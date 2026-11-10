@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BHOJORA — Food You Love. Trust You Deserve.</title>
+  <meta name="description" content="Kolkata's first food delivery and trust transparency platform combining seamless ordering with independent, evidence-backed kitchen verification.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700;800&family=Noto+Sans+Bengali:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --terracotta: #8D352A;
+      --terracotta-dark: #6D271E;
+      --terracotta-light: #FBEFEF;
+      --cream: #F7F1E6;
+      --cream-card: #FFFFFF;
+      --cream-alt: #EFE8DC;
+      --trust-green: #344B3E;
+      --trust-green-light: #EDF3EF;
+      --trust-green-text: #1E3025;
+      --saffron: #E4A746;
+      --saffron-light: #FCF5E8;
+      --neutral-950: #171412;
+      --neutral-800: #3A3430;
+      --neutral-600: #635B55;
+      --neutral-400: #9E938B;
+      --neutral-200: #DDD5CD;
+      --neutral-100: #F2ECE4;
+      --shadow-subtle: 0 1px 3px 0 rgba(23, 20, 18, 0.06);
+      --shadow-elevated: 0 6px 12px -2px rgba(23, 20, 18, 0.08), 0 3px 6px -2px rgba(23, 20, 18, 0.04);
+      --shadow-modal: 0 24px 32px -6px rgba(23, 20, 18, 0.16);
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-xl: 16px;
+      --radius-full: 9999px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--cream);
+      color: var(--neutral-800);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3, h4, h5, .brand-font {
+      font-family: 'Manrope', sans-serif;
+      color: var(--neutral-950);
+      font-weight: 700;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* Header */
+    header {
+      background: rgba(247, 241, 230, 0.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--neutral-200);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 72px;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      font-size: 24px;
+      letter-spacing: -0.02em;
+      color: var(--terracotta);
+    }
+
+    .logo-emblem {
+      width: 40px;
+      height: 40px;
+      background: var(--terracotta);
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--cream);
+      box-shadow: var(--shadow-subtle);
+    }
+
+    .location-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--cream-card);
+      border: 1px solid var(--neutral-200);
+      border-radius: var(--radius-full);
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .location-pill:hover {
+      border-color: var(--terracotta);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .nav-links a:hover {
+      color: var(--terracotta);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 20px;
+      min-height: 44px;
+      font-family: 'Manrope', sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--terracotta);
+      color: #FFFFFF;
+      box-shadow: 0 2px 4px rgba(141, 53, 42, 0.2);
+    }
+
+    .btn-primary:hover {
+      background: var(--terracotta-dark);
+      transform: translateY(-1px);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--neutral-300, #DDD5CD);
+      color: var(--neutral-800);
+    }
+
+    .btn-outline:hover {
+      background: var(--cream-card);
+      border-color: var(--neutral-600);
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 56px 0 40px;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--saffron-light);
+      border: 1px solid var(--saffron);
+      color: #8C590E;
+      padding: 6px 16px;
+      border-radius: var(--radius-full);
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+
+    .hero-title {
+      font-size: 44px;
+      line-height: 1.18;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+      color: var(--neutral-950);
+      max-width: 860px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .hero-title span.highlight {
+      color: var(--terracotta);
+    }
+
+    .hero-subtitle {
+      font-size: 18px;
+      color: var(--neutral-600);
+      max-width: 680px;
+      margin: 0 auto 36px;
+      line-height: 1.55;
+    }
+
+    /* Search & Discovery Bar */
+    .search-container {
+      background: var(--cream-card);
+      border: 1px solid var(--neutral-200);
+      border-radius: var(--radius-xl);
+      padding: 10px 14px;
+      max-width: 740px;
+      margin: 0 auto 28px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: var(--shadow-elevated);
+    }
+
+    .search-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 15px;
+      font-family: inherit;
+      color: var(--neutral-800);
+      background: transparent;
+      padding: 8px;
+    }
+
+    .search-input::placeholder {
+      color: var(--neutral-400);
+    }
+
+    .landmark-chips {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 48px;
+    }
+
+    .chip {
+      background: var(--cream-card);
+      border: 1px solid var(--neutral-200);
+      border-radius: var(--radius-full);
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--neutral-600);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .chip:hover, .chip.active {
+      background: var(--terracotta-light);
+      border-color: var(--terracotta);
+      color: var(--terracotta);
+    }
+
+    /* Section Styles */
+    .section-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+
+    .section-title {
+      font-size: 26px;
+      letter-spacing: -0.01em;
+    }
+
+    .section-desc {
+      font-size: 14px;
+      color: var(--neutral-600);
+      margin-top: 4px;
+    }
+
+    /* Cards Grid */
+    .grid-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 24px;
+      margin-bottom: 64px;
+    }
+
+    .card {
+      background: var(--cream-card);
+      border: 1px solid var(--neutral-200);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      box-shadow: var(--shadow-subtle);
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow-elevated);
+      transform: translateY(-3px);
+      border-color: var(--neutral-300, #C2B8AD);
+    }
+
+    .card-media {
+      height: 180px;
+      position: relative;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .trust-pill {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(4px);
+      border: 1px solid var(--trust-green);
+      border-radius: var(--radius-full);
+      padding: 5px 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'Manrope', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--trust-green-text);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+      cursor: pointer;
+    }
+
+    .trust-pill svg {
+      width: 14px;
+      height: 14px;
+      fill: var(--trust-green);
+    }
+
+    .card-body {
+      padding: 16px 18px 20px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 4px;
+    }
+
+    .card-title {
+      font-size: 17px;
+      font-weight: 700;
+    }
+
+    .card-rating {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--saffron-light);
+      color: #925C08;
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .card-cuisine {
+      font-size: 13px;
+      color: var(--neutral-600);
+      margin-bottom: 12px;
+    }
+
+    .card-footer {
+      margin-top: auto;
+      padding-top: 12px;
+      border-top: 1px dashed var(--neutral-200);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--neutral-600);
+      font-weight: 500;
+    }
+
+    .audit-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--trust-green);
+      font-weight: 600;
+    }
+
+    /* Trust Pillars Banner */
+    .pillars-section {
+      background: var(--cream-card);
+      border: 1px solid var(--neutral-200);
+      border-radius: var(--radius-xl);
+      padding: 48px 40px;
+      margin-bottom: 64px;
+      box-shadow: var(--shadow-subtle);
+    }
+
+    .pillars-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 32px;
+      margin-top: 32px;
+    }
+
+    .pillar-card {
+      padding: 24px;
+      border-radius: var(--radius-lg);
+      background: var(--cream);
+      border: 1px solid var(--neutral-200);
+    }
+
+    .pillar-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      font-size: 20px;
+    }
+
+    .pillar-title {
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    .pillar-text {
+      font-size: 14px;
+      color: var(--neutral-600);
+      line-height: 1.5;
+    }
+
+    /* Bengali Highlight Box */
+    .bengali-banner {
+      background: var(--terracotta);
+      color: #FFFFFF;
+      border-radius: var(--radius-xl);
+      padding: 36px 40px;
+      margin-bottom: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .bengali-title {
+      font-family: 'Noto Sans Bengali', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--cream);
+      margin-bottom: 8px;
+    }
+
+    .bengali-text {
+      font-size: 15px;
+      color: rgba(247, 241, 230, 0.9);
+      max-width: 650px;
+    }
+
+    /* Modal / Drawer for Trust Profile */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(23, 20, 18, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--cream-card);
+      border-radius: var(--radius-xl);
+      width: 100%;
+      max-width: 580px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-modal);
+      padding: 28px 32px;
+      border: 1px solid var(--neutral-200);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--neutral-200);
+      padding-bottom: 16px;
+      margin-bottom: 20px;
+    }
+
+    .modal-close {
+      background: transparent;
+      border: none;
+      font-size: 22px;
+      cursor: pointer;
+      color: var(--neutral-600);
+    }
+
+    .score-banner {
+      background: var(--trust-green-light);
+      border: 1px solid var(--trust-green);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .score-number {
+      font-family: 'Manrope', sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--trust-green-text);
+    }
+
+    .category-row {
+      margin-bottom: 14px;
+    }
+
+    .category-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .progress-bar-bg {
+      background: var(--neutral-100);
+      height: 8px;
+      border-radius: var(--radius-full);
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      background: var(--trust-green);
+      height: 100%;
+      border-radius: var(--radius-full);
+    }
+
+    .disclaimer-box {
+      margin-top: 24px;
+      padding: 14px 16px;
+      background: var(--cream);
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      color: var(--neutral-600);
+      line-height: 1.45;
+      border-left: 3px solid var(--terracotta);
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--neutral-200);
+      padding: 48px 0 32px;
+      background: var(--cream-card);
+      font-size: 13px;
+      color: var(--neutral-600);
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 36px;
+      margin-bottom: 36px;
+    }
+
+    .footer-col h4 {
+      font-size: 14px;
+      color: var(--neutral-950);
+      margin-bottom: 14px;
+    }
+
+    .footer-col ul {
+      list-style: none;
+    }
+
+    .footer-col li {
+      margin-bottom: 8px;
+    }
+
+    .footer-bottom {
+      border-top: 1px solid var(--neutral-200);
+      padding-top: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+    }
+
+    @media (max-width: 768px) {
+      .hero-title { font-size: 32px; }
+      .bengali-banner { flex-direction: column; text-align: center; }
+      .footer-grid { grid-template-columns: 1fr; }
+      .navbar .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="container navbar">
+      <div style="display: flex; align-items: center; gap: 24px;">
+        <a href="/" class="brand-logo">
+          <div class="logo-emblem">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-4.5a1 1 0 0 1-2 0V7a1 1 0 0 1 2 0z"/>
+            </svg>
+          </div>
+          <span>BHOJORA</span>
+        </a>
+
+        <div class="location-pill" onclick="alert('Bhojora is currently live in Kolkata, West Bengal (Zones: Salt Lake, New Town, Park Street, Ballygunge, Shyambazar).')">
+          <span>📍</span>
+          <span>Salt Lake, Sector V</span>
+          <span style="color: var(--neutral-400);">▼</span>
+        </div>
+      </div>
+
+      <nav class="nav-links">
+        <a href="#discover">Discovery</a>
+        <a href="#trust">Trust Engine</a>
+        <a href="#pillars">Architecture</a>
+        <a href="https://github.com/Soumyaroy428/BHOJORA" target="_blank">GitHub Repo</a>
+        <button class="btn btn-primary" onclick="alert('Bhojora Mobile Apps for iOS and Android are configured in client/customer-mobile and client/delivery-mobile!')">
+          Get Bhojora App
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-badge">
+        <span>🛡️</span>
+        <span>Independent Kitchen Verification • Launching in Kolkata</span>
+      </div>
+      <h1 class="hero-title">
+        Food You Love.<br>
+        <span class="highlight">Trust You Deserve.</span>
+      </h1>
+      <p class="hero-subtitle">
+        India's first food-tech platform combining seamless on-demand delivery with evidence-backed kitchen hygiene audits. Know exactly how your food is prepared before you order.
+      </p>
+
+      <!-- Search Box -->
+      <div class="search-container">
+        <span style="font-size: 18px; color: var(--neutral-400); margin-left: 6px;">🔍</span>
+        <input type="text" class="search-input" placeholder="Search for Arsalan Biryani, Mocambo Devilled Crab, Sweets...">
+        <button class="btn btn-primary" style="padding: 8px 18px; min-height: 38px;">Find Food</button>
+      </div>
+
+      <!-- Kolkata Landmark Chips -->
+      <div class="landmark-chips">
+        <span class="chip active">All Kolkata</span>
+        <span class="chip">Salt Lake / Sector V</span>
+        <span class="chip">Park Street / Central</span>
+        <span class="chip">New Town</span>
+        <span class="chip">Ballygunge / South</span>
+        <span class="chip">Shyambazar / North</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Verified Kitchens Showcase -->
+  <section id="discover" class="container">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title">Verified Kitchens in Kolkata</h2>
+        <p class="section-desc">Audited on-site by independent hygiene inspectors with verifiable cryptographic photo proof.</p>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <span class="chip active" style="font-size: 11px;">🛡️ Score ≥ 90</span>
+        <span class="chip" style="font-size: 11px;">🟢 Pure Veg</span>
+      </div>
+    </div>
+
+    <div class="grid-cards">
+      <!-- Card 1: Arsalan -->
+      <div class="card">
+        <div class="card-media" style="background-image: url('https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=600&q=80');">
+          <div class="trust-pill" onclick="openTrustModal('Arsalan (Park Circus)', 94, '14 Oct 2026', '12821008000491')">
+            <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+            <span>VERIFIED • 94/100</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-title-row">
+            <h3 class="card-title">Arsalan</h3>
+            <span class="card-rating">★ 4.5 (2.4k)</span>
+          </div>
+          <p class="card-cuisine">Mughlai, Kolkata Biryani, Kebabs</p>
+          <div class="card-footer">
+            <span>Park Circus • 25–35 mins</span>
+            <span class="audit-status">🛡️ Audited Oct 2026</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Peter Cat -->
+      <div class="card">
+        <div class="card-media" style="background-image: url('https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80');">
+          <div class="trust-pill" onclick="openTrustModal('Peter Cat (Park Street)', 92, '28 Oct 2026', '12820002000189')">
+            <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+            <span>VERIFIED • 92/100</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-title-row">
+            <h3 class="card-title">Peter Cat</h3>
+            <span class="card-rating">★ 4.6 (4.1k)</span>
+          </div>
+          <p class="card-cuisine">Continental, Chelo Kebab, Sizzlers</p>
+          <div class="card-footer">
+            <span>Park Street • 30–40 mins</span>
+            <span class="audit-status">🛡️ Audited Oct 2026</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Mocambo -->
+      <div class="card">
+        <div class="card-media" style="background-image: url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80');">
+          <div class="trust-pill" onclick="openTrustModal('Mocambo (Free School St)', 95, '02 Nov 2026', '12819001000842')">
+            <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+            <span>VERIFIED • 95/100</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-title-row">
+            <h3 class="card-title">Mocambo</h3>
+            <span class="card-rating">★ 4.7 (3.8k)</span>
+          </div>
+          <p class="card-cuisine">Heritage Continental, Devilled Crab</p>
+          <div class="card-footer">
+            <span>Free School St • 25–35 mins</span>
+            <span class="audit-status">🛡️ Audited Nov 2026</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: Balaram Mullick -->
+      <div class="card">
+        <div class="card-media" style="background-image: url('https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=600&q=80');">
+          <div class="trust-pill" onclick="openTrustModal('Balaram Mullick & Radharaman Mullick', 96, '05 Nov 2026', '12822004000321')">
+            <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+            <span>VERIFIED • 96/100</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-title-row">
+            <h3 class="card-title">Balaram Mullick</h3>
+            <span class="card-rating">★ 4.8 (5.2k)</span>
+          </div>
+          <p class="card-cuisine">Bengali Mishti, Baked Rosogolla, Sandesh</p>
+          <div class="card-footer">
+            <span>Bhowanipore • 20–30 mins</span>
+            <span class="audit-status">🛡️ Audited Nov 2026</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bengali Cultural Banner -->
+  <section class="container">
+    <div class="bengali-banner">
+      <div>
+        <h3 class="bengali-title">খাবার আপনি ভালোবাসেন। বিশ্বাস আপনি প্রাপ্য।</h3>
+        <p class="bengali-text">
+          ভোজোরা (Bhojora) কলকাতার প্রতিটি রেস্তোরাঁ ও ক্লাউড কিচেন স্বাধীন পরিদর্শকদের দ্বারা যাচাই করে। পরিষ্কার রান্নাঘর, খাঁটি স্বাদ এবং নিরাপদ ডেলিভারি—এখন একই ছাদের নিচে।
+        </p>
+      </div>
+      <button class="btn btn-outline" style="background: var(--cream); color: var(--terracotta); border: none; font-weight: 700; white-space: nowrap;" onclick="alert('Language toggled to Bengali (বাংলা)!')">
+        বাংলা সংস্করণ
+      </button>
+    </div>
+  </section>
+
+  <!-- Three Pillars Section -->
+  <section id="pillars" class="container">
+    <div class="pillars-section">
+      <div style="text-align: center; max-width: 680px; margin: 0 auto;">
+        <h2 class="section-title">The Three Pillars of Bhojora</h2>
+        <p class="section-desc">A unified food-tech ecosystem engineered for trust, convenience, and intelligence.</p>
+      </div>
+
+      <div class="pillars-grid">
+        <div class="pillar-card">
+          <div class="pillar-icon" style="background: var(--terracotta-light); color: var(--terracotta);">🛵</div>
+          <h3 class="pillar-title">1. Food Delivery</h3>
+          <p class="pillar-text">Geospatial Kolkata dispatch engine, authoritative server price quotes in integer paise, live map tracking, and secure 4-digit Delivery OTP handovers.</p>
+        </div>
+
+        <div class="pillar-card">
+          <div class="pillar-icon" style="background: var(--trust-green-light); color: var(--trust-green);">🛡️</div>
+          <h3 class="pillar-title">2. Trust Transparency</h3>
+          <p class="pillar-text">Standardized on-site kitchen inspections, tamper-evident SHA-256 photo hashes, strict separation of inspector and reviewer duties, and instant critical violation suspensions.</p>
+        </div>
+
+        <div class="pillar-card">
+          <div class="pillar-icon" style="background: var(--saffron-light); color: #B3740D;">🤖</div>
+          <h3 class="pillar-title">3. Supervised AI</h3>
+          <p class="pillar-text">Human-supervised computer vision flagging potential kitchen risk anomalies, demand prediction, and smart dish recommendations without automated score certification.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trust Profile Modal (Interactive) -->
+  <div id="trustModal" class="modal-overlay" onclick="closeTrustModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h3 id="modalOutletName" style="font-size: 18px;">Arsalan (Park Circus)</h3>
+          <p id="modalFssai" style="font-size: 12px; color: var(--neutral-600);">FSSAI Lic. No: 12821008000491</p>
+        </div>
+        <button class="modal-close" onclick="document.getElementById('trustModal').classList.remove('active')">&times;</button>
+      </div>
+
+      <div class="score-banner">
+        <div>
+          <div style="font-size: 12px; font-weight: 700; color: var(--trust-green); text-transform: uppercase;">Independent Audit Result</div>
+          <div style="font-size: 16px; font-weight: 700; color: var(--trust-green-text);">VERIFIED CLEAN KITCHEN</div>
+          <div id="modalAuditDate" style="font-size: 12px; color: var(--neutral-600); margin-top: 2px;">Inspected on: 14 Oct 2026</div>
+        </div>
+        <div id="modalScoreNum" class="score-number">94<span style="font-size: 16px; color: var(--neutral-600);">/100</span></div>
+      </div>
+
+      <h4 style="font-size: 14px; margin-bottom: 12px;">Category Score Breakdown</h4>
+      <div class="category-row">
+        <div class="category-label"><span>1. Food Storage & Cold Chain (25%)</span><span>96%</span></div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 96%;"></div></div>
+      </div>
+      <div class="category-row">
+        <div class="category-label"><span>2. Personal Hygiene & Gear (20%)</span><span>92%</span></div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 92%;"></div></div>
+      </div>
+      <div class="category-row">
+        <div class="category-label"><span>3. Sanitation & Pest Control (25%)</span><span>95%</span></div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 95%;"></div></div>
+      </div>
+      <div class="category-row">
+        <div class="category-label"><span>4. Water & Raw Material Quality (15%)</span><span>90%</span></div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 90%;"></div></div>
+      </div>
+      <div class="category-row">
+        <div class="category-label"><span>5. Waste Management & Drainage (10%)</span><span>98%</span></div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 98%;"></div></div>
+      </div>
+
+      <div class="disclaimer-box">
+        <strong>⚠️ Statutory Transparency Notice:</strong><br>
+        This independent platform assessment reflects on-site physical observations recorded under Bhojora Verification Protocol v2.1. It is NOT a statutory government certification issued by FSSAI and does not guarantee that every meal is 100% risk-free.
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <div class="brand-logo" style="margin-bottom: 12px;">
+            <div class="logo-emblem" style="width: 32px; height: 32px; font-size: 14px;">B</div>
+            <span style="font-size: 20px;">BHOJORA</span>
+          </div>
+          <p style="font-size: 13px; line-height: 1.6; max-width: 320px;">
+            Food You Love. Trust You Deserve.<br>
+            Launching across Kolkata, West Bengal, India. Built with clean software architecture and transparent governance.
+          </p>
+        </div>
+        <div class="footer-col">
+          <h4>Ecosystem</h4>
+          <ul>
+            <li><a href="#">Bhojora Consumer Web</a></li>
+            <li><a href="#">Bhojora Partner Portal</a></li>
+            <li><a href="#">Bhojora Delivery Fleet</a></li>
+            <li><a href="#">Bhojora Inspect Tool</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Trust & Safety</h4>
+          <ul>
+            <li><a href="#">Inspection Methodology</a></li>
+            <li><a href="#">Scoring Policy v2.1</a></li>
+            <li><a href="#">Inspector Code of Conduct</a></li>
+            <li><a href="#">Report a Food Issue</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Kolkata Launch</h4>
+          <ul>
+            <li>Salt Lake (Sector V)</li>
+            <li>Park Street / Central</li>
+            <li>New Town Kolkata</li>
+            <li>South Kolkata Hub</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>&copy; 2026 BHOJORA Technologies Pvt. Ltd. All rights reserved.</div>
+        <div>
+          <a href="https://github.com/Soumyaroy428/BHOJORA" target="_blank" style="color: var(--terracotta); font-weight: 600;">GitHub Repository: Soumyaroy428/BHOJORA</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function openTrustModal(name, score, date, fssai) {
+      document.getElementById('modalOutletName').innerText = name;
+      document.getElementById('modalScoreNum').innerHTML = score + '<span style="font-size: 16px; color: var(--neutral-600);">/100</span>';
+      document.getElementById('modalAuditDate').innerText = 'Inspected on: ' + date;
+      document.getElementById('modalFssai').innerText = 'FSSAI Lic. No: ' + fssai;
+      document.getElementById('trustModal').classList.add('active');
+    }
+
+    function closeTrustModal(e) {
+      if (e.target.id === 'trustModal') {
+        document.getElementById('trustModal').classList.remove('active');
+      }
+    }
+  </script>
+</body>
+</html>
