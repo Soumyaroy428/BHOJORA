@@ -1,0 +1,36 @@
+# BHOJORA — Documentation Index
+
+## Core Planning & Design
+
+-   `01-CORE-PLANNING-DESIGN/BRAND.md` (Official Brand Identity Brief & Design Tokens)
+-   `01-CORE-PLANNING-DESIGN/PRD.md`
+-   `01-CORE-PLANNING-DESIGN/DESIGN.md`
+-   `01-CORE-PLANNING-DESIGN/ARCHITECTURE.md`
+-   `01-CORE-PLANNING-DESIGN/DATABASE.md`
+-   `01-CORE-PLANNING-DESIGN/API.md`
+
+## Execution & Agents
+
+-   `02-EXECUTION-AGENTS/AGENTS.md`
+-   `02-EXECUTION-AGENTS/README.md`
+-   `02-EXECUTION-AGENTS/PLAN.md`
+-   `02-EXECUTION-AGENTS/SETUP.md`
+-   `02-EXECUTION-AGENTS/FEATURES.md`
+
+## Security & Quality Assurance
+
+-   `03-SECURITY-QUALITY/AUTH.md`
+-   `03-SECURITY-QUALITY/MCP.md`
+-   `03-SECURITY-QUALITY/INTEGRATIONS.md`
+-   `03-SECURITY-QUALITY/TESTING.md`
+-   `03-SECURITY-QUALITY/DEBUGGING.md`
+
+## Checkpoints
+
+See `CHECKPOINTS/CHECKPOINT_INDEX.md` and Checkpoint 00 through 38.
+There are 39 sequential checkpoints, each with scope, deliverables,
+acceptance criteria and a required founder approval gate.
+
+## Repository rule
+
+At project root, only `docs/`, `client/`, and `server/` are allowed.
