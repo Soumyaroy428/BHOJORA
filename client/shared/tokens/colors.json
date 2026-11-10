@@ -1,0 +1,81 @@
+{
+  "brand": {
+    "terracotta": {
+      "default": "#8D352A",
+      "dark": "#6D271E",
+      "light": "#FBEFEF"
+    },
+    "cream": {
+      "default": "#F7F1E6",
+      "card": "#FFFFFF",
+      "alt": "#EFE8DC"
+    },
+    "trustGreen": {
+      "default": "#344B3E",
+      "light": "#EDF3EF",
+      "text": "#1E3025"
+    },
+    "saffron": {
+      "default": "#E4A746",
+      "dark": "#C68B2C",
+      "light": "#FCF5E8"
+    }
+  },
+  "neutrals": {
+    "950": "#171412",
+    "800": "#3A3430",
+    "600": "#635B55",
+    "400": "#9E938B",
+    "200": "#DDD5CD",
+    "100": "#F2ECE4"
+  },
+  "status": {
+    "verifiedClean": {
+      "background": "#EDF3EF",
+      "border": "#344B3E",
+      "text": "#1E3025",
+      "icon": "ShieldCheck"
+    },
+    "actionRequired": {
+      "background": "#FFF4E5",
+      "border": "#ED6C02",
+      "text": "#663C00",
+      "icon": "AlertTriangle"
+    },
+    "suspended": {
+      "background": "#FDEAEA",
+      "border": "#D32F2F",
+      "text": "#5F2120",
+      "icon": "ShieldAlert"
+    },
+    "expired": {
+      "background": "#F5F5F4",
+      "border": "#78716C",
+      "text": "#44403C",
+      "icon": "ClockHistory"
+    },
+    "notInspected": {
+      "background": "#F8F8F8",
+      "border": "#A8A29E",
+      "text": "#57534E",
+      "icon": "HelpCircle"
+    }
+  },
+  "dietary": {
+    "pureVeg": {
+      "border": "#0E8345",
+      "fill": "#0E8345",
+      "label": "Pure Veg"
+    },
+    "nonVeg": {
+      "border": "#9E3B2E",
+      "fill": "#9E3B2E",
+      "label": "Non-Veg"
+    },
+    "egg": {
+      "border": "#D97706",
+      "fill": "#D97706",
+      "label": "Contains Egg"
+    }
+  }
+}

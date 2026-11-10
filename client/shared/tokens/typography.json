@@ -1,0 +1,26 @@
+{
+  "fontFamily": {
+    "heading": "Manrope, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    "body": "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    "button": "Manrope, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    "bengali": "'Noto Sans Bengali', Inter, sans-serif"
+  },
+  "fontSize": {
+    "display2xl": { "size": "48px", "lineHeight": "56px", "tracking": "-0.02em" },
+    "displayXl": { "size": "36px", "lineHeight": "44px", "tracking": "-0.02em" },
+    "headingLg": { "size": "28px", "lineHeight": "36px", "tracking": "-0.01em" },
+    "headingMd": { "size": "22px", "lineHeight": "28px", "tracking": "-0.01em" },
+    "headingSm": { "size": "18px", "lineHeight": "24px", "tracking": "0" },
+    "bodyLg": { "size": "16px", "lineHeight": "24px", "tracking": "0" },
+    "bodyMd": { "size": "14px", "lineHeight": "20px", "tracking": "0" },
+    "bodySm": { "size": "12px", "lineHeight": "16px", "tracking": "+0.01em" },
+    "caption": { "size": "11px", "lineHeight": "14px", "tracking": "+0.02em" }
+  },
+  "fontWeight": {
+    "regular": "400",
+    "medium": "500",
+    "semiBold": "600",
+    "bold": "700",
+    "extraBold": "800"
+  }
+}

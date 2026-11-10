@@ -11,6 +11,8 @@
 -   `01-CORE-PLANNING-DESIGN/USER_JOURNEYS.md` (Detailed Multi-Persona End-to-End Journeys)
 -   `01-CORE-PLANNING-DESIGN/SITEMAP_AND_SCREENS.md` (Complete Sitemaps, Screens & 9 Standard UX States)
 -   `01-CORE-PLANNING-DESIGN/USER_STORIES.md` (Gherkin Acceptance Criteria across 13 Feature Domains)
+-   `01-CORE-PLANNING-DESIGN/COMPONENTS.md` (Reusable Component Inventory & Props Specifications)
+-   `01-CORE-PLANNING-DESIGN/KEY_SCREENS_SPEC.md` (High-Fidelity Screen Architecture & Wireframe Specs)
 
 ## Execution & Agents
 
