@@ -48,7 +48,10 @@ export type SafetyStatus =
   | 'EXPIRED';
 
 /** Terminal states emitted immediately when an independent reviewer approves a submission. */
-export type ApprovedSafetyStatus = Extract<SafetyStatus, 'VERIFIED_CLEAN' | 'ACTION_REQUIRED' | 'SUSPENDED'>;
+export type ApprovedSafetyStatus = Extract<
+  SafetyStatus,
+  'VERIFIED_CLEAN' | 'ACTION_REQUIRED' | 'SUSPENDED'
+>;
 
 export interface InspectionApprovedPayload {
   inspectionId: string;

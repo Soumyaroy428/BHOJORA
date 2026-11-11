@@ -136,3 +136,22 @@ We establish a **Four-Tier Data Classification Model**:
 ### Consequences
 - **Positive:** Complete compliance with Indian privacy laws and minimization of customer PII exposure.
 - **Negative:** Requires strict logging sanitation filters and virtual proxy numbers for delivery communications.
+
+---
+
+## ADR-008: Pinned Node 22 LTS Runtime, npm Workspaces & Automated CI Pipeline
+
+### Status: ACCEPTED (Locked Baseline — Checkpoint 04)
+
+### Context
+Multiple web apps, Expo mobile apps, shared contracts, and modular monolith backend services require deterministic local tooling, strict type checking, formatting, linting, automated secret scanning, and continuous integration without prematurely bundling heavy framework dependencies before their assigned checkpoints.
+
+### Decision
+1. **Pinned Runtime & Package Manager:** Standardize on **Node.js `22.21.0` LTS** (`.nvmrc`, `.node-version`) and **npm `11.12.1`** (`packageManager` + `engines` in `package.json`), utilizing `npm ci` in GitHub Actions.
+2. **Strict Quality Tooling:** Enforce `tsconfig.base.json` (`strict: true`, `noUncheckedIndexedAccess: true`), ESLint flat config (`eslint.config.mjs`), and Prettier (`.prettierrc.json`) across shared packages and backend code.
+3. **Zero Premature Runtime Bloat:** Install only checkpoint-scoped tooling dependencies during Checkpoint 04; forbid Express, Mongoose, Next.js, Redis, or React runtime installation until their respective checkpoints.
+4. **Automated Secret Scanning:** Enforce repo-level forbidden file and credential pattern detection (`npm run security:secrets`) alongside `npm audit --audit-level=high` on every PR and push to `main`.
+
+### Consequences
+- **Positive:** Reproducible builds across Windows developer workstations and Linux CI runners; early detection of type drift and accidental credential commits.
+- **Negative:** Requires updating workspace lists and ESLint overrides explicitly as new web/mobile apps bootstrap in later checkpoints.

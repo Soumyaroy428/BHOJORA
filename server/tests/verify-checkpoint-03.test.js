@@ -34,10 +34,19 @@ assert.ok(fs.existsSync(archPath), 'Missing ARCHITECTURE.md');
 const archContent = fs.readFileSync(archPath, 'utf8');
 
 assert.ok(archContent.includes('Modular Monolith'), 'Architecture must enforce Modular Monolith');
-assert.ok(archContent.includes('Domain Ownership'), 'Architecture must define Domain Ownership matrix');
-assert.ok(archContent.includes('Transactional Outbox'), 'Architecture must specify Transactional Outbox pattern');
+assert.ok(
+  archContent.includes('Domain Ownership'),
+  'Architecture must define Domain Ownership matrix',
+);
+assert.ok(
+  archContent.includes('Transactional Outbox'),
+  'Architecture must specify Transactional Outbox pattern',
+);
 assert.ok(archContent.includes('Tier 4'), 'Architecture must specify 4-tier Data Classification');
-assert.ok(archContent.includes('```mermaid'), 'Architecture must contain Mermaid architectural diagrams');
+assert.ok(
+  archContent.includes('```mermaid'),
+  'Architecture must contain Mermaid architectural diagrams',
+);
 
 const requiredModules = [
   'identity',
@@ -53,7 +62,7 @@ const requiredModules = [
   'inspections',
   'safety-profile',
   'support',
-  'governance'
+  'governance',
 ];
 
 for (const mod of requiredModules) {
@@ -69,12 +78,22 @@ const spec = JSON.parse(fs.readFileSync(openApiPath, 'utf8'));
 
 assert.strictEqual(spec.openapi, '3.1.0', 'OpenAPI version must be 3.1.0');
 assert.ok(spec.info.title.includes('BHOJORA'), 'OpenAPI title must reference BHOJORA');
-assert.ok(spec.servers.some(s => s.url.includes('/api/v1')), 'OpenAPI servers must mount under /api/v1');
+assert.ok(
+  spec.servers.some((s) => s.url.includes('/api/v1')),
+  'OpenAPI servers must mount under /api/v1',
+);
 assert.ok(spec.components.schemas.MoneyPaise, 'OpenAPI must define MoneyPaise integer schema');
-assert.strictEqual(spec.components.schemas.MoneyPaise.type, 'integer', 'MoneyPaise must strictly be integer');
+assert.strictEqual(
+  spec.components.schemas.MoneyPaise.type,
+  'integer',
+  'MoneyPaise must strictly be integer',
+);
 assert.ok(spec.components.schemas.SafetyStatusEnum, 'OpenAPI must define SafetyStatusEnum');
 assert.ok(spec.components.schemas.ErrorResponse, 'OpenAPI must define standard ErrorResponse');
-assert.ok(spec.components.parameters.IdempotencyKey, 'OpenAPI must define Idempotency-Key header parameter');
+assert.ok(
+  spec.components.parameters.IdempotencyKey,
+  'OpenAPI must define Idempotency-Key header parameter',
+);
 
 const requiredPaths = [
   '/health',
@@ -88,20 +107,22 @@ const requiredPaths = [
   '/webhooks/payments/{provider}',
   '/delivery/jobs/{id}/complete',
   '/inspections/{id}/submit',
-  '/inspections/{id}/approve'
+  '/inspections/{id}/approve',
 ];
 
 for (const p of requiredPaths) {
   assert.ok(spec.paths[p], `OpenAPI specification missing required endpoint: "${p}"`);
 }
-console.log(`✓ OpenAPI 3.1.0 contract validated (${Object.keys(spec.paths).length} endpoints checked).`);
+console.log(
+  `✓ OpenAPI 3.1.0 contract validated (${Object.keys(spec.paths).length} endpoints checked).`,
+);
 
 // Test 4: Validate Shared Contracts in client/shared/contracts/
 console.log('[Test 4] Validating shared TypeScript contracts in client/shared/contracts/...');
 const contractFiles = [
   'client/shared/contracts/api-response.ts',
   'client/shared/contracts/events.ts',
-  'client/shared/contracts/index.ts'
+  'client/shared/contracts/index.ts',
 ];
 
 for (const file of contractFiles) {
@@ -111,13 +132,24 @@ for (const file of contractFiles) {
 console.log('✓ Shared API response and domain event contracts verified.');
 
 // Test 5: Validate Customer Web Header/Footer Hygiene, Accessible Modal & All Surface Logos
-console.log('[Test 5] Validating customer-web hygiene, native dialog, and public logo distribution...');
+console.log(
+  '[Test 5] Validating customer-web hygiene, native dialog, and public logo distribution...',
+);
 const webHtmlPath = path.join(ROOT_DIR, 'client/customer-web/index.html');
 assert.ok(fs.existsSync(webHtmlPath), 'Missing client/customer-web/index.html');
 const html = fs.readFileSync(webHtmlPath, 'utf8');
-assert.ok(!html.toLowerCase().includes('github.com'), 'Header and footer must NOT display any GitHub repo link');
-assert.ok(html.includes('./logo.png'), 'Customer web must reference ./logo.png in favicon, header, and footer');
-assert.ok(html.includes('<dialog id="trustModal"') && html.includes('.showModal()'), 'Trust profile modal must use accessible native <dialog> + showModal()');
+assert.ok(
+  !html.toLowerCase().includes('github.com'),
+  'Header and footer must NOT display any GitHub repo link',
+);
+assert.ok(
+  html.includes('./logo.png'),
+  'Customer web must reference ./logo.png in favicon, header, and footer',
+);
+assert.ok(
+  html.includes('<dialog id="trustModal"') && html.includes('.showModal()'),
+  'Trust profile modal must use accessible native <dialog> + showModal()',
+);
 
 const expectedLogos = [
   'client/public/logo.png',
@@ -127,7 +159,7 @@ const expectedLogos = [
   'client/admin-web/public/logo.png',
   'client/customer-mobile/assets/logo.png',
   'client/delivery-mobile/assets/logo.png',
-  'client/inspector-mobile/assets/logo.png'
+  'client/inspector-mobile/assets/logo.png',
 ];
 
 for (const logoRelPath of expectedLogos) {
@@ -136,6 +168,8 @@ for (const logoRelPath of expectedLogos) {
   const stat = fs.statSync(fullLogoPath);
   assert.ok(stat.size > 1000, `Logo file looks empty or invalid: "${logoRelPath}"`);
 }
-console.log(`✓ Customer web clean branding verified and all ${expectedLogos.length} client/public logo.png assets validated.`);
+console.log(
+  `✓ Customer web clean branding verified and all ${expectedLogos.length} client/public logo.png assets validated.`,
+);
 
 console.log('--- ALL CHECKPOINT 03 CHECKS PASSED SUCCESSFULLY ---');

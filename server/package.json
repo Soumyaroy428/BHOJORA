@@ -1,0 +1,12 @@
+{
+  "name": "@bhojora/server",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "tsc -p tsconfig.json",
+    "test": "node tests/verify-repo-structure.test.js && node tests/verify-checkpoint-01.test.js && node tests/verify-checkpoint-02.test.js && node tests/verify-checkpoint-03.test.js && node tests/verify-checkpoint-04.test.js"
+  }
+}

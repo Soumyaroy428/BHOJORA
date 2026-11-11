@@ -1,0 +1,78 @@
+name: BHOJORA CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  quality-and-tests:
+    name: Format, Lint, Typecheck, Build & Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pinned Node.js LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Verify pinned runtime and package manager
+        run: |
+          node -v
+          npm -v
+
+      - name: Install locked dev tooling dependencies
+        run: npm ci
+
+      - name: Check code formatting (Prettier)
+        run: npm run format:check
+
+      - name: Run static lint rules (ESLint)
+        run: npm run lint
+
+      - name: Run TypeScript strict typecheck
+        run: npm run typecheck
+
+      - name: Build workspace artifacts
+        run: npm run build
+
+      - name: Run repository & checkpoint verification suites
+        run: npm test
+
+  security-and-secrets:
+    name: Secret Scan & Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pinned Node.js LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Run BHOJORA secret & forbidden-file scanner
+        run: npm run security:secrets
+
+      - name: Run npm dependency vulnerability audit
+        run: npm audit --audit-level=high

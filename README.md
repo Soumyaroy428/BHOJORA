@@ -98,10 +98,18 @@ BHOJORA/
 ## 6. Development & Deployment Workflow
 
 ### Checkpoint-Driven Execution
+
 Development follows 39 granular checkpoints (`CHECKPOINT_00.md` to `CHECKPOINT_38.md`). Each checkpoint follows the strict cycle:
 `Understand` ➔ `Plan` ➔ `Implement` ➔ `Test` ➔ `Review` ➔ `Report` ➔ `Founder Approval` ➔ `GitHub Push` ➔ `Deployment & Verification` ➔ `Acceptance`.
 
+### Developer Tooling & Quality Checks
+
+- **Runtime & Package Manager:** Node.js `22.21.0` LTS (`.nvmrc`) + `npm` `11.12.1`
+- **Local Verification:** `npm ci` then `npm run ci` (`format:check`, `lint`, `typecheck`, `build`, `security:secrets`, `test`)
+- **Guides:** See `docs/02-EXECUTION-AGENTS/CODING_STANDARDS.md` and `docs/02-EXECUTION-AGENTS/CONTRIBUTING.md`
+
 ### Deployment Targets
+
 - **Web Applications (`client/customer-web`, `client/restaurant-web`, `client/admin-web`):** Vercel with dedicated domain/subdomain routing.
 - **Mobile Applications (`client/*-mobile`):** Expo Application Services (EAS) for Android and iOS builds.
 - **Backend API & Real-time Services (`server`):** Containerized Node.js services with managed MongoDB and Redis.
@@ -110,4 +118,4 @@ Development follows 39 granular checkpoints (`CHECKPOINT_00.md` to `CHECKPOINT_3
 
 ## 7. License & Notice
 
-*BHOJORA is a proprietary platform. All intellectual property, trademarks, and documentation are reserved.*
+_BHOJORA is a proprietary platform. All intellectual property, trademarks, and documentation are reserved._

@@ -12,11 +12,7 @@ export const BhojoraTypography = typography;
 export const BhojoraSpacing = spacing;
 
 export type SafetyStatusKey =
-  | 'verifiedClean'
-  | 'actionRequired'
-  | 'suspended'
-  | 'expired'
-  | 'notInspected';
+  'verifiedClean' | 'actionRequired' | 'suspended' | 'expired' | 'notInspected';
 
 export interface SafetyStatusBadgeConfig {
   label: string;

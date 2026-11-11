@@ -1,0 +1,34 @@
+{
+  "name": "bhojora-platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "BHOJORA — Full-scale food delivery and independent kitchen trust transparency platform (Kolkata launch)",
+  "packageManager": "npm@11.12.1",
+  "engines": {
+    "node": ">=22.21.0 <23.0.0",
+    "npm": ">=11.0.0"
+  },
+  "workspaces": [
+    "client/shared",
+    "server"
+  ],
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "typecheck": "npm run typecheck --workspaces",
+    "build": "npm run build --workspaces",
+    "test": "npm test --workspace=server",
+    "security:secrets": "node server/tests/secret-scan.js",
+    "ci": "npm run format:check && npm run lint && npm run typecheck && npm run build && npm run security:secrets && npm test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.6.6",
+    "eslint": "^10.14.0",
+    "globals": "^17.14.0",
+    "prettier": "^3.9.10",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.2"
+  }
+}

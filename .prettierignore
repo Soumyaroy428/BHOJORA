@@ -1,0 +1,13 @@
+node_modules/
+dist/
+build/
+.next/
+out/
+coverage/
+.vercel/
+docs/
+client/customer-web/index.html
+client/public/
+*.png
+*.jpg
+package-lock.json

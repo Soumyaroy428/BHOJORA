@@ -14,25 +14,27 @@ const ROOT_DIR = path.resolve(__dirname, '../..');
 
 console.log('--- Starting Checkpoint 00 Verification Suite ---');
 
-// Test 1: Root directory contains ONLY docs, client, server (and standard repository files: README.md, .gitignore, .git)
+// Test 1: Root directory contains ONLY docs, client, server (and hidden VCS/CI folders: .git, .github)
 console.log('[Test 1] Validating root directory structure...');
 const allowedRootFolders = new Set(['docs', 'client', 'server']);
-const allowedRootFiles = new Set(['README.md', '.gitignore', '.git']);
+const ignoredVcsFolders = new Set(['.git', '.github', 'node_modules']);
 
 const rootEntries = fs.readdirSync(ROOT_DIR, { withFileTypes: true });
-const rootFolders = rootEntries.filter(e => e.isDirectory() && e.name !== '.git').map(e => e.name);
+const rootFolders = rootEntries
+  .filter((e) => e.isDirectory() && !ignoredVcsFolders.has(e.name))
+  .map((e) => e.name);
 
 for (const folder of rootFolders) {
   assert.ok(
     allowedRootFolders.has(folder),
-    `Violation: Extraneous root folder found: "${folder}". Only docs/, client/, and server/ are allowed.`
+    `Violation: Extraneous root folder found: "${folder}". Only docs/, client/, and server/ are allowed.`,
   );
 }
 
 for (const expectedFolder of allowedRootFolders) {
   assert.ok(
     rootFolders.includes(expectedFolder),
-    `Missing required root folder: "${expectedFolder}"`
+    `Missing required root folder: "${expectedFolder}"`,
   );
 }
 console.log('✓ Root directory contains ONLY docs/, client/, and server/.');
@@ -46,24 +48,24 @@ const expectedClientSurfaces = [
   'customer-mobile',
   'delivery-mobile',
   'inspector-mobile',
-  'shared'
+  'shared',
 ];
 
 for (const surface of expectedClientSurfaces) {
   const surfacePath = path.join(ROOT_DIR, 'client', surface);
   assert.ok(fs.existsSync(surfacePath), `Missing client surface directory: "client/${surface}"`);
-  assert.ok(fs.statSync(surfacePath).isDirectory(), `Client surface "client/${surface}" must be a directory`);
+  assert.ok(
+    fs.statSync(surfacePath).isDirectory(),
+    `Client surface "client/${surface}" must be a directory`,
+  );
 }
-console.log(`✓ All ${expectedClientSurfaces.length} client application surfaces are properly scaffolded.`);
+console.log(
+  `✓ All ${expectedClientSurfaces.length} client application surfaces are properly scaffolded.`,
+);
 
 // Test 3: Server structure exists
 console.log('[Test 3] Validating server directories...');
-const expectedServerDirs = [
-  'src/modules',
-  'src/config',
-  'src/middleware',
-  'tests'
-];
+const expectedServerDirs = ['src/modules', 'src/config', 'src/middleware', 'tests'];
 
 for (const dir of expectedServerDirs) {
   const dirPath = path.join(ROOT_DIR, 'server', dir);
@@ -90,7 +92,7 @@ const coreDocs = [
   '03-SECURITY-QUALITY/INTEGRATIONS.md',
   '03-SECURITY-QUALITY/TESTING.md',
   '03-SECURITY-QUALITY/DEBUGGING.md',
-  'INDEX.md'
+  'INDEX.md',
 ];
 
 for (const doc of coreDocs) {
@@ -109,22 +111,43 @@ for (let i = 0; i <= 38; i++) {
   const numStr = String(i).padStart(2, '0');
   const cpFile = path.join(ROOT_DIR, 'docs/CHECKPOINTS', `CHECKPOINT_${numStr}.md`);
   assert.ok(fs.existsSync(cpFile), `Missing checkpoint file: "CHECKPOINT_${numStr}.md"`);
-  assert.ok(fs.statSync(cpFile).size > 0, `Checkpoint file "CHECKPOINT_${numStr}.md" cannot be empty`);
+  assert.ok(
+    fs.statSync(cpFile).size > 0,
+    `Checkpoint file "CHECKPOINT_${numStr}.md" cannot be empty`,
+  );
 }
 console.log('✓ All 39 sequential checkpoint specifications (00-38 + INDEX) verified.');
 
-// Test 6: Zero application dependencies installed for Checkpoint 00
-console.log('[Test 6] Checking dependency boundary (no premature node_modules)...');
-const bannedDependencyPaths = [
-  path.join(ROOT_DIR, 'node_modules'),
-  path.join(ROOT_DIR, 'client/node_modules'),
-  path.join(ROOT_DIR, 'server/node_modules'),
-  path.join(ROOT_DIR, 'package-lock.json')
-];
+// Test 6: Dependency & Secret Discipline (zero premature runtime frameworks before CP05)
+console.log('[Test 6] Checking dependency boundary & clean env hygiene...');
+const rootPkg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf8'));
+assert.strictEqual(
+  Object.keys(rootPkg.dependencies || {}).length,
+  0,
+  'Root workspace package.json must not carry runtime dependencies.',
+);
+assert.ok(
+  !fs.existsSync(path.join(ROOT_DIR, '.env')),
+  'Violation: .env file must never exist in tracked workspace baseline.',
+);
 
-for (const depPath of bannedDependencyPaths) {
-  assert.ok(!fs.existsSync(depPath), `Violation: Premature dependency found at "${depPath}". Checkpoint 00 requires zero application dependencies.`);
+const prematureRuntimeLibs = [
+  'express',
+  'mongoose',
+  'next',
+  'react',
+  'bullmq',
+  'ioredis',
+  'prisma',
+];
+const serverPkg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'server/package.json'), 'utf8'));
+const allServerDeps = { ...(serverPkg.dependencies || {}), ...(serverPkg.devDependencies || {}) };
+for (const pkg of prematureRuntimeLibs) {
+  assert.ok(
+    !allServerDeps[pkg],
+    `Violation: Premature runtime library "${pkg}" installed before its checkpoint.`,
+  );
 }
-console.log('✓ Zero application dependencies confirmed. Clean baseline preserved.');
+console.log('✓ Zero premature runtime dependencies and clean .env hygiene confirmed.');
 
 console.log('--- ALL CHECKPOINT 00 CHECKS PASSED SUCCESSFULLY ---');
