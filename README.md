@@ -106,6 +106,7 @@ Development follows 39 granular checkpoints (`CHECKPOINT_00.md` to `CHECKPOINT_3
 
 - **Runtime & Package Manager:** Node.js `22.21.0` LTS (`.nvmrc`) + `npm` `11.12.1`
 - **Local Verification:** `npm ci` then `npm run ci` (`format:check`, `lint`, `typecheck`, `build`, `security:secrets`, `test`)
+- **API Foundation Run:** Copy `.env.example` to `.env`, then run `npm run build && npm run start --workspace=server` (`/api/v1/health`, `/api/v1/ready`)
 - **Guides:** See `docs/02-EXECUTION-AGENTS/CODING_STANDARDS.md` and `docs/02-EXECUTION-AGENTS/CONTRIBUTING.md`
 
 ### Deployment Targets

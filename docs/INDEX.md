@@ -6,7 +6,7 @@
 -   `01-CORE-PLANNING-DESIGN/PRD.md`
 -   `01-CORE-PLANNING-DESIGN/DESIGN.md`
 -   `01-CORE-PLANNING-DESIGN/ARCHITECTURE.md`
--   `01-CORE-PLANNING-DESIGN/ADRS.md` (Architecture Decision Records ADR-001 through ADR-008)
+-   `01-CORE-PLANNING-DESIGN/ADRS.md` (Architecture Decision Records ADR-001 through ADR-009)
 -   `01-CORE-PLANNING-DESIGN/DATABASE.md`
 -   `01-CORE-PLANNING-DESIGN/API.md`
 -   `01-CORE-PLANNING-DESIGN/openapi.json` (OpenAPI 3.1.0 Contract Specification)

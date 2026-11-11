@@ -155,3 +155,22 @@ Multiple web apps, Expo mobile apps, shared contracts, and modular monolith back
 ### Consequences
 - **Positive:** Reproducible builds across Windows developer workstations and Linux CI runners; early detection of type drift and accidental credential commits.
 - **Negative:** Requires updating workspace lists and ESLint overrides explicitly as new web/mobile apps bootstrap in later checkpoints.
+
+---
+
+## ADR-009: Express API Bootstrap, Fail-Fast Zod Config & Structured Tier-Safe Logging
+
+### Status: ACCEPTED (Locked Baseline — Checkpoint 05)
+
+### Context
+Starting Checkpoint 05, the backend API foundation requires HTTP request correlation, strict environment validation, standardized error envelopes matching OpenAPI 3.1.0, liveness/readiness probes for container orchestrators, and logging compliant with DPDP Tier 3 PII masking and Tier 4 secret protection (`ADR-007`).
+
+### Decision
+1. **Fail-Fast Zod Config (`server/src/config/env.ts`):** Validate all required environment variables (`MONGODB_URI`, `REDIS_URL`, distinct `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` >= 32 chars, valid IANA timezone, production placeholder & CORS checks) via `Zod` at startup, throwing `ConfigValidationError` without printing secret values.
+2. **Modular Express App Factory (`server/src/app.ts`):** Separate Express pipeline assembly (`createApp`) from TCP port binding (`server/src/index.ts`) so HTTP integration tests bind isolated ephemeral loopback ports cleanly without external runtime frameworks.
+3. **Request Correlation & Tier-Safe JSON Logging (`server/src/middleware/request-context.ts`, `server/src/config/logger.ts`):** Validate inbound `X-Request-Id` or generate UUID v4, emit UTC JSON logs with recursive redaction of sensitive keys (`password`, `token`, `otp`, `secret`, `phone`, `email`, URI credentials), and suppress stack traces in HTTP error payloads (`server/src/middleware/error-handler.ts`).
+4. **Health & Readiness Split (`server/src/modules/health/`):** Expose `/api/v1/health` (liveness) and `/api/v1/ready` (async dependency & graceful-shutdown readiness returning HTTP `503 SERVICE_UNAVAILABLE` when degraded).
+
+### Consequences
+- **Positive:** Safe zero-leak startup failures, deterministic HTTP error contracts matching `ErrorResponse`, and test-ready graceful shutdown handling prior to Checkpoint 06 database wiring.
+- **Negative:** Dependent downstream checkpoints (MongoDB, Redis) must register readiness probes into `createApp({ readinessProbes })` during bootstrap.

@@ -42,6 +42,7 @@ export interface ApiErrorResponse {
       | 'OUTLET_OUT_OF_ZONE'
       | 'CRITICAL_VIOLATION_SUSPENDED'
       | 'SELF_APPROVAL_PROHIBITED'
+      | 'SERVICE_UNAVAILABLE'
       | 'INTERNAL_SERVER_ERROR';
     message: string;
     details?: ApiErrorDetail[];

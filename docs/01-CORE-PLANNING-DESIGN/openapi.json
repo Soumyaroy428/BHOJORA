@@ -75,6 +75,7 @@
           "OUTLET_OUT_OF_ZONE",
           "CRITICAL_VIOLATION_SUSPENDED",
           "SELF_APPROVAL_PROHIBITED",
+          "SERVICE_UNAVAILABLE",
           "INTERNAL_SERVER_ERROR"
         ]
       },
@@ -142,11 +143,22 @@
   "paths": {
     "/health": {
       "get": {
-        "summary": "API Health Check",
+        "summary": "API Liveness Health Check",
         "security": [],
         "tags": ["System"],
         "responses": {
-          "200": { "description": "API service and database connectivity status." }
+          "200": { "description": "API service process liveness status." }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "summary": "API Readiness Probe",
+        "security": [],
+        "tags": ["System"],
+        "responses": {
+          "200": { "description": "API service is ready to accept traffic." },
+          "503": { "description": "API service or dependency readiness probe failed or shutting down." }
         }
       }
     },
