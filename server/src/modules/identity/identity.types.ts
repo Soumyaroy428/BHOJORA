@@ -30,8 +30,8 @@ export const LANGUAGE_PREFERENCES = ['en-IN', 'bn-IN'] as const;
 export type LanguagePreference = (typeof LANGUAGE_PREFERENCES)[number];
 
 export type OtpChannel = 'sms' | 'email';
-export type OtpPurpose = 'auth' | 'recovery';
-export type ChallengePurpose = 'otp_auth' | 'password_recovery';
+export type OtpPurpose = 'auth' | 'recovery' | 'mfa';
+export type ChallengePurpose = 'otp_auth' | 'password_recovery' | 'mfa_step_up';
 export type RateLimitScope = 'otp_send' | 'login_fail' | 'recovery_send';
 
 export const ACCOUNT_STATUS_TRANSITIONS: Readonly<Record<AccountStatus, readonly AccountStatus[]>> =
@@ -112,6 +112,7 @@ export interface UserSessionRecord {
   lastRotatedAt: Date;
   revokedAt?: Date | null;
   revocationReason?: string | null;
+  mfaVerifiedAt?: Date | null;
   createdAt: Date;
 }
 
@@ -161,6 +162,7 @@ export interface AuthSessionSummaryDto {
   lastRotatedAt: string;
   expiresAt: string;
   current: boolean;
+  mfaVerified: boolean;
 }
 
 export interface AuthTokensDto {
@@ -255,6 +257,7 @@ export interface IdentityStore {
       Pick<
         UserRecord,
         | 'name'
+        | 'roles'
         | 'languagePreference'
         | 'status'
         | 'phoneVerified'
@@ -278,6 +281,7 @@ export interface IdentityStore {
     nextExpiresAt: Date;
     now: Date;
   }): Promise<UserSessionRecord | null>;
+  markSessionMfaVerified(sessionId: string, mfaVerifiedAt: Date): Promise<UserSessionRecord | null>;
   revokeSession(sessionId: string, reason: string, now: Date): Promise<boolean>;
   revokeAllUserSessions(userId: string, reason: string, now: Date): Promise<number>;
 

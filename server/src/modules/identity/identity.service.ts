@@ -118,10 +118,19 @@ const updateProfileSchema = z
     message: 'At least one profile field must be provided',
   });
 
+const mfaVerifySchema = z.object({
+  challengeId: z.string().trim().uuid('Valid challengeId is required'),
+  code: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, 'MFA verification code must be 6 digits'),
+});
+
 export interface AuthenticatedContext {
   userId: string;
   sessionId: string;
   roles: UserRole[];
+  mfaVerified: boolean;
   user: UserProfileDto;
 }
 
@@ -179,6 +188,7 @@ function toSessionSummaryDto(session: UserSessionRecord, current: boolean): Auth
     lastRotatedAt: session.lastRotatedAt.toISOString(),
     expiresAt: session.expiresAt.toISOString(),
     current,
+    mfaVerified: Boolean(session.mfaVerifiedAt),
   };
 }
 
@@ -197,6 +207,10 @@ export class IdentityService {
       },
       this.clock,
     );
+  }
+
+  getStore(): IdentityStore {
+    return this.options.store;
   }
 
   async register(rawInput: unknown, meta: RequestMetadata): Promise<AuthSessionResponseDto> {
@@ -658,6 +672,161 @@ export class IdentityService {
       userId: user.id,
       sessionId: session.sessionId,
       roles: [...user.roles],
+      mfaVerified: Boolean(session.mfaVerifiedAt),
+      user: toUserProfileDto(user),
+    };
+  }
+
+  async sendSessionMfaChallenge(
+    userId: string,
+    meta: RequestMetadata,
+  ): Promise<{
+    challengeId: string;
+    channel: OtpChannel;
+    maskedDestination: string;
+    expiresInSeconds: number;
+  }> {
+    const now = this.clock.now();
+    const user = await this.options.store.findUserById(userId);
+    if (!user || user.status !== 'ACTIVE') {
+      throw new AppError(403, 'FORBIDDEN', 'Account is not eligible for MFA challenge');
+    }
+
+    const destination = user.phoneNormalized ?? user.emailNormalized;
+    const channel: OtpChannel = user.phoneNormalized ? 'sms' : 'email';
+    if (!destination) {
+      throw new AppError(
+        400,
+        'VALIDATION_ERROR',
+        'Verified phone number or email is required for MFA step-up',
+      );
+    }
+
+    const rateState = await this.options.store.consumeRateLimitWindow({
+      scope: 'otp_send',
+      subjectKey: `mfa:${user.id}`,
+      maxCount: this.options.config.otpMaxSendPerWindow,
+      windowSeconds: this.options.config.otpWindowSeconds,
+      blockSeconds: this.options.config.otpBlockSeconds,
+      now,
+    });
+    if (!rateState.allowed) {
+      throw new AppError(
+        429,
+        'RATE_LIMITED',
+        `Too many MFA verification requests. Retry in ${rateState.retryAfterSeconds} seconds.`,
+      );
+    }
+
+    const challengeId = crypto.randomUUID();
+    const code = generateNumericOtp();
+    const expiresAt = new Date(now.getTime() + this.options.config.otpTtlSeconds * 1000);
+    const maskedDestination = channel === 'sms' ? maskPhone(destination) : maskEmail(destination);
+
+    await this.options.store.createChallenge({
+      challengeId,
+      purpose: 'mfa_step_up',
+      channel,
+      identifierNormalized: destination,
+      userId: user.id,
+      secretHash: hashSecretToken(`mfa:${user.id}:${code}`, this.options.config.jwtAccessSecret),
+      maxAttempts: this.options.config.otpMaxVerifyAttempts,
+      expiresAt,
+      now,
+    });
+
+    const bodyText =
+      channel === 'sms'
+        ? formatOriginBoundOtpSms({
+            code,
+            originHost: this.options.config.appOriginHost,
+            purpose: 'mfa',
+            ttlSeconds: this.options.config.otpTtlSeconds,
+          })
+        : `Your BHOJORA step-up MFA code is ${code}. Valid for ${Math.max(1, Math.round(this.options.config.otpTtlSeconds / 60))} minutes.`;
+
+    await this.options.otpAdapter.sendOtp({
+      challengeId,
+      purpose: 'mfa',
+      channel,
+      destination,
+      maskedDestination,
+      code,
+      bodyText,
+      expiresAt,
+    });
+
+    this.options.logger.info('identity.mfa.challenge_sent', {
+      requestId: meta.requestId,
+      userId: user.id,
+      challengeId,
+    });
+
+    return {
+      challengeId,
+      channel,
+      maskedDestination,
+      expiresInSeconds: this.options.config.otpTtlSeconds,
+    };
+  }
+
+  async verifySessionMfa(
+    userId: string,
+    sessionId: string,
+    rawInput: unknown,
+    meta: RequestMetadata,
+  ): Promise<{ mfaVerified: true; session: AuthSessionSummaryDto; user: UserProfileDto }> {
+    const input = mfaVerifySchema.parse(rawInput);
+    const now = this.clock.now();
+    const challenge = await this.options.store.findChallengeById(input.challengeId);
+
+    if (
+      !challenge ||
+      challenge.purpose !== 'mfa_step_up' ||
+      challenge.userId !== userId ||
+      challenge.usedAt !== null ||
+      challenge.invalidatedAt !== null ||
+      challenge.expiresAt <= now
+    ) {
+      throw new AppError(401, 'UNAUTHORIZED', 'Invalid or expired MFA challenge');
+    }
+
+    const expectedHash = hashSecretToken(
+      `mfa:${userId}:${input.code}`,
+      this.options.config.jwtAccessSecret,
+    );
+    if (!timingSafeHexEqual(challenge.secretHash, expectedHash)) {
+      await this.options.store.recordFailedChallengeAttempt(challenge.challengeId, now);
+      throw new AppError(401, 'UNAUTHORIZED', 'Invalid MFA verification code');
+    }
+
+    const consumed = await this.options.store.consumeChallengeAtomically(
+      challenge.challengeId,
+      now,
+    );
+    if (!consumed) {
+      throw new AppError(401, 'UNAUTHORIZED', 'MFA challenge has expired or was already used');
+    }
+
+    const updatedSession = await this.options.store.markSessionMfaVerified(sessionId, now);
+    if (!updatedSession) {
+      throw new AppError(401, 'UNAUTHORIZED', 'Session is no longer active');
+    }
+
+    const user = await this.options.store.findUserById(userId);
+    if (!user || user.status !== 'ACTIVE') {
+      throw new AppError(403, 'FORBIDDEN', 'Account is not active');
+    }
+
+    this.options.logger.info('identity.mfa.verified', {
+      requestId: meta.requestId,
+      userId,
+      sessionId,
+    });
+
+    return {
+      mfaVerified: true,
+      session: toSessionSummaryDto(updatedSession, true),
       user: toUserProfileDto(user),
     };
   }

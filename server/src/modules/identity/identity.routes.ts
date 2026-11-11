@@ -205,5 +205,33 @@ export function createIdentityRouter(
     }),
   );
 
+  router.post(
+    '/auth/mfa/send',
+    requireAuth,
+    wrapAsync(async (req, res) => {
+      const auth = getAuthContext(res);
+      const challenge = await identityService.sendSessionMfaChallenge(
+        auth.userId,
+        extractRequestMeta(req, res),
+      );
+      sendSuccess(res, 200, challenge);
+    }),
+  );
+
+  router.post(
+    '/auth/mfa/verify',
+    requireAuth,
+    wrapAsync(async (req, res) => {
+      const auth = getAuthContext(res);
+      const result = await identityService.verifySessionMfa(
+        auth.userId,
+        auth.sessionId,
+        req.body,
+        extractRequestMeta(req, res),
+      );
+      sendSuccess(res, 200, result);
+    }),
+  );
+
   return router;
 }

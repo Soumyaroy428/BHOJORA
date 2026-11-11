@@ -10,7 +10,10 @@ import { createHealthService, type ReadinessProbe } from './modules/health/healt
 import { MongooseIdentityStore } from './modules/identity/identity.models';
 import { createIdentityRouter } from './modules/identity/identity.routes';
 import { IdentityService } from './modules/identity/identity.service';
+import type { IdentityStore } from './modules/identity/identity.types';
 import { SafeLogOtpSenderAdapter } from './modules/identity/otp.adapter';
+import { createRbacRouter } from './modules/rbac/rbac.routes';
+import { MongooseRbacStore, type RbacStore } from './modules/rbac/rbac.store';
 
 export interface CreateAppOptions {
   config: AppConfig;
@@ -18,6 +21,8 @@ export interface CreateAppOptions {
   readinessProbes?: readonly ReadinessProbe[];
   getIsShuttingDown?: () => boolean;
   identityService?: IdentityService;
+  identityStore?: IdentityStore;
+  rbacStore?: RbacStore;
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -47,18 +52,29 @@ export function createApp(options: CreateAppOptions): Express {
   });
   const healthRouter = createHealthRouter(healthService);
 
+  const fallbackIdentityStore =
+    options.identityStore ?? new MongooseIdentityStore(mongoose.connection);
   const identityService =
     options.identityService ??
     new IdentityService({
       config,
-      store: new MongooseIdentityStore(mongoose.connection),
+      store: fallbackIdentityStore,
       otpAdapter: new SafeLogOtpSenderAdapter(logger),
       logger,
     });
+  const identityStore = options.identityStore ?? identityService.getStore();
+  const rbacStore = options.rbacStore ?? new MongooseRbacStore(mongoose.connection);
   const identityRouter = createIdentityRouter(identityService, config);
+  const rbacRouter = createRbacRouter({
+    identityService,
+    identityStore,
+    rbacStore,
+    config,
+  });
 
   app.use('/api/v1', healthRouter);
   app.use('/api/v1', identityRouter);
+  app.use('/api/v1', rbacRouter);
   app.use(healthRouter);
 
   app.use(notFoundHandler);

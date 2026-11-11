@@ -1,5 +1,11 @@
 import { FormEvent, useState } from 'react';
-import type { ApiResponse, AuthSessionResponseDto, UserProfileDto } from '@bhojora/shared';
+import {
+  ROLE_PERMISSION_MATRIX,
+  type ApiResponse,
+  type AuthSessionResponseDto,
+  type RbacContextDto,
+  type UserProfileDto,
+} from '@bhojora/shared';
 
 interface PartnerOutletView {
   outletId: string;
@@ -64,9 +70,39 @@ export function App() {
     'Tenant-scoped partner console. Sign in to view assigned restaurant memberships.',
   );
   const [sessionUser, setSessionUser] = useState<UserProfileDto | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [rbacContext, setRbacContext] = useState<RbacContextDto | null>(null);
 
   const selectedOutlet =
     SAMPLE_OUTLETS.find((outlet) => outlet.outletId === selectedOutletId) ?? SAMPLE_OUTLETS[0]!;
+
+  async function verifyOutletTenantAccess(outletId: string, tokenOverride?: string) {
+    const token = tokenOverride ?? accessToken;
+    const apiBase = getApiBase();
+    if (!token || !apiBase) {
+      return;
+    }
+    try {
+      const res = await fetch(
+        `${apiBase}/api/v1/rbac/outlets/${encodeURIComponent(outletId)}/workspace`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      const data = (await res.json()) as ApiResponse<{ outlet: { name: string } }>;
+      if (!res.ok || !data.success) {
+        setStatusMessage(
+          data.success
+            ? 'Tenant isolation check blocked outlet access.'
+            : `Tenant check (${res.status}): ${data.error.message}`,
+        );
+        return;
+      }
+      setStatusMessage(`Verified tenant scope for ${data.data.outlet.name}.`);
+    } catch {
+      setStatusMessage('Unable to verify outlet workspace scope.');
+    }
+  }
 
   async function handlePartnerSignIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -93,10 +129,23 @@ export function App() {
         return;
       }
       setSessionUser(payload.data.user);
-      setStatusMessage(
-        `Signed in as ${payload.data.user.name} (${payload.data.user.activeRole}) — tenant access scoped to assigned outlets.`,
-      );
+      setAccessToken(payload.data.tokens.accessToken);
       setPassword('');
+
+      const rbacRes = await fetch(`${apiBase}/api/v1/rbac/me`, {
+        headers: { Authorization: `Bearer ${payload.data.tokens.accessToken}` },
+      });
+      const rbacPayload = (await rbacRes.json()) as ApiResponse<RbacContextDto>;
+      if (rbacRes.ok && rbacPayload.success) {
+        setRbacContext(rbacPayload.data);
+        setStatusMessage(
+          `Signed in as ${payload.data.user.name} (${rbacPayload.data.activeRole}) — ${rbacPayload.data.memberships.length} outlet membership(s) loaded.`,
+        );
+      } else {
+        setStatusMessage(
+          `Signed in as ${payload.data.user.name} (${payload.data.user.activeRole}) — tenant access scoped to assigned outlets.`,
+        );
+      }
     } catch {
       setStatusMessage('Unable to reach identity API at ' + apiBase);
     }
@@ -120,10 +169,12 @@ export function App() {
                 className="btn-ghost"
                 onClick={() => {
                   setSessionUser(null);
+                  setAccessToken(null);
+                  setRbacContext(null);
                   setStatusMessage('Signed out of partner portal session.');
                 }}
               >
-                Sign Out ({sessionUser.activeRole})
+                Sign Out ({rbacContext?.activeRole ?? sessionUser.activeRole})
               </button>
             ) : (
               <span className="badge">React Workspace</span>
@@ -156,7 +207,10 @@ export function App() {
                   type="button"
                   className="tab-btn"
                   aria-pressed={outlet.outletId === selectedOutlet.outletId}
-                  onClick={() => setSelectedOutletId(outlet.outletId)}
+                  onClick={() => {
+                    setSelectedOutletId(outlet.outletId);
+                    void verifyOutletTenantAccess(outlet.outletId);
+                  }}
                 >
                   {outlet.zone}
                 </button>
@@ -236,6 +290,13 @@ export function App() {
             <li>
               <span>Independent field auditor schedule</span>
               <span className="badge">Every {selectedOutlet.inspectionCadenceDays} days</span>
+            </li>
+            <li>
+              <span>Effective permissions ({rbacContext?.activeRole ?? 'RESTAURANT_OWNER'})</span>
+              <span className="badge">
+                {(rbacContext?.permissions ?? ROLE_PERMISSION_MATRIX.RESTAURANT_OWNER).length}{' '}
+                scoped
+              </span>
             </li>
           </ul>
         </section>

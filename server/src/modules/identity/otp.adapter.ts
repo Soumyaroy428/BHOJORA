@@ -12,7 +12,12 @@ export function formatOriginBoundOtpSms(params: {
   ttlSeconds: number;
 }): string {
   const minutes = Math.max(1, Math.round(params.ttlSeconds / 60));
-  const actionLabel = params.purpose === 'recovery' ? 'account recovery code' : 'verification code';
+  const actionLabel =
+    params.purpose === 'recovery'
+      ? 'account recovery code'
+      : params.purpose === 'mfa'
+        ? 'step-up MFA code'
+        : 'verification code';
   return `Your BHOJORA ${actionLabel} is ${params.code}. Valid for ${minutes} minutes. Never share this code.\n\n@${params.originHost} #${params.code}`;
 }
 

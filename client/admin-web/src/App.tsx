@@ -1,8 +1,12 @@
 import { FormEvent, useState } from 'react';
 import {
+  PRIVILEGED_MFA_ROLES,
+  ROLE_PERMISSION_MATRIX,
   USER_ROLES,
   type ApiResponse,
   type AuthSessionResponseDto,
+  type MfaSendResponseDto,
+  type RbacContextDto,
   type UserProfileDto,
 } from '@bhojora/shared';
 
@@ -54,6 +58,10 @@ export function App() {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [sessionUser, setSessionUser] = useState<UserProfileDto | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [rbacContext, setRbacContext] = useState<RbacContextDto | null>(null);
+  const [mfaChallengeId, setMfaChallengeId] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState('');
   const [statusMessage, setStatusMessage] = useState(
     'Privileged admin, reviewer, and finance sessions require verified MFA.',
   );
@@ -62,6 +70,20 @@ export function App() {
     filter === 'ALL'
       ? GOVERNANCE_QUEUE
       : GOVERNANCE_QUEUE.filter((item) => item.reviewerStatus === filter);
+
+  async function refreshRbacContext(token: string) {
+    const apiBase = getApiBase();
+    if (!apiBase) {
+      return;
+    }
+    const res = await fetch(`${apiBase}/api/v1/rbac/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const payload = (await res.json()) as ApiResponse<RbacContextDto>;
+    if (res.ok && payload.success) {
+      setRbacContext(payload.data);
+    }
+  }
 
   async function handleAdminSignIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -88,13 +110,59 @@ export function App() {
         return;
       }
       setSessionUser(payload.data.user);
-      setStatusMessage(
-        `Signed in as ${payload.data.user.name} (${payload.data.user.activeRole}). Step-up MFA applies to privileged routes.`,
-      );
+      setAccessToken(payload.data.tokens.accessToken);
       setPassword('');
+      await refreshRbacContext(payload.data.tokens.accessToken);
+      setStatusMessage(
+        `Signed in as ${payload.data.user.name} (${payload.data.user.activeRole}). Complete step-up MFA to unlock privileged actions.`,
+      );
     } catch {
       setStatusMessage('Unable to reach control plane API at ' + apiBase);
     }
+  }
+
+  async function handleSendMfa() {
+    const apiBase = getApiBase();
+    if (!apiBase || !accessToken) {
+      return;
+    }
+    const res = await fetch(`${apiBase}/api/v1/auth/mfa/send`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    const payload = (await res.json()) as ApiResponse<MfaSendResponseDto>;
+    if (!res.ok || !payload.success) {
+      setStatusMessage(payload.success ? 'MFA send failed.' : payload.error.message);
+      return;
+    }
+    setMfaChallengeId(payload.data.challengeId);
+    setStatusMessage(
+      `Step-up MFA code dispatched via ${payload.data.channel} to ${payload.data.maskedDestination}.`,
+    );
+  }
+
+  async function handleVerifyMfa(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const apiBase = getApiBase();
+    if (!apiBase || !accessToken || !mfaChallengeId) {
+      return;
+    }
+    const res = await fetch(`${apiBase}/api/v1/auth/mfa/verify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ challengeId: mfaChallengeId, code: mfaCode }),
+    });
+    const payload = (await res.json()) as ApiResponse<{ mfaVerified: true }>;
+    if (!res.ok || !payload.success) {
+      setStatusMessage(payload.success ? 'MFA verification failed.' : payload.error.message);
+      return;
+    }
+    setMfaCode('');
+    await refreshRbacContext(accessToken);
+    setStatusMessage('Step-up MFA verified for active privileged session.');
   }
 
   return (
@@ -187,6 +255,43 @@ export function App() {
                 Authenticate Control Session
               </button>
             </form>
+            {sessionUser && !rbacContext?.mfaVerified ? (
+              <div
+                style={{
+                  marginTop: '1rem',
+                  paddingTop: '1rem',
+                  borderTop: '1px solid var(--border)',
+                }}
+              >
+                <button type="button" className="filter-btn" onClick={() => void handleSendMfa()}>
+                  Send Step-Up MFA Code
+                </button>
+                {mfaChallengeId ? (
+                  <form
+                    onSubmit={(event) => void handleVerifyMfa(event)}
+                    style={{ marginTop: '0.75rem' }}
+                  >
+                    <div className="field">
+                      <label htmlFor="adminMfaCode">6-Digit MFA Code</label>
+                      <input
+                        id="adminMfaCode"
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        pattern="\d{6}"
+                        maxLength={6}
+                        required
+                        value={mfaCode}
+                        onChange={(event) => setMfaCode(event.target.value)}
+                      />
+                    </div>
+                    <button type="submit" className="btn-primary">
+                      Verify Step-Up MFA
+                    </button>
+                  </form>
+                ) : null}
+              </div>
+            ) : null}
             <p className="status-note" role="status" aria-live="polite">
               {statusMessage}
             </p>
@@ -196,11 +301,15 @@ export function App() {
         <section className="panel">
           <h2>Platform Role Matrix ({USER_ROLES.length} Shared Contract Roles)</h2>
           <div className="role-grid">
-            {USER_ROLES.map((role) => (
-              <span key={role} className="role-chip">
-                {role}
-              </span>
-            ))}
+            {USER_ROLES.map((role) => {
+              const requiresMfa = (PRIVILEGED_MFA_ROLES as readonly string[]).includes(role);
+              const permCount = ROLE_PERMISSION_MATRIX[role].length;
+              return (
+                <span key={role} className="role-chip">
+                  {role} · {permCount} perms{requiresMfa ? ' · MFA Required' : ''}
+                </span>
+              );
+            })}
           </div>
         </section>
       </main>

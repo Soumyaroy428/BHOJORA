@@ -108,6 +108,16 @@ export const INITIAL_DATABASE_INDEXES: readonly DatabaseIndexSpec[] = [
     options: { name: 'idx_outlets_restaurant_status' },
   },
   {
+    collection: COLLECTION_NAMES.restaurantStaff,
+    key: { userId: 1, restaurantId: 1, outletId: 1 },
+    options: { name: 'idx_restaurant_staff_user_restaurant_outlet_unique', unique: true },
+  },
+  {
+    collection: COLLECTION_NAMES.restaurantStaff,
+    key: { outletId: 1, status: 1 },
+    options: { name: 'idx_restaurant_staff_outlet_status' },
+  },
+  {
     collection: COLLECTION_NAMES.menuItems,
     key: { outletId: 1, isAvailable: 1, categoryId: 1 },
     options: { name: 'idx_menu_items_outlet_avail_category' },

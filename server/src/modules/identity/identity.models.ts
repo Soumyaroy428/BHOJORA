@@ -75,6 +75,7 @@ const userSessionSchema = applyBaseSchemaConventions(
     lastRotatedAt: { type: Date, required: true },
     revokedAt: { type: Date, required: false, default: null },
     revocationReason: { type: String, required: false, default: null },
+    mfaVerifiedAt: { type: Date, required: false, default: null },
   }),
 );
 
@@ -83,7 +84,7 @@ const authChallengeSchema = applyBaseSchemaConventions(
     challengeId: { type: String, required: true },
     purpose: {
       type: String,
-      enum: ['otp_auth', 'password_recovery'],
+      enum: ['otp_auth', 'password_recovery', 'mfa_step_up'],
       required: true,
     },
     channel: {
@@ -230,6 +231,7 @@ function toSessionRecord(
     revokedAt: record['revokedAt'] instanceof Date ? record['revokedAt'] : null,
     revocationReason:
       typeof record['revocationReason'] === 'string' ? record['revocationReason'] : null,
+    mfaVerifiedAt: record['mfaVerifiedAt'] instanceof Date ? record['mfaVerifiedAt'] : null,
     createdAt: record['createdAt'] instanceof Date ? record['createdAt'] : new Date(),
   };
 }
@@ -360,6 +362,7 @@ export class MongooseIdentityStore implements IdentityStore {
       Pick<
         UserRecord,
         | 'name'
+        | 'roles'
         | 'languagePreference'
         | 'status'
         | 'phoneVerified'
@@ -393,6 +396,7 @@ export class MongooseIdentityStore implements IdentityStore {
         lastRotatedAt: input.now,
         revokedAt: null,
         revocationReason: null,
+        mfaVerifiedAt: null,
       },
     ]);
     if (!created) {
@@ -439,6 +443,18 @@ export class MongooseIdentityStore implements IdentityStore {
         },
       },
       { new: true, runValidators: true },
+    );
+    return updated ? toSessionRecord(updated) : null;
+  }
+
+  async markSessionMfaVerified(
+    sessionId: string,
+    mfaVerifiedAt: Date,
+  ): Promise<UserSessionRecord | null> {
+    const updated = await this.models.UserSession.findOneAndUpdate(
+      { sessionId, revokedAt: null },
+      { $set: { mfaVerifiedAt } },
+      { new: true },
     );
     return updated ? toSessionRecord(updated) : null;
   }
@@ -735,6 +751,7 @@ export class InMemoryIdentityStore implements IdentityStore {
       Pick<
         UserRecord,
         | 'name'
+        | 'roles'
         | 'languagePreference'
         | 'status'
         | 'phoneVerified'
@@ -774,6 +791,7 @@ export class InMemoryIdentityStore implements IdentityStore {
       lastRotatedAt: input.now,
       revokedAt: null,
       revocationReason: null,
+      mfaVerifiedAt: null,
       createdAt: input.now,
     };
     this.sessionsById.set(session.sessionId, session);
@@ -815,6 +833,22 @@ export class InMemoryIdentityStore implements IdentityStore {
       lastRotatedAt: params.now,
     };
     this.sessionsById.set(existing.sessionId, updated);
+    return updated;
+  }
+
+  async markSessionMfaVerified(
+    sessionId: string,
+    mfaVerifiedAt: Date,
+  ): Promise<UserSessionRecord | null> {
+    const existing = this.sessionsById.get(sessionId);
+    if (!existing || existing.revokedAt !== null) {
+      return null;
+    }
+    const updated: UserSessionRecord = {
+      ...existing,
+      mfaVerifiedAt,
+    };
+    this.sessionsById.set(sessionId, updated);
     return updated;
   }
 

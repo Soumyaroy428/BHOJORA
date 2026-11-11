@@ -213,3 +213,22 @@ Checkpoint 07 establishes identity, session lifecycle, OTP verification, and pas
 ### Consequences
 - **Positive:** Zero external C++ native-build dependencies, deterministic time-controlled verification tests (`Clock` injection), and immediate revocation guarantees across all clients.
 - **Negative:** Protected endpoints incur one indexed session lookup per authenticated request (or future read-through cache backed by session revocation events in later scalability phases).
+
+---
+
+## ADR-012: Role-Based Access Control, Multi-Tenant Outlet Isolation & Privileged Step-Up MFA
+
+### Status: ACCEPTED (Locked Baseline — Checkpoint 08)
+
+### Context
+Checkpoint 08 requires least-privilege RBAC across 12 platform/partner/customer roles (`AUTH.md`), strict restaurant/outlet tenant isolation preventing cross-outlet data leaks, IDOR defense on customer and rider records, strict segregation of duties across Trust vs. Finance vs. Inspection Review workflows, and mandatory MFA verification on privileged operations.
+
+### Decision
+1. **Shared Permission Matrix (`client/shared/contracts/rbac.ts`, `server/src/modules/rbac/rbac.policy.ts`):** Define 28 explicit permissions and bind each of the 12 `USER_ROLES` to an immutable least-privilege matrix; `FINANCE_ADMIN` excludes `safety:score:publish`, `TRUST_ADMIN` excludes `finance:settlement:read`/`finance:refund:approve`, and `INSPECTOR` excludes `inspection:approve`.
+2. **Explicit Active Role Context (`server/src/middleware/rbac.ts`):** Resolve optional `X-Bhojora-Active-Role` strictly against `user.roles` persisted on the database user record (`403 FORBIDDEN` on unassigned claims), ensuring multi-role accounts operate within an explicit authorization boundary.
+3. **Session-Bound Step-Up MFA Policy (`POST /auth/mfa/send`, `POST /auth/mfa/verify`):** Bind MFA assurance to `user_sessions.mfaVerifiedAt` rather than permanent user flags; requests acting under any privileged role (`INSPECTION_REVIEWER`, `OPS_ADMIN`, `TRUST_ADMIN`, `FINANCE_ADMIN`, `SUPER_ADMIN`) without verified session MFA are rejected with `403 FORBIDDEN` (`MFA_REQUIRED`).
+4. **Tenant Memberships & Resource Ownership Guards:** Scope partner access against `restaurant_staff` memberships (`restaurantId` + `outletId` / wildcard `'*'`), block cross-customer (`IDOR`) and cross-rider reads, forbid `SELF_APPROVAL_PROHIBITED` when an inspection reviewer authored the report, and record authorization decisions in append-only `audit_logs`.
+
+### Consequences
+- **Positive:** Eliminates horizontal IDOR, cross-outlet leaks, privilege escalation, and unverified privileged mutations behind composable Express middleware and testable pure policy guards.
+- **Negative:** Privileged operators must verify a second-factor session OTP after initial password login before executing administrative mutations.

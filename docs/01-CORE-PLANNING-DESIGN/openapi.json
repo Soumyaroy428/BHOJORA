@@ -483,6 +483,72 @@
         "tags": ["Admin Governance"],
         "responses": { "200": { "description": "Paginated audit logs" } }
       }
+    },
+    "/auth/mfa/send": {
+      "post": {
+        "summary": "Dispatch step-up 6-digit MFA challenge for active authenticated session",
+        "tags": ["Authentication"],
+        "responses": { "200": { "description": "MFA challenge metadata returned without OTP leak" } }
+      }
+    },
+    "/auth/mfa/verify": {
+      "post": {
+        "summary": "Verify step-up MFA challenge and upgrade active session assurance",
+        "tags": ["Authentication"],
+        "responses": { "200": { "description": "Active session marked MFA verified" } }
+      }
+    },
+    "/rbac/me": {
+      "get": {
+        "summary": "Inspect active role, permissions, MFA assurance, and tenant memberships",
+        "tags": ["RBAC & Tenant Isolation"],
+        "responses": { "200": { "description": "Resolved RBAC security context" } }
+      }
+    },
+    "/rbac/permissions": {
+      "get": {
+        "summary": "Retrieve canonical permission matrix and privileged MFA role list",
+        "tags": ["RBAC & Tenant Isolation"],
+        "responses": { "200": { "description": "Role-permission catalog" } }
+      }
+    },
+    "/rbac/memberships": {
+      "post": {
+        "summary": "Assign tenant-scoped restaurant/outlet staff membership",
+        "tags": ["RBAC & Tenant Isolation"],
+        "responses": { "200": { "description": "Scoped membership persisted" } }
+      }
+    },
+    "/rbac/users/{userId}/roles": {
+      "post": {
+        "summary": "Assign platform roles (MFA-verified SUPER_ADMIN + audit reason required)",
+        "tags": ["RBAC & Tenant Isolation"],
+        "parameters": [{ "name": "userId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Roles updated and audited" } }
+      }
+    },
+    "/rbac/outlets/{outletId}/workspace": {
+      "get": {
+        "summary": "Access outlet-scoped partner workspace guarded by tenant isolation",
+        "tags": ["RBAC & Tenant Isolation"],
+        "parameters": [{ "name": "outletId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Outlet workspace summary" }, "403": { "description": "Cross-outlet access denied" } }
+      }
+    },
+    "/rbac/inspections/{inspectionId}/approve": {
+      "post": {
+        "summary": "Approve inspection (MFA-verified reviewer only; self-approval prohibited)",
+        "tags": ["RBAC & Tenant Isolation"],
+        "parameters": [{ "name": "inspectionId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Inspection approved" }, "403": { "description": "SELF_APPROVAL_PROHIBITED or MFA_REQUIRED" } }
+      }
+    },
+    "/rbac/admin/audit-logs": {
+      "get": {
+        "summary": "Read append-only authorization and governance audit trail",
+        "tags": ["RBAC & Tenant Isolation"],
+        "responses": { "200": { "description": "Audit log entries" } }
+      }
     }
   }
 }

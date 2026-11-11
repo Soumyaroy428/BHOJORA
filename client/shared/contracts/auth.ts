@@ -108,6 +108,7 @@ export interface AuthSessionSummaryDto {
   lastRotatedAt: string;
   expiresAt: string;
   current: boolean;
+  mfaVerified: boolean;
 }
 
 export interface AuthTokensDto {

@@ -57,3 +57,9 @@ force and reviewer self-approval.
 - **Refresh Reuse Detection:** Refresh rotation atomically rotates `refreshTokenHash` and preserves `previousRefreshTokenHash`; presenting a consumed refresh token revokes the session (`REFRESH_TOKEN_REPLAY_DETECTED`) and rejects the request.
 - **Transport & CSRF:** API/mobile callers use `Authorization: Bearer`; browser cookie sessions (`X-Bhojora-Session-Mode: cookie`) issue `HttpOnly`, `SameSite=Lax`, `Secure` auth cookies paired with `bhojora_csrf` + `X-Csrf-Token` verification on cookie-authenticated mutations.
 - **Public Registration Hardening:** `/auth/register` always assigns `CUSTOMER` role regardless of caller payload; privileged role assignment and RBAC enforcement matrices are layered in Checkpoint 08.
+
+## 8. Implementation Contract (Checkpoint 08 Baseline)
+
+- **Permission Matrix & Role Context:** All 12 `USER_ROLES` map to explicit least-privilege permissions (`client/shared/contracts/rbac.ts`, `server/src/modules/rbac/rbac.policy.ts`). Multi-role callers may select an active role via `X-Bhojora-Active-Role`, rejected with `403 FORBIDDEN` if not assigned to that account.
+- **Session-Bound Step-Up MFA:** `INSPECTION_REVIEWER`, `OPS_ADMIN`, `TRUST_ADMIN`, `FINANCE_ADMIN`, and `SUPER_ADMIN` require `mfaVerified: true` on the active session (`POST /api/v1/auth/mfa/send` + `POST /api/v1/auth/mfa/verify`), rejecting unverified privileged access with `403 FORBIDDEN` (`code: 'MFA_REQUIRED'`).
+- **Tenant & Resource Isolation:** Partner outlet routes check `ACTIVE` memberships in `restaurant_staff` (`restaurantId` + `outletId`); customer and delivery endpoints enforce ownership; inspection approval rejects self-approval with `403 SELF_APPROVAL_PROHIBITED`; all privileged role updates and access denials write append-only records to `audit_logs`.
