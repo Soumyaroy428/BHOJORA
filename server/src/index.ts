@@ -9,10 +9,13 @@ import {
 } from './database/connection';
 import { applyInitialIndexes } from './database/indexes';
 import { runSeed } from './database/seed';
+import { MongooseIdentityStore } from './modules/identity/identity.models';
+import { IdentityService } from './modules/identity/identity.service';
+import { SafeLogOtpSenderAdapter } from './modules/identity/otp.adapter';
 
 export const SERVER_BASELINE = {
   service: 'bhojora-api',
-  checkpoint: '06',
+  checkpoint: '07',
   runtime: 'node-22-lts',
   currency: 'INR',
   currencyUnit: 'paise',
@@ -29,6 +32,9 @@ export {
   sanitizeMongoUri,
   applyInitialIndexes,
   runSeed,
+  IdentityService,
+  MongooseIdentityStore,
+  SafeLogOtpSenderAdapter,
 };
 
 async function startServer(): Promise<void> {
@@ -75,11 +81,19 @@ async function startServer(): Promise<void> {
     process.exit(1);
   }
 
+  const identityService = new IdentityService({
+    config,
+    store: new MongooseIdentityStore(dbManager.getConnection()),
+    otpAdapter: new SafeLogOtpSenderAdapter(logger),
+    logger,
+  });
+
   const app = createApp({
     config,
     logger,
     readinessProbes: [dbManager.getReadinessProbe()],
     getIsShuttingDown: () => shuttingDown,
+    identityService,
   });
 
   const server = http.createServer(app);

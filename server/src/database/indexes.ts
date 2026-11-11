@@ -53,6 +53,51 @@ export const INITIAL_DATABASE_INDEXES: readonly DatabaseIndexSpec[] = [
     },
   },
   {
+    collection: COLLECTION_NAMES.userSessions,
+    key: { sessionId: 1 },
+    options: { name: 'idx_user_sessions_session_id_unique', unique: true },
+  },
+  {
+    collection: COLLECTION_NAMES.userSessions,
+    key: { userId: 1, revokedAt: 1, expiresAt: -1 },
+    options: { name: 'idx_user_sessions_user_active' },
+  },
+  {
+    collection: COLLECTION_NAMES.userSessions,
+    key: { expiresAt: 1 },
+    options: { name: 'idx_user_sessions_expires_ttl', expireAfterSeconds: 0 },
+  },
+  {
+    collection: COLLECTION_NAMES.authChallenges,
+    key: { challengeId: 1 },
+    options: { name: 'idx_auth_challenges_id_unique', unique: true },
+  },
+  {
+    collection: COLLECTION_NAMES.authChallenges,
+    key: { identifierNormalized: 1, purpose: 1, createdAt: -1 },
+    options: { name: 'idx_auth_challenges_identifier_purpose' },
+  },
+  {
+    collection: COLLECTION_NAMES.authChallenges,
+    key: { expiresAt: 1 },
+    options: { name: 'idx_auth_challenges_expires_ttl', expireAfterSeconds: 0 },
+  },
+  {
+    collection: COLLECTION_NAMES.consentRecords,
+    key: { userId: 1, consentType: 1, acceptedAt: -1 },
+    options: { name: 'idx_consent_records_user_type_accepted' },
+  },
+  {
+    collection: COLLECTION_NAMES.authRateLimits,
+    key: { scope: 1, subjectKey: 1 },
+    options: { name: 'idx_auth_rate_limits_scope_subject_unique', unique: true },
+  },
+  {
+    collection: COLLECTION_NAMES.authRateLimits,
+    key: { expiresAt: 1 },
+    options: { name: 'idx_auth_rate_limits_expires_ttl', expireAfterSeconds: 0 },
+  },
+  {
     collection: COLLECTION_NAMES.restaurantOutlets,
     key: { location: '2dsphere' },
     options: { name: 'idx_outlets_location_2dsphere' },

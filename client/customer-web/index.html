@@ -64,7 +64,7 @@
       text-decoration: none;
     }
 
-    :where(a:any-link, button, input):focus-visible {
+    :where(a:any-link, button, input, select, textarea):focus-visible {
       outline: 3px solid var(--terracotta);
       outline-offset: 2px;
     }
@@ -683,6 +683,247 @@
       min-height: 20px;
     }
 
+    /* Auth UI Foundation (DESIGN.md & modern-web-guidance) */
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .auth-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 6px;
+      margin-bottom: 18px;
+      background: var(--neutral-100);
+      padding: 4px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--neutral-200);
+    }
+
+    .auth-tab {
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-sm);
+      min-height: 44px;
+      padding: 8px 6px;
+      font-family: 'Manrope', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--neutral-600);
+      cursor: pointer;
+    }
+
+    .auth-tab[aria-selected='true'] {
+      background: var(--cream-card);
+      color: var(--terracotta);
+      box-shadow: var(--shadow-subtle);
+    }
+
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .auth-field {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 4px;
+    }
+
+    .auth-field label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--neutral-950);
+    }
+
+    .auth-hint {
+      font-size: 12px;
+      color: var(--neutral-600);
+      margin: 0;
+    }
+
+    .auth-rules-list {
+      font-size: 12px;
+      color: var(--neutral-600);
+      margin: 0 0 4px 18px;
+      line-height: 1.45;
+    }
+
+    .auth-input {
+      width: 100%;
+      font: inherit;
+      font-size: max(1rem, 1em);
+      min-height: 48px;
+      padding: 10px 12px;
+      background: var(--cream-card);
+      color: var(--neutral-950);
+      border: 1px solid var(--neutral-600);
+      border-radius: var(--radius-md);
+      box-sizing: border-box;
+    }
+
+    .auth-input-otp {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 1.25rem;
+      letter-spacing: 0.35em;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .auth-password-wrap {
+      position: relative;
+      display: flex;
+      align-items: stretch;
+    }
+
+    .auth-password-wrap .auth-input {
+      padding-right: 76px;
+    }
+
+    .auth-toggle-pw {
+      position: absolute;
+      right: 4px;
+      top: 50%;
+      transform: translateY(-50%);
+      min-height: 40px;
+      min-width: 60px;
+      padding: 0 10px;
+      background: var(--neutral-100);
+      border: 1px solid var(--neutral-200);
+      border-radius: var(--radius-sm);
+      font-family: 'Manrope', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--neutral-800);
+      cursor: pointer;
+    }
+
+    .auth-field-error {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #8b1e16;
+      margin-top: 2px;
+    }
+
+    .auth-field:has(:is(:user-invalid, .user-invalid-fallback)) .auth-input {
+      border-color: #b42318;
+      background: #fbeeee;
+    }
+
+    .auth-field:has(:is(:user-invalid, .user-invalid-fallback)) .auth-field-error {
+      display: flex;
+    }
+
+    .auth-field:has(:is(:user-invalid, .user-invalid-fallback)) .auth-rules-list {
+      color: #8b1e16;
+      font-weight: 600;
+    }
+
+    .auth-field:has(.auth-input:user-valid) .auth-input {
+      border-color: var(--trust-green);
+    }
+
+    .auth-field:has(.auth-input:user-valid) .auth-rules-list {
+      visibility: hidden;
+    }
+
+    .auth-fieldset {
+      border: 1px solid var(--neutral-200);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .auth-fieldset legend {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--neutral-800);
+      padding: 0 6px;
+    }
+
+    .auth-radio-item,
+    .auth-checkbox-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+      font-size: 13px;
+      color: var(--neutral-800);
+      cursor: pointer;
+    }
+
+    .auth-radio-item input,
+    .auth-checkbox-row input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--terracotta);
+    }
+
+    .auth-status-banner {
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 14px;
+      border: 1px solid var(--neutral-200);
+      background: var(--neutral-100);
+      color: var(--neutral-800);
+    }
+
+    .auth-status-banner.is-success {
+      background: var(--trust-green-light);
+      border-color: var(--trust-green);
+      color: var(--trust-green-text);
+    }
+
+    .auth-status-banner.is-error {
+      background: #fdeaea;
+      border-color: #d32f2f;
+      color: #5f2120;
+    }
+
+    .auth-row-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .auth-link-btn {
+      background: transparent;
+      border: none;
+      min-height: 44px;
+      padding: 6px 4px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--terracotta);
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .session-card {
+      border: 1px solid var(--neutral-200);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+      background: var(--cream);
+    }
+
     @media (max-width: 768px) {
       .hero-title { font-size: 32px; }
       .bengali-banner { flex-direction: column; text-align: center; padding: 28px 22px; }
@@ -724,14 +965,19 @@
         </button>
       </div>
 
-      <nav class="nav-links" aria-label="Primary">
-        <a href="#discover">Discovery</a>
-        <a href="#pillars">Trust Engine</a>
-        <a href="#kolkata-launch">Kolkata Zones</a>
-        <button type="button" class="btn btn-primary" onclick="openAppBanner()">
-          Get Bhojora App
+      <div class="header-actions">
+        <nav class="nav-links" aria-label="Primary">
+          <a href="#discover">Discovery</a>
+          <a href="#pillars">Trust Engine</a>
+          <a href="#kolkata-launch">Kolkata Zones</a>
+          <button type="button" class="btn btn-primary" onclick="openAppBanner()">
+            Get Bhojora App
+          </button>
+        </nav>
+        <button type="button" id="openAuthModalBtn" class="btn btn-outline" style="min-height: 44px; padding: 8px 14px;">
+          Sign In
         </button>
-      </nav>
+      </div>
     </div>
   </header>
 
@@ -987,6 +1233,376 @@
     </p>
   </dialog>
 
+  <!-- Customer Identity & Session Foundation Dialog (Checkpoint 07) -->
+  <dialog id="authModal" class="trust-dialog" closedby="any" aria-labelledby="authModalTitle">
+    <div class="modal-header">
+      <div>
+        <h2 id="authModalTitle" style="font-size: 18px;">Sign in to BHOJORA</h2>
+        <p id="authModalSubtitle" style="font-size: 12px; color: var(--neutral-600);">Protected Kolkata delivery &amp; trust session (/api/v1/auth)</p>
+      </div>
+      <form method="dialog">
+        <button type="submit" class="modal-close" aria-label="Close account dialog">&times;</button>
+      </form>
+    </div>
+
+    <div id="authStatusBanner" class="auth-status-banner" role="status" aria-live="polite" hidden></div>
+
+    <div id="authGuestContainer">
+      <div class="auth-tabs" role="tablist" aria-label="Authentication methods">
+        <button type="button" class="auth-tab" id="tabBtnLogin" role="tab" aria-selected="true" aria-controls="panelLogin" data-auth-panel="login">Sign In</button>
+        <button type="button" class="auth-tab" id="tabBtnOtp" role="tab" aria-selected="false" aria-controls="panelOtp" data-auth-panel="otp">Phone OTP</button>
+        <button type="button" class="auth-tab" id="tabBtnRegister" role="tab" aria-selected="false" aria-controls="panelRegister" data-auth-panel="register">Register</button>
+        <button type="button" class="auth-tab" id="tabBtnRecover" role="tab" aria-selected="false" aria-controls="panelRecover" data-auth-panel="recover">Recover</button>
+      </div>
+
+      <!-- Panel 1: Password Sign In -->
+      <section id="panelLogin" role="tabpanel" aria-labelledby="tabBtnLogin">
+        <form id="authLoginForm" class="auth-form" method="POST" action="/api/v1/auth/login" aria-labelledby="tabBtnLogin">
+          <div class="auth-field">
+            <label for="loginIdentifier">Email or Indian mobile number <span aria-hidden="true">*</span></label>
+            <p id="loginIdentifierHint" class="auth-hint">Example: you@example.com or 9830012345</p>
+            <input
+              id="loginIdentifier"
+              name="identifier"
+              type="text"
+              class="auth-input"
+              autocomplete="username"
+              autocorrect="off"
+              autocapitalize="none"
+              spellcheck="false"
+              enterkeyhint="next"
+              aria-describedby="loginIdentifierHint"
+              data-error="loginIdentifierError"
+              required
+              autofocus
+            >
+            <div id="loginIdentifierError" class="auth-field-error">
+              <span role="img" aria-label="Error">⚠️</span> Enter your registered email or 10-digit mobile number.
+            </div>
+          </div>
+
+          <div class="auth-field">
+            <label for="loginPassword">Password <span aria-hidden="true">*</span></label>
+            <span id="loginPwWarning" class="visually-hidden">Warning: revealing your password makes it visible on screen.</span>
+            <div class="auth-password-wrap">
+              <input
+                id="loginPassword"
+                name="password"
+                type="password"
+                class="auth-input"
+                autocomplete="current-password"
+                enterkeyhint="done"
+                data-error="loginPasswordError"
+                required
+              >
+              <button
+                type="button"
+                class="auth-toggle-pw"
+                data-pw-target="loginPassword"
+                aria-pressed="false"
+                aria-label="Show password"
+                aria-describedby="loginPwWarning"
+              >Show</button>
+            </div>
+            <div id="loginPasswordError" class="auth-field-error">
+              <span role="img" aria-label="Error">⚠️</span> Enter your current password.
+            </div>
+          </div>
+
+          <div class="auth-row-actions">
+            <button type="button" id="goRecoverFromLoginBtn" class="auth-link-btn">Forgot password?</button>
+            <button type="button" id="goOtpFromLoginBtn" class="auth-link-btn">Sign in with 6-digit SMS OTP</button>
+          </div>
+
+          <button type="submit" id="loginSubmitBtn" class="btn btn-primary" style="width: 100%; min-height: 48px;">Sign In</button>
+        </form>
+      </section>
+
+      <!-- Panel 2: Phone OTP Flow (sms-otp-form pattern) -->
+      <section id="panelOtp" role="tabpanel" aria-labelledby="tabBtnOtp" hidden>
+        <form id="authOtpSendForm" class="auth-form" method="POST" action="/api/v1/auth/otp/send" style="margin-bottom: 16px;">
+          <div class="auth-field">
+            <label for="otpPhoneInput">Indian mobile number <span aria-hidden="true">*</span></label>
+            <p id="otpPhoneHint" class="auth-hint">10-digit mobile number (e.g. 9830012345). We send a 6-digit OTP valid for 5 minutes.</p>
+            <input
+              id="otpPhoneInput"
+              name="identifier"
+              type="tel"
+              class="auth-input"
+              inputmode="tel"
+              autocomplete="tel"
+              autocorrect="off"
+              autocapitalize="none"
+              spellcheck="false"
+              pattern="(?:\+?91|0)?[6-9]\d{9}"
+              enterkeyhint="done"
+              aria-describedby="otpPhoneHint"
+              data-error="otpPhoneError"
+              required
+            >
+            <div id="otpPhoneError" class="auth-field-error">
+              <span role="img" aria-label="Error">⚠️</span> Enter a valid 10-digit Indian mobile number starting with 6–9.
+            </div>
+          </div>
+
+          <fieldset class="auth-fieldset">
+            <legend>Preferred app language</legend>
+            <label class="auth-radio-item" for="otpLangEn">
+              <input id="otpLangEn" type="radio" name="languagePreference" value="en-IN" checked>
+              <span>English (en-IN)</span>
+            </label>
+            <label class="auth-radio-item" for="otpLangBn">
+              <input id="otpLangBn" type="radio" name="languagePreference" value="bn-IN">
+              <span lang="bn">বাংলা (bn-IN)</span>
+            </label>
+          </fieldset>
+
+          <button type="submit" id="otpSendBtn" class="btn btn-primary" style="width: 100%; min-height: 48px;">Get 6-digit OTP</button>
+        </form>
+
+        <form id="authOtpVerifyForm" class="auth-form" method="POST" action="/api/v1/auth/otp/verify" hidden>
+          <div class="auth-field">
+            <label for="otpCodeInput">Verification code <span aria-hidden="true">*</span></label>
+            <p id="otpFormatHint" class="auth-hint">Enter the 6-digit OTP sent via origin-bound SMS. Supports browser one-time-code autofill.</p>
+            <input
+              id="otpCodeInput"
+              name="otp"
+              type="text"
+              class="auth-input auth-input-otp"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              pattern="\d{6}"
+              maxlength="6"
+              enterkeyhint="done"
+              aria-describedby="otpFormatHint"
+              data-error="otpCodeError"
+              required
+            >
+            <div id="otpCodeError" class="auth-field-error">
+              <span role="img" aria-label="Error">⚠️</span> Enter the exact 6-digit numeric code.
+            </div>
+          </div>
+
+          <div class="auth-row-actions">
+            <button type="button" id="otpResendBtn" class="auth-link-btn" disabled>Resend OTP in 60s</button>
+            <button type="button" id="otpChangeNumberBtn" class="auth-link-btn">Change mobile number</button>
+          </div>
+
+          <button type="submit" id="otpVerifyBtn" class="btn btn-primary" style="width: 100%; min-height: 48px;">Verify &amp; Continue</button>
+        </form>
+      </section>
+
+      <!-- Panel 3: Create Account -->
+      <section id="panelRegister" role="tabpanel" aria-labelledby="tabBtnRegister" hidden>
+        <form id="authRegisterForm" class="auth-form" method="POST" action="/api/v1/auth/register">
+          <div class="auth-field">
+            <label for="regName">Full name <span aria-hidden="true">*</span></label>
+            <p id="regNameHint" class="auth-hint">Supports English or Bengali Unicode scripts.</p>
+            <input
+              id="regName"
+              name="name"
+              type="text"
+              class="auth-input"
+              autocomplete="name"
+              enterkeyhint="next"
+              maxlength="120"
+              aria-describedby="regNameHint"
+              data-error="regNameError"
+              required
+            >
+            <div id="regNameError" class="auth-field-error">
+              <span role="img" aria-label="Error">⚠️</span> Enter your full name.
+            </div>
+          </div>
+
+          <div class="auth-field">
+            <label for="regEmail">Email address <span aria-hidden="true">*</span></label>
+            <p id="regEmailHint" class="auth-hint">Format: name@example.com</p>
+            <input
+              id="regEmail"
+              name="email"
+              type="email"
+              class="auth-input"
+              autocomplete="username"
+              spellcheck="false"
+              enterkeyhint="next"
+              aria-describedby="regEmailHint"
+              data-error="regEmailError"
+              required
+            >
+            <div id="regEmailError" class="auth-field-error">
+              <span role="img" aria-label="Error">⚠️</span> Enter an email address in the format you@example.com.
+            </div>
+          </div>
+
+          <div class="auth-field">
+            <label for="regPhone">Indian mobile number (optional)</label>
+            <p id="regPhoneHint" class="auth-hint">Used for order status &amp; delivery updates.</p>
+            <input
+              id="regPhone"
+              name="phone"
+              type="tel"
+              class="auth-input"
+              autocomplete="tel"
+              inputmode="tel"
+              pattern="(?:\+?91|0)?[6-9]\d{9}"
+              enterkeyhint="next"
+              aria-describedby="regPhoneHint"
+              data-error="regPhoneError"
+            >
+            <div id="regPhoneError" class="auth-field-error">
+              <span role="img" aria-label="Error">⚠️</span> Enter a valid 10-digit Indian mobile number or leave blank.
+            </div>
+          </div>
+
+          <div class="auth-field">
+            <label for="regPassword">Create password <span aria-hidden="true">*</span></label>
+            <ul id="regPasswordRules" class="auth-rules-list">
+              <li>At least 8 characters</li>
+              <li>One uppercase letter and one lowercase letter</li>
+              <li>One number and one special character</li>
+            </ul>
+            <span id="regPwWarning" class="visually-hidden">Warning: revealing your password makes it visible on screen.</span>
+            <div class="auth-password-wrap">
+              <input
+                id="regPassword"
+                name="password"
+                type="password"
+                class="auth-input"
+                autocomplete="new-password"
+                minlength="8"
+                pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}"
+                enterkeyhint="done"
+                aria-describedby="regPasswordRules"
+                data-error="regPasswordError"
+                required
+              >
+              <button
+                type="button"
+                class="auth-toggle-pw"
+                data-pw-target="regPassword"
+                aria-pressed="false"
+                aria-label="Show password"
+                aria-describedby="regPwWarning"
+              >Show</button>
+            </div>
+            <div id="regPasswordError" class="auth-field-error">
+              <span role="img" aria-label="Error">⚠️</span> Password must satisfy all requirements listed above.
+            </div>
+          </div>
+
+          <fieldset class="auth-fieldset">
+            <legend>Language preference</legend>
+            <label class="auth-radio-item" for="regLangEn">
+              <input id="regLangEn" type="radio" name="languagePreference" value="en-IN" checked>
+              <span>English (en-IN)</span>
+            </label>
+            <label class="auth-radio-item" for="regLangBn">
+              <input id="regLangBn" type="radio" name="languagePreference" value="bn-IN">
+              <span lang="bn">বাংলা (bn-IN)</span>
+            </label>
+          </fieldset>
+
+          <label class="auth-checkbox-row" for="regAcceptTerms">
+            <input id="regAcceptTerms" name="acceptTerms" type="checkbox" required>
+            <span>I accept BHOJORA Terms of Service and DPDP Privacy Notice.</span>
+          </label>
+
+          <button type="submit" id="registerSubmitBtn" class="btn btn-primary" style="width: 100%; min-height: 48px;">Create Bhojora Account</button>
+        </form>
+      </section>
+
+      <!-- Panel 4: Password Recovery -->
+      <section id="panelRecover" role="tabpanel" aria-labelledby="tabBtnRecover" hidden>
+        <form id="authRecoverRequestForm" class="auth-form" method="POST" action="/api/v1/auth/forgot-password" style="margin-bottom: 18px;">
+          <div class="auth-field">
+            <label for="recoverIdentifier">Registered email or mobile number <span aria-hidden="true">*</span></label>
+            <p id="recoverIdentifierHint" class="auth-hint">Receive a single-use recovery code valid for 15 minutes.</p>
+            <input
+              id="recoverIdentifier"
+              name="identifier"
+              type="text"
+              class="auth-input"
+              autocomplete="username"
+              autocorrect="off"
+              autocapitalize="none"
+              spellcheck="false"
+              aria-describedby="recoverIdentifierHint"
+              data-error="recoverIdentifierError"
+              required
+            >
+            <div id="recoverIdentifierError" class="auth-field-error">
+              <span role="img" aria-label="Error">⚠️</span> Enter your registered email or mobile number.
+            </div>
+          </div>
+          <button type="submit" id="recoverRequestBtn" class="btn btn-outline" style="width: 100%; min-height: 48px;">Send Recovery Code</button>
+        </form>
+
+        <form id="authRecoverResetForm" class="auth-form" method="POST" action="/api/v1/auth/reset-password">
+          <div class="auth-field">
+            <label for="resetTokenInput">Single-use recovery code / token <span aria-hidden="true">*</span></label>
+            <input
+              id="resetTokenInput"
+              name="token"
+              type="text"
+              class="auth-input"
+              autocomplete="one-time-code"
+              minlength="6"
+              data-error="resetTokenError"
+              required
+            >
+            <div id="resetTokenError" class="auth-field-error">
+              <span role="img" aria-label="Error">⚠️</span> Enter the recovery code sent to your email or phone.
+            </div>
+          </div>
+
+          <div class="auth-field">
+            <label for="resetNewPassword">New password <span aria-hidden="true">*</span></label>
+            <div class="auth-password-wrap">
+              <input
+                id="resetNewPassword"
+                name="newPassword"
+                type="password"
+                class="auth-input"
+                autocomplete="new-password"
+                minlength="8"
+                pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}"
+                data-error="resetPasswordError"
+                required
+              >
+              <button
+                type="button"
+                class="auth-toggle-pw"
+                data-pw-target="resetNewPassword"
+                aria-pressed="false"
+                aria-label="Show password"
+              >Show</button>
+            </div>
+            <div id="resetPasswordError" class="auth-field-error">
+              <span role="img" aria-label="Error">⚠️</span> Must be at least 8 characters with uppercase, lowercase, number, and symbol.
+            </div>
+          </div>
+
+          <button type="submit" id="recoverResetBtn" class="btn btn-primary" style="width: 100%; min-height: 48px;">Reset Password &amp; Revoke Sessions</button>
+        </form>
+      </section>
+    </div>
+
+    <!-- Signed-in Session & Device Management Panel -->
+    <section id="authSessionPanel" hidden>
+      <div class="score-banner" style="margin-bottom: 16px;">
+        <div>
+          <div style="font-size: 11px; font-weight: 700; color: var(--trust-green); text-transform: uppercase;">Active Session</div>
+          <div id="sessionUserName" style="font-size: 16px; font-weight: 700; color: var(--neutral-950);">Bhojora Customer</div>
+          <div id="sessionUserMeta" style="font-size: 12px; color: var(--neutral-600);">Role: CUSTOMER • en-IN</div>
+        </div>
+        <button type="button" id="sessionLogoutBtn" class="btn btn-outline" style="min-height: 44px; padding: 8px 14px;">Sign Out</button>
+      </div>
+      <div id="activeSessionsList"></div>
+      <button type="button" id="sessionLogoutAllBtn" class="btn btn-outline" style="width: 100%; min-height: 48px; margin-top: 8px;">Sign Out All Devices</button>
+    </section>
+  </dialog>
+
   <!-- Footer -->
   <footer id="kolkata-launch">
     <div class="container">
@@ -1191,6 +1807,406 @@
         });
       }
     }
+
+    // Auth UI Foundation & WebOTP / Post-Interaction ARIA Validation (Checkpoint 07)
+    (() => {
+      const authModal = document.getElementById('authModal');
+      const openAuthBtn = document.getElementById('openAuthModalBtn');
+      const authStatusBanner = document.getElementById('authStatusBanner');
+      const authGuestContainer = document.getElementById('authGuestContainer');
+      const authSessionPanel = document.getElementById('authSessionPanel');
+      if (!authModal || !openAuthBtn) return;
+
+      const API_BASE = typeof window.BHOJORA_API_BASE === 'string' ? window.BHOJORA_API_BASE : '/api/v1';
+      let currentSessionState = null;
+      let activeChallengeId = null;
+      let activeOtpIdentifier = '';
+      let otpAbortController = null;
+      let resendInterval = null;
+
+      function stopSmsOtpListener() {
+        if (otpAbortController) {
+          otpAbortController.abort();
+          otpAbortController = null;
+        }
+      }
+
+      async function startSmsOtpListener() {
+        const otpInput = document.getElementById('otpCodeInput');
+        const otpForm = document.getElementById('authOtpVerifyForm');
+        if (!otpInput || !('OTPCredential' in window)) return;
+        stopSmsOtpListener();
+        const ac = new AbortController();
+        otpAbortController = ac;
+        try {
+          const otp = await navigator.credentials.get({
+            otp: { transport: ['sms'] },
+            signal: ac.signal,
+          });
+          if (otp && typeof otp.code === 'string') {
+            otpInput.value = otp.code;
+            if (otpForm) otpForm.requestSubmit();
+          }
+        } catch (err) {
+          if (err && err.name === 'AbortError') return;
+        }
+      }
+
+      function setBanner(text, kind) {
+        if (!authStatusBanner) return;
+        authStatusBanner.classList.remove('is-success', 'is-error');
+        if (!text) {
+          authStatusBanner.hidden = true;
+          authStatusBanner.textContent = '';
+          return;
+        }
+        if (kind === 'success') authStatusBanner.classList.add('is-success');
+        if (kind === 'error') authStatusBanner.classList.add('is-error');
+        authStatusBanner.textContent = text;
+        authStatusBanner.hidden = false;
+      }
+
+      function startResendCountdown(seconds) {
+        const resendBtn = document.getElementById('otpResendBtn');
+        if (!resendBtn) return;
+        clearInterval(resendInterval);
+        let remaining = Number(seconds) || 60;
+        resendBtn.disabled = true;
+        resendBtn.textContent = `Resend OTP in ${remaining}s`;
+        resendInterval = setInterval(() => {
+          remaining -= 1;
+          if (remaining <= 0) {
+            clearInterval(resendInterval);
+            resendBtn.disabled = false;
+            resendBtn.textContent = 'Resend OTP';
+          } else {
+            resendBtn.textContent = `Resend OTP in ${remaining}s`;
+          }
+        }, 1000);
+      }
+
+      function switchAuthPanel(panelName) {
+        stopSmsOtpListener();
+        setBanner('', 'neutral');
+        const map = {
+          login: { tab: 'tabBtnLogin', panel: 'panelLogin' },
+          otp: { tab: 'tabBtnOtp', panel: 'panelOtp' },
+          register: { tab: 'tabBtnRegister', panel: 'panelRegister' },
+          recover: { tab: 'tabBtnRecover', panel: 'panelRecover' },
+        };
+        for (const [key, refs] of Object.entries(map)) {
+          const active = key === panelName;
+          const tabEl = document.getElementById(refs.tab);
+          const panelEl = document.getElementById(refs.panel);
+          if (tabEl) tabEl.setAttribute('aria-selected', String(active));
+          if (panelEl) panelEl.hidden = !active;
+        }
+      }
+
+      function renderSessionState() {
+        const loggedIn = Boolean(currentSessionState);
+        authGuestContainer.hidden = loggedIn;
+        authSessionPanel.hidden = !loggedIn;
+        openAuthBtn.textContent = loggedIn ? (currentSessionState.user.name.split(' ')[0] || 'Account') : 'Sign In';
+        if (!loggedIn) return;
+        document.getElementById('sessionUserName').textContent = currentSessionState.user.name;
+        document.getElementById('sessionUserMeta').textContent =
+          `Role: ${currentSessionState.user.activeRole} • ${currentSessionState.user.languagePreference}`;
+        const list = document.getElementById('activeSessionsList');
+        if (list) {
+          list.replaceChildren();
+          const card = document.createElement('div');
+          card.className = 'session-card';
+          const info = document.createElement('div');
+          const title = document.createElement('div');
+          title.style.fontWeight = '700';
+          title.style.fontSize = '13px';
+          title.textContent = `${currentSessionState.session.deviceName} (Current Session)`;
+          const sub = document.createElement('div');
+          sub.style.fontSize = '12px';
+          sub.style.color = 'var(--neutral-600)';
+          sub.textContent = `Expires ${new Date(currentSessionState.session.expiresAt).toLocaleDateString('en-IN')}`;
+          info.append(title, sub);
+          card.append(info);
+          list.append(card);
+        }
+      }
+
+      async function postJson(path, body, token) {
+        const headers = { 'Content-Type': 'application/json', 'X-Requested-With': 'fetch' };
+        if (token) headers.Authorization = `Bearer ${token}`;
+        const res = await fetch(`${API_BASE}${path}`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(body),
+        });
+        const contentType = res.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+          throw new Error('PREVIEW_NO_API');
+        }
+        const json = await res.json();
+        if (!res.ok || !json.success) {
+          throw new Error(json?.error?.message || 'Request failed');
+        }
+        return json.data;
+      }
+
+      openAuthBtn.addEventListener('click', () => {
+        renderSessionState();
+        authModal.showModal();
+      });
+
+      authModal.addEventListener('close', () => {
+        stopSmsOtpListener();
+        clearInterval(resendInterval);
+      });
+
+      document.querySelectorAll('.auth-tab').forEach((btn) => {
+        btn.addEventListener('click', () => switchAuthPanel(btn.dataset.authPanel));
+      });
+      document.getElementById('goRecoverFromLoginBtn')?.addEventListener('click', () => switchAuthPanel('recover'));
+      document.getElementById('goOtpFromLoginBtn')?.addEventListener('click', () => switchAuthPanel('otp'));
+
+      document.querySelectorAll('.auth-toggle-pw').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const target = document.getElementById(btn.dataset.pwTarget);
+          if (!target) return;
+          const visible = target.type === 'text';
+          target.type = visible ? 'password' : 'text';
+          btn.setAttribute('aria-pressed', String(!visible));
+          btn.setAttribute('aria-label', visible ? 'Show password' : 'Hide password');
+          btn.textContent = visible ? 'Show' : 'Hide';
+        });
+      });
+
+      document.getElementById('authLoginForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.currentTarget;
+        if (!form.reportValidity()) return;
+        const submitBtn = document.getElementById('loginSubmitBtn');
+        submitBtn.disabled = true;
+        try {
+          const data = await postJson('/auth/login', {
+            identifier: document.getElementById('loginIdentifier').value.trim(),
+            password: document.getElementById('loginPassword').value,
+          });
+          currentSessionState = data;
+          renderSessionState();
+          setBanner('Signed in cleanly. Access & rotating refresh session active.', 'success');
+        } catch (err) {
+          if (err.message === 'PREVIEW_NO_API') {
+            setBanner('Static frontend preview active — start Bhojora API server on /api/v1 for live token verification.', 'neutral');
+          } else {
+            setBanner(err.message, 'error');
+          }
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
+
+      document.getElementById('authOtpSendForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.currentTarget;
+        if (!form.reportValidity()) return;
+        const identifier = document.getElementById('otpPhoneInput').value.trim();
+        const sendBtn = document.getElementById('otpSendBtn');
+        sendBtn.disabled = true;
+        try {
+          const data = await postJson('/auth/otp/send', { identifier, channel: 'sms' });
+          activeChallengeId = data.challengeId;
+          activeOtpIdentifier = identifier;
+          document.getElementById('authOtpVerifyForm').hidden = false;
+          startResendCountdown(data.resendAfterSeconds);
+          setBanner(`6-digit OTP sent to ${data.maskedDestination}.`, 'success');
+          void startSmsOtpListener();
+        } catch (err) {
+          if (err.message === 'PREVIEW_NO_API') {
+            document.getElementById('authOtpVerifyForm').hidden = false;
+            startResendCountdown(60);
+            setBanner('Static UI preview: 6-digit OTP step opened (connect /api/v1/auth/otp/send for live SMS dispatch).', 'neutral');
+          } else {
+            setBanner(err.message, 'error');
+          }
+        } finally {
+          sendBtn.disabled = false;
+        }
+      });
+
+      document.getElementById('otpResendBtn')?.addEventListener('click', () => {
+        const sendForm = document.getElementById('authOtpSendForm');
+        if (sendForm) sendForm.requestSubmit();
+      });
+
+      document.getElementById('otpChangeNumberBtn')?.addEventListener('click', () => {
+        stopSmsOtpListener();
+        document.getElementById('authOtpVerifyForm').hidden = true;
+        document.getElementById('otpPhoneInput').focus();
+      });
+
+      document.getElementById('authOtpVerifyForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        stopSmsOtpListener();
+        const form = e.currentTarget;
+        if (!form.reportValidity()) return;
+        const lang = form.closest('#panelOtp')?.querySelector('input[name="languagePreference"]:checked')?.value || 'en-IN';
+        try {
+          const data = await postJson('/auth/otp/verify', {
+            challengeId: activeChallengeId || '00000000-0000-0000-0000-000000000000',
+            identifier: activeOtpIdentifier || document.getElementById('otpPhoneInput').value.trim(),
+            otp: document.getElementById('otpCodeInput').value.trim(),
+            languagePreference: lang,
+          });
+          currentSessionState = data;
+          renderSessionState();
+          setBanner('Phone OTP verified. Active session established.', 'success');
+        } catch (err) {
+          setBanner(
+            err.message === 'PREVIEW_NO_API'
+              ? 'Static frontend preview active — start Bhojora API server on /api/v1 to verify OTP codes.'
+              : err.message,
+            err.message === 'PREVIEW_NO_API' ? 'neutral' : 'error',
+          );
+        }
+      });
+
+      document.getElementById('authRegisterForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.currentTarget;
+        if (!form.reportValidity()) return;
+        const lang = form.querySelector('input[name="languagePreference"]:checked')?.value || 'en-IN';
+        try {
+          const phoneVal = document.getElementById('regPhone').value.trim();
+          const data = await postJson('/auth/register', {
+            name: document.getElementById('regName').value.trim(),
+            email: document.getElementById('regEmail').value.trim(),
+            ...(phoneVal ? { phone: phoneVal } : {}),
+            password: document.getElementById('regPassword').value,
+            languagePreference: lang,
+            acceptTerms: true,
+          });
+          currentSessionState = data;
+          renderSessionState();
+          setBanner('BHOJORA account created and signed in.', 'success');
+        } catch (err) {
+          setBanner(
+            err.message === 'PREVIEW_NO_API'
+              ? 'Static frontend preview active — start Bhojora API server on /api/v1 to create accounts.'
+              : err.message,
+            err.message === 'PREVIEW_NO_API' ? 'neutral' : 'error',
+          );
+        }
+      });
+
+      document.getElementById('authRecoverRequestForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!e.currentTarget.reportValidity()) return;
+        try {
+          const data = await postJson('/auth/forgot-password', {
+            identifier: document.getElementById('recoverIdentifier').value.trim(),
+          });
+          setBanner(data.message, 'success');
+        } catch (err) {
+          setBanner(
+            err.message === 'PREVIEW_NO_API'
+              ? 'Static frontend preview active — connect /api/v1/auth/forgot-password to dispatch recovery tokens.'
+              : err.message,
+            err.message === 'PREVIEW_NO_API' ? 'neutral' : 'error',
+          );
+        }
+      });
+
+      document.getElementById('authRecoverResetForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!e.currentTarget.reportValidity()) return;
+        try {
+          await postJson('/auth/reset-password', {
+            identifier: document.getElementById('recoverIdentifier').value.trim(),
+            token: document.getElementById('resetTokenInput').value.trim(),
+            newPassword: document.getElementById('resetNewPassword').value,
+          });
+          switchAuthPanel('login');
+          setBanner('Password updated and previous sessions revoked. Sign in with your new password.', 'success');
+        } catch (err) {
+          setBanner(
+            err.message === 'PREVIEW_NO_API'
+              ? 'Static frontend preview active — connect /api/v1/auth/reset-password for live reset.'
+              : err.message,
+            err.message === 'PREVIEW_NO_API' ? 'neutral' : 'error',
+          );
+        }
+      });
+
+      document.getElementById('sessionLogoutBtn')?.addEventListener('click', async () => {
+        const token = currentSessionState?.tokens?.accessToken;
+        try {
+          if (token) await postJson('/auth/logout', {}, token);
+        } catch {
+          // Always clear client view state cleanly
+        }
+        currentSessionState = null;
+        renderSessionState();
+        switchAuthPanel('login');
+        setBanner('Signed out and current session revoked.', 'success');
+      });
+
+      document.getElementById('sessionLogoutAllBtn')?.addEventListener('click', async () => {
+        const token = currentSessionState?.tokens?.accessToken;
+        try {
+          if (token) await postJson('/auth/logout-all', {}, token);
+        } catch {
+          // Always clear client view state cleanly
+        }
+        currentSessionState = null;
+        renderSessionState();
+        switchAuthPanel('login');
+        setBanner('Signed out across all devices.', 'success');
+      });
+
+      // Consistent ARIA state sync after interaction (validate-input-after-interaction)
+      const announcer = document.createElement('div');
+      announcer.setAttribute('aria-live', 'polite');
+      announcer.classList.add('visually-hidden');
+      document.body.append(announcer);
+      let announceTimer;
+      const announced = new WeakSet();
+      const linkError = (el, shown) => {
+        const errorId = el.dataset.error;
+        if (!errorId) return;
+        const ids = (el.getAttribute('aria-describedby') || '').split(/\s+/).filter((id) => id && id !== errorId);
+        if (shown) ids.push(errorId);
+        if (ids.length) el.setAttribute('aria-describedby', ids.join(' '));
+        else el.removeAttribute('aria-describedby');
+      };
+      const syncAria = (el, announce = false) => {
+        if (!el.matches?.('.auth-input')) return;
+        const invalid = el.matches(':user-invalid');
+        if (invalid) {
+          el.setAttribute('aria-invalid', 'true');
+          linkError(el, true);
+          if (announce && !announced.has(el)) {
+            const errorEl = document.getElementById(el.dataset.error || '');
+            if (errorEl) {
+              clearTimeout(announceTimer);
+              announceTimer = setTimeout(() => {
+                announcer.textContent = errorEl.textContent.trim();
+              }, 350);
+            }
+            announced.add(el);
+          }
+        } else {
+          el.setAttribute('aria-invalid', 'false');
+          linkError(el, false);
+          announced.delete(el);
+        }
+      };
+      authModal.querySelectorAll('.auth-input').forEach((el) => syncAria(el));
+      authModal.addEventListener('blur', (e) => syncAria(e.target, true), true);
+      authModal.addEventListener('input', (e) => syncAria(e.target, false), true);
+      authModal.addEventListener('invalid', (e) => {
+        announced.add(e.target);
+        syncAria(e.target, false);
+      }, true);
+    })();
   </script>
 </body>
 </html>

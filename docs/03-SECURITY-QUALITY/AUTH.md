@@ -49,3 +49,11 @@ DELETION_REQUESTED. Define permitted transitions and user notices.
 Test unauthenticated access, wrong role, wrong tenant/outlet, expired
 token, revoked session, IDOR, privilege escalation, replayed OTP, brute
 force and reviewer self-approval.
+
+## 7. Implementation Contract (Checkpoint 07 Baseline)
+
+- **Hashing & Secrets:** Passwords use Node `crypto.scrypt` PHC format (`$scrypt$n=16384,r=8,p=1$...`); OTP codes, refresh tokens, and recovery tokens are hashed before persistence (`auth_challenges`, `user_sessions`).
+- **Session Revocation:** Access tokens are HS256 JWTs (`900s` default TTL) validated on every request against `user_sessions` (`revokedAt === null`), making `logout`, `logout-all`, `DELETE /auth/sessions/:sessionId`, and password reset immediate.
+- **Refresh Reuse Detection:** Refresh rotation atomically rotates `refreshTokenHash` and preserves `previousRefreshTokenHash`; presenting a consumed refresh token revokes the session (`REFRESH_TOKEN_REPLAY_DETECTED`) and rejects the request.
+- **Transport & CSRF:** API/mobile callers use `Authorization: Bearer`; browser cookie sessions (`X-Bhojora-Session-Mode: cookie`) issue `HttpOnly`, `SameSite=Lax`, `Secure` auth cookies paired with `bhojora_csrf` + `X-Csrf-Token` verification on cookie-authenticated mutations.
+- **Public Registration Hardening:** `/auth/register` always assigns `CUSTOMER` role regardless of caller payload; privileged role assignment and RBAC enforcement matrices are layered in Checkpoint 08.

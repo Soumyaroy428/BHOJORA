@@ -6,6 +6,8 @@ import { Schema, type SchemaOptions } from 'mongoose';
 export const COLLECTION_NAMES = {
   users: 'users',
   userSessions: 'user_sessions',
+  authChallenges: 'auth_challenges',
+  authRateLimits: 'auth_rate_limits',
   roles: 'roles',
   permissions: 'permissions',
   consentRecords: 'consent_records',

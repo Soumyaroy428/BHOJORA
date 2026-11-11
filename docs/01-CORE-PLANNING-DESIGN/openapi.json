@@ -202,21 +202,84 @@
     },
     "/auth/refresh": {
       "post": {
-        "summary": "Rotate refresh token",
+        "summary": "Rotate refresh token and revoke session family on replay detection",
+        "security": [],
         "tags": ["Identity"],
-        "responses": { "200": { "description": "New token pair issued" } }
+        "responses": {
+          "200": { "description": "New token pair issued" },
+          "401": { "description": "Expired, invalid, or replayed refresh token" }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "summary": "Revoke current authenticated session and clear auth cookies",
+        "tags": ["Identity"],
+        "responses": { "200": { "description": "Current session revoked" } }
+      }
+    },
+    "/auth/logout-all": {
+      "post": {
+        "summary": "Revoke all active sessions for the current user",
+        "tags": ["Identity"],
+        "responses": { "200": { "description": "All active sessions revoked" } }
+      }
+    },
+    "/auth/sessions": {
+      "get": {
+        "summary": "List active and recent sessions for the current user",
+        "tags": ["Identity"],
+        "responses": { "200": { "description": "Session list" } }
+      }
+    },
+    "/auth/sessions/{sessionId}": {
+      "delete": {
+        "summary": "Revoke a specific session belonging to the current user",
+        "tags": ["Identity"],
+        "parameters": [
+          { "name": "sessionId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Session revoked" },
+          "404": { "description": "Session not found" }
+        }
+      }
+    },
+    "/auth/forgot-password": {
+      "post": {
+        "summary": "Initiate account recovery with enumeration-safe response",
+        "security": [],
+        "tags": ["Identity"],
+        "responses": { "200": { "description": "Recovery request accepted" } }
+      }
+    },
+    "/auth/reset-password": {
+      "post": {
+        "summary": "Verify single-use recovery token, update password, and revoke all active sessions",
+        "security": [],
+        "tags": ["Identity"],
+        "responses": {
+          "200": { "description": "Password reset and active sessions revoked" },
+          "401": { "description": "Expired, invalid, or replayed recovery token" }
+        }
       }
     },
     "/users/me": {
       "get": {
         "summary": "Get current authenticated user profile",
         "tags": ["Users"],
-        "responses": { "200": { "description": "User profile details" } }
+        "responses": {
+          "200": { "description": "User profile details" },
+          "401": { "description": "Authentication required or session revoked" }
+        }
       },
       "patch": {
-        "summary": "Update user language preference (en-IN / bn-IN) and details",
+        "summary": "Update user language preference (en-IN / bn-IN) and profile details",
         "tags": ["Users"],
-        "responses": { "200": { "description": "Profile updated" } }
+        "responses": {
+          "200": { "description": "Profile updated" },
+          "401": { "description": "Authentication required or session revoked" }
+        }
       }
     },
     "/addresses": {

@@ -193,3 +193,23 @@ Checkpoint 06 introduces MongoDB persistence via Mongoose (`ADR-002`) across an 
 ### Consequences
 - **Positive:** Repeatable multi-environment index builds, deterministic failure behavior when MongoDB is unreachable, and consistent domain isolation across future feature modules.
 - **Negative:** Production deployments must run `npm run db:indexes --workspace=server` cleanly during release automation before enabling traffic.
+
+---
+
+## ADR-011: Identity Cryptography (`scrypt`), Rotating Refresh Tokens, Origin-Bound OTP & Immediate Session Revocation
+
+### Status: ACCEPTED (Locked Baseline — Checkpoint 07)
+
+### Context
+Checkpoint 07 establishes identity, session lifecycle, OTP verification, and password recovery (`AUTH.md`) in a Windows/Linux TypeScript workspace constrained against unverified native addons and required to enforce immediate session revocation, brute-force resistance, CSRF protection for cookie transports, and zero credential/OTP logging.
+
+### Decision
+1. **PHC `scrypt` Password Hashing (`server/src/modules/identity/identity.crypto.ts`):** Hash passwords using Node.js built-in `crypto.scrypt` (`N=16384`, `r=8`, `p=1`, `keyLen=64`) encoded as PHC strings (`$scrypt$n=16384,r=8,p=1$<salt>$<hash>`) with timing-safe verification and dummy verification against timing-based user enumeration.
+2. **HS256 JWT Access Tokens with Live Session Revocation (`server/src/modules/identity/identity.service.ts`, `server/src/middleware/auth.ts`):** Issue short-lived (`900s`) HS256 JWTs carrying `sub` and `sid`, verified on every protected request against persistent session state (`revokedAt == null && expiresAt > now`) so logout, `logout-all`, session deletion, and password reset invalidate access immediately.
+3. **Rotating Refresh Tokens & Reuse Family Revocation:** Persist hashed opaque refresh tokens on `user_sessions` alongside `previousRefreshTokenHash` and atomic conditional rotation; replaying a prior refresh token immediately revokes the session (`REFRESH_TOKEN_REPLAY_DETECTED`) and returns `401 UNAUTHORIZED`.
+4. **Origin-Bound Pluggable OTP Adapter (`server/src/modules/identity/otp.adapter.ts`):** Store OTP and recovery secrets strictly as keyed hashes in `auth_challenges`, throttle sends/attempts in `auth_rate_limits`, bind SMS bodies with WebOTP final line `@<appOriginHost> #<otp>`, and prohibit plaintext OTPs or phone numbers from logs (`SafeLogOtpSenderAdapter` + `logger.ts` redaction).
+5. **Cookie + CSRF Dual Transport (`server/src/middleware/auth.ts`):** Support Bearer token headers cleanly for mobile/API clients and `HttpOnly`, `SameSite=Lax`, `Secure` cookies paired with double-submit `bhojora_csrf` + `X-Csrf-Token` header verification for mutating cookie-authenticated requests.
+
+### Consequences
+- **Positive:** Zero external C++ native-build dependencies, deterministic time-controlled verification tests (`Clock` injection), and immediate revocation guarantees across all clients.
+- **Negative:** Protected endpoints incur one indexed session lookup per authenticated request (or future read-through cache backed by session revocation events in later scalability phases).

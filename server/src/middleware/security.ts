@@ -28,12 +28,13 @@ export function createCorsMiddleware(allowedOrigins: readonly string[]) {
     const originAllowed = typeof origin === 'string' && allowlist.has(origin);
     if (originAllowed && origin) {
       res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
       res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
       res.setHeader(
         'Access-Control-Allow-Headers',
-        'Content-Type,Authorization,X-Request-Id,Idempotency-Key',
+        'Content-Type,Authorization,X-Request-Id,Idempotency-Key,X-Csrf-Token,X-Requested-With,X-Bhojora-Session-Mode,X-Device-Name',
       );
-      res.setHeader('Access-Control-Expose-Headers', 'X-Request-Id');
+      res.setHeader('Access-Control-Expose-Headers', 'X-Request-Id,X-Csrf-Token');
     }
 
     if (req.method === 'OPTIONS') {
