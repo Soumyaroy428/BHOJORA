@@ -251,3 +251,23 @@ Checkpoint 09 introduces persistent customer profiles (`customer_profiles`), sav
 ### Consequences
 - **Positive:** Eliminates horizontal customer IDOR, preserves verifiable proof of consent/withdrawal, and provides complete client + database parity ready for Phase 10+ discovery and checkout flows.
 - **Negative:** Automated purge worker scheduling must execute queued `PENDING_RETENTION` anonymization jobs once downstream order/payment tables exist in later checkpoints.
+
+---
+
+## ADR-014: Restaurant Onboarding, Private Compliance Documents & Statutory FSSAI Separation
+
+### Status: ACCEPTED (Locked Baseline — Checkpoint 10)
+
+### Context
+Checkpoint 10 introduces restaurant partner onboarding, legal KYC + settlement payout capture, private compliance document upload, and an MFA-verified admin review queue, while preserving the non-negotiable business rule that statutory FSSAI verification is legally and operationally distinct from Bhojora's independent hygiene inspection (`NOT_INSPECTED` until physical audit approval).
+
+### Decision
+1. **Dedicated Restaurant Module (`server/src/modules/restaurant/`) Within `ADR-001` Boundaries:** Own `BhojoraRestaurant` (`restaurants`), `BhojoraRestaurantOutlet` (`restaurant_outlets`), and `BhojoraRestaurantDocument` (`restaurant_documents`) while reusing `RbacStore` (`restaurant_staff`, `audit_logs`) and `IdentityStore` (`users`) instead of duplicating staff or audit models.
+2. **Private-Only Compliance Documents (`PRIVATE_COMPLIANCE`, `isPublic: false`):** Enforce schema validation (`isPublic === false`), HMAC-SHA256 single-use upload intents (`900s` TTL), `docId` replay prevention, path-traversal filename sanitization, and `120s` audited read grants (`Cache-Control: no-store`, `X-Robots-Tag: noindex, nofollow`) on `/api/v1/restaurant/documents/:documentId/access` exclusively for the owning applicant or an MFA-verified administrator. Public `/api/v1/restaurants` never returns document keys, PAN, bank account numbers, or owner contact PII.
+3. **PAN & Settlement Bank Masking + HMAC Digesting:** Never return raw PAN or full bank account numbers after submission; store masked display strings (`AB******4F`, `******1234`) alongside keyed HMAC-SHA256 digests using the server secret.
+4. **Immutable Separation of Statutory FSSAI vs. Bhojora Field Inspection:** Admin onboarding approval verifies documents and statutory `fssaiVerificationStatus` independently, promotes the applicant into `RESTAURANT_OWNER` + `ACTIVE` outlet membership, and explicitly initializes `platformInspectionStatus = 'NOT_INSPECTED'` and `publishedSafetyScore = null` — never inferring hygiene clearance from an approved FSSAI certificate.
+5. **Accessible Onboarding & MFA Governance Portals (`client/restaurant-web`, `client/admin-web`):** Follow `modern-web-guidance` fieldsets, `autocomplete` attributes, above-field hints, post-interaction validation (`:user-invalid`, touched `aria-invalid`), and audited review tables with explicit reason entry (`>= 8` chars) and self-review prohibition.
+
+### Consequences
+- **Positive:** Prevents sensitive KYC leakage, eliminates self-review or unverified privilege promotion, and upholds Bhojora's core trust invariant separating FSSAI legal registration from independent field inspection.
+- **Negative:** Approved outlets remain `NOT_INSPECTED` (`publishedSafetyScore: null`) until field inspection workflows run in subsequent checkpoints.

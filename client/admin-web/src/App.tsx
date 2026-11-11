@@ -9,6 +9,7 @@ import {
   type RbacContextDto,
   type UserProfileDto,
 } from '@bhojora/shared';
+import { OnboardingReviewQueue } from './components/OnboardingReviewQueue';
 
 interface GovernanceItem {
   id: string;
@@ -312,6 +313,13 @@ export function App() {
             })}
           </div>
         </section>
+
+        <OnboardingReviewQueue
+          apiBase={getApiBase()}
+          accessToken={accessToken}
+          mfaVerified={Boolean(rbacContext?.mfaVerified)}
+          onStatusUpdate={setStatusMessage}
+        />
       </main>
 
       <footer className="footer">

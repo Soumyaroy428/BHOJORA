@@ -615,6 +615,87 @@
         "tags": ["Customer Profile & Privacy"],
         "responses": { "200": { "description": "Account marked DELETION_REQUESTED and sessions revoked" } }
       }
+    },
+    "/restaurant/applications": {
+      "get": {
+        "summary": "List onboarding applications owned by the authenticated partner applicant",
+        "tags": ["Restaurant Onboarding"],
+        "responses": { "200": { "description": "Owner-scoped onboarding applications" } }
+      },
+      "post": {
+        "summary": "Create a draft restaurant onboarding application with legal KYC, Kolkata outlet setup, and masked payout metadata",
+        "tags": ["Restaurant Onboarding"],
+        "responses": { "201": { "description": "Draft onboarding application created" } }
+      }
+    },
+    "/restaurant/applications/{applicationId}": {
+      "get": {
+        "summary": "Get single onboarding application owned by the authenticated applicant",
+        "tags": ["Restaurant Onboarding"],
+        "parameters": [{ "name": "applicationId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Owner application details" }, "403": { "description": "Cross-applicant access denied" } }
+      },
+      "patch": {
+        "summary": "Update editable DRAFT or CHANGES_REQUESTED onboarding application",
+        "tags": ["Restaurant Onboarding"],
+        "parameters": [{ "name": "applicationId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Updated onboarding draft" }, "409": { "description": "Non-editable status" } }
+      }
+    },
+    "/restaurant/applications/{applicationId}/documents/upload-url": {
+      "post": {
+        "summary": "Issue single-use signed upload intent for PRIVATE_COMPLIANCE document",
+        "tags": ["Restaurant Onboarding"],
+        "parameters": [{ "name": "applicationId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Single-use upload token and private storageKey" } }
+      }
+    },
+    "/restaurant/applications/{applicationId}/documents": {
+      "post": {
+        "summary": "Verify signed upload token and persist private compliance document metadata (isPublic: false)",
+        "tags": ["Restaurant Onboarding"],
+        "parameters": [{ "name": "applicationId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "201": { "description": "Private document metadata persisted" }, "409": { "description": "Upload token already consumed" } }
+      }
+    },
+    "/restaurant/applications/{applicationId}/submit": {
+      "post": {
+        "summary": "Validate mandatory private KYC documents and submit onboarding application for admin review",
+        "tags": ["Restaurant Onboarding"],
+        "parameters": [{ "name": "applicationId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Application moved to SUBMITTED" } }
+      }
+    },
+    "/restaurant/documents/{documentId}/access": {
+      "get": {
+        "summary": "Issue audited 120-second signed read URL for private compliance document (owner or MFA-verified admin only)",
+        "tags": ["Restaurant Onboarding"],
+        "parameters": [{ "name": "documentId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "No-store short-lived signed access grant" }, "403": { "description": "Unauthorized or MFA required" } }
+      }
+    },
+    "/admin/restaurant-applications": {
+      "get": {
+        "summary": "List restaurant onboarding review queue (ops:outlet:manage + MFA verified)",
+        "tags": ["Administration"],
+        "responses": { "200": { "description": "Filtered onboarding review queue" }, "403": { "description": "MFA_REQUIRED or permission denied" } }
+      }
+    },
+    "/admin/restaurant-applications/{applicationId}": {
+      "get": {
+        "summary": "Inspect onboarding application with masked KYC and private compliance document list (MFA-verified admin)",
+        "tags": ["Administration"],
+        "parameters": [{ "name": "applicationId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Application review detail" } }
+      }
+    },
+    "/admin/restaurant-applications/{applicationId}/review": {
+      "post": {
+        "summary": "Record audited APPROVE/REQUEST_CHANGES/REJECT decision and statutory FSSAI status independently from platform inspection",
+        "tags": ["Administration"],
+        "parameters": [{ "name": "applicationId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Audited decision recorded; platformInspectionStatus remains NOT_INSPECTED" }, "403": { "description": "SELF_REVIEW_PROHIBITED or MFA_REQUIRED" } }
+      }
     }
   }
 }

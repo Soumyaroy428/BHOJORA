@@ -18,6 +18,10 @@ import { MongooseCustomerStore } from './modules/customer/customer.store';
 import type { CustomerStore } from './modules/customer/customer.types';
 import { createRbacRouter } from './modules/rbac/rbac.routes';
 import { MongooseRbacStore, type RbacStore } from './modules/rbac/rbac.store';
+import { createRestaurantRouter } from './modules/restaurant/restaurant.routes';
+import { RestaurantService } from './modules/restaurant/restaurant.service';
+import { MongooseRestaurantStore } from './modules/restaurant/restaurant.store';
+import type { RestaurantStore } from './modules/restaurant/restaurant.types';
 
 export interface CreateAppOptions {
   config: AppConfig;
@@ -29,6 +33,8 @@ export interface CreateAppOptions {
   rbacStore?: RbacStore;
   customerStore?: CustomerStore;
   customerService?: CustomerService;
+  restaurantStore?: RestaurantStore;
+  restaurantService?: RestaurantService;
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -79,6 +85,17 @@ export function createApp(options: CreateAppOptions): Express {
       rbacStore,
       logger,
     });
+  const restaurantStore =
+    options.restaurantStore ?? new MongooseRestaurantStore(mongoose.connection);
+  const restaurantService =
+    options.restaurantService ??
+    new RestaurantService({
+      restaurantStore,
+      identityStore,
+      rbacStore,
+      signingSecret: config.jwtAccessSecret,
+      logger,
+    });
   const identityRouter = createIdentityRouter(identityService, config);
   const rbacRouter = createRbacRouter({
     identityService,
@@ -92,11 +109,18 @@ export function createApp(options: CreateAppOptions): Express {
     rbacStore,
     config,
   });
+  const restaurantRouter = createRestaurantRouter({
+    identityService,
+    restaurantService,
+    rbacStore,
+    config,
+  });
 
   app.use('/api/v1', healthRouter);
   app.use('/api/v1', identityRouter);
   app.use('/api/v1', rbacRouter);
   app.use('/api/v1', customerRouter);
+  app.use('/api/v1', restaurantRouter);
   app.use(healthRouter);
 
   app.use(notFoundHandler);

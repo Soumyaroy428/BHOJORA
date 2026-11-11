@@ -6,6 +6,7 @@ import {
   type RbacContextDto,
   type UserProfileDto,
 } from '@bhojora/shared';
+import { RestaurantOnboardingPanel } from './components/RestaurantOnboardingPanel';
 
 interface PartnerOutletView {
   outletId: string;
@@ -300,6 +301,12 @@ export function App() {
             </li>
           </ul>
         </section>
+
+        <RestaurantOnboardingPanel
+          apiBase={getApiBase()}
+          accessToken={accessToken}
+          onStatusUpdate={setStatusMessage}
+        />
       </main>
 
       <footer className="footer">

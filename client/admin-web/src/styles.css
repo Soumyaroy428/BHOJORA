@@ -215,8 +215,113 @@ h1 {
   border-color: var(--terracotta);
 }
 
-.field input:user-valid {
+.field input:user-valid,
+.field select:user-valid,
+.field textarea:user-valid {
   border-color: var(--trust-green);
+}
+
+.field select,
+.field textarea {
+  width: 100%;
+  padding: 0.65rem 0.8rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  color: var(--ink-950);
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+.field select:user-invalid,
+.field textarea:user-invalid {
+  border-color: var(--terracotta);
+}
+
+.field-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--ink-600);
+}
+
+.field-error {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--terracotta-dark);
+}
+
+.notice-banner {
+  border: 1px solid var(--saffron);
+  background: var(--saffron-light);
+  color: var(--ink-950);
+  border-radius: 12px;
+  padding: 0.75rem 0.95rem;
+  font-size: 0.85rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.queue-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.queue-table caption {
+  text-align: left;
+  font-size: 0.8rem;
+  color: var(--ink-600);
+  margin-bottom: 0.5rem;
+}
+
+.queue-table th,
+.queue-table td {
+  text-align: left;
+  padding: 0.65rem 0.55rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.queue-table th {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-600);
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.detail-box {
+  background: var(--bg-canvas);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.9rem;
+}
+
+.btn-secondary {
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--ink-950);
+  padding: 0.5rem 0.85rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  border-color: var(--terracotta);
 }
 
 .btn-primary {
@@ -248,8 +353,17 @@ h1 {
   font-size: 0.85rem;
 }
 
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--terracotta);
+  outline-offset: 2px;
+}
+
 @media (max-width: 820px) {
-  .grid-split {
+  .grid-split,
+  .detail-grid {
     grid-template-columns: 1fr;
   }
 }

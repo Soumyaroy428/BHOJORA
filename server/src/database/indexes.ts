@@ -123,6 +123,31 @@ export const INITIAL_DATABASE_INDEXES: readonly DatabaseIndexSpec[] = [
     options: { name: 'idx_auth_rate_limits_expires_ttl', expireAfterSeconds: 0 },
   },
   {
+    collection: COLLECTION_NAMES.restaurants,
+    key: { applicationId: 1 },
+    options: { name: 'idx_restaurants_application_unique', unique: true },
+  },
+  {
+    collection: COLLECTION_NAMES.restaurants,
+    key: { restaurantId: 1 },
+    options: { name: 'idx_restaurants_restaurant_unique', unique: true },
+  },
+  {
+    collection: COLLECTION_NAMES.restaurants,
+    key: { ownerUserId: 1, updatedAt: -1 },
+    options: { name: 'idx_restaurants_owner_updated' },
+  },
+  {
+    collection: COLLECTION_NAMES.restaurants,
+    key: { onboardingStatus: 1, submittedAt: 1 },
+    options: { name: 'idx_restaurants_onboarding_submitted' },
+  },
+  {
+    collection: COLLECTION_NAMES.restaurantOutlets,
+    key: { outletId: 1 },
+    options: { name: 'idx_outlets_outlet_unique', unique: true },
+  },
+  {
     collection: COLLECTION_NAMES.restaurantOutlets,
     key: { location: '2dsphere' },
     options: { name: 'idx_outlets_location_2dsphere' },
@@ -131,6 +156,16 @@ export const INITIAL_DATABASE_INDEXES: readonly DatabaseIndexSpec[] = [
     collection: COLLECTION_NAMES.restaurantOutlets,
     key: { restaurantId: 1, status: 1 },
     options: { name: 'idx_outlets_restaurant_status' },
+  },
+  {
+    collection: COLLECTION_NAMES.restaurantDocuments,
+    key: { documentId: 1 },
+    options: { name: 'idx_restaurant_docs_doc_id_unique', unique: true },
+  },
+  {
+    collection: COLLECTION_NAMES.restaurantDocuments,
+    key: { restaurantId: 1, documentType: 1, uploadedAt: -1 },
+    options: { name: 'idx_restaurant_docs_restaurant_type_uploaded' },
   },
   {
     collection: COLLECTION_NAMES.restaurantStaff,

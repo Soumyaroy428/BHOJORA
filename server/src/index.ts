@@ -15,10 +15,12 @@ import { MongooseIdentityStore } from './modules/identity/identity.models';
 import { IdentityService } from './modules/identity/identity.service';
 import { SafeLogOtpSenderAdapter } from './modules/identity/otp.adapter';
 import { MongooseRbacStore } from './modules/rbac/rbac.store';
+import { RestaurantService } from './modules/restaurant/restaurant.service';
+import { MongooseRestaurantStore } from './modules/restaurant/restaurant.store';
 
 export const SERVER_BASELINE = {
   service: 'bhojora-api',
-  checkpoint: '09',
+  checkpoint: '10',
   runtime: 'node-22-lts',
   currency: 'INR',
   currencyUnit: 'paise',
@@ -40,6 +42,8 @@ export {
   MongooseRbacStore,
   CustomerService,
   MongooseCustomerStore,
+  RestaurantService,
+  MongooseRestaurantStore,
   SafeLogOtpSenderAdapter,
 };
 
@@ -91,6 +95,7 @@ async function startServer(): Promise<void> {
   const identityStore = new MongooseIdentityStore(mongoConnection);
   const rbacStore = new MongooseRbacStore(mongoConnection);
   const customerStore = new MongooseCustomerStore(mongoConnection);
+  const restaurantStore = new MongooseRestaurantStore(mongoConnection);
 
   const identityService = new IdentityService({
     config,
@@ -106,6 +111,14 @@ async function startServer(): Promise<void> {
     logger,
   });
 
+  const restaurantService = new RestaurantService({
+    restaurantStore,
+    identityStore,
+    rbacStore,
+    signingSecret: config.jwtAccessSecret,
+    logger,
+  });
+
   const app = createApp({
     config,
     logger,
@@ -116,6 +129,8 @@ async function startServer(): Promise<void> {
     rbacStore,
     customerStore,
     customerService,
+    restaurantStore,
+    restaurantService,
   });
 
   const server = http.createServer(app);
