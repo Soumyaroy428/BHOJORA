@@ -126,6 +126,7 @@ export function createIdentityRouter(
       const auth = getAuthContext(res);
       await identityService.logout(auth.sessionId);
       clearAuthCookies(res, config);
+      res.setHeader('Clear-Site-Data', '"cookies", "storage"');
       sendSuccess(res, 200, { loggedOut: true, sessionId: auth.sessionId });
     }),
   );
@@ -137,6 +138,7 @@ export function createIdentityRouter(
       const auth = getAuthContext(res);
       const revokedCount = await identityService.logoutAll(auth.userId);
       clearAuthCookies(res, config);
+      res.setHeader('Clear-Site-Data', '"cookies", "storage"');
       sendSuccess(res, 200, { loggedOutAll: true, revokedCount });
     }),
   );

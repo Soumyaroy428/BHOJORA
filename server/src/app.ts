@@ -12,6 +12,10 @@ import { createIdentityRouter } from './modules/identity/identity.routes';
 import { IdentityService } from './modules/identity/identity.service';
 import type { IdentityStore } from './modules/identity/identity.types';
 import { SafeLogOtpSenderAdapter } from './modules/identity/otp.adapter';
+import { createCustomerRouter } from './modules/customer/customer.routes';
+import { CustomerService } from './modules/customer/customer.service';
+import { MongooseCustomerStore } from './modules/customer/customer.store';
+import type { CustomerStore } from './modules/customer/customer.types';
 import { createRbacRouter } from './modules/rbac/rbac.routes';
 import { MongooseRbacStore, type RbacStore } from './modules/rbac/rbac.store';
 
@@ -23,6 +27,8 @@ export interface CreateAppOptions {
   identityService?: IdentityService;
   identityStore?: IdentityStore;
   rbacStore?: RbacStore;
+  customerStore?: CustomerStore;
+  customerService?: CustomerService;
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -64,6 +70,15 @@ export function createApp(options: CreateAppOptions): Express {
     });
   const identityStore = options.identityStore ?? identityService.getStore();
   const rbacStore = options.rbacStore ?? new MongooseRbacStore(mongoose.connection);
+  const customerStore = options.customerStore ?? new MongooseCustomerStore(mongoose.connection);
+  const customerService =
+    options.customerService ??
+    new CustomerService({
+      identityStore,
+      customerStore,
+      rbacStore,
+      logger,
+    });
   const identityRouter = createIdentityRouter(identityService, config);
   const rbacRouter = createRbacRouter({
     identityService,
@@ -71,10 +86,17 @@ export function createApp(options: CreateAppOptions): Express {
     rbacStore,
     config,
   });
+  const customerRouter = createCustomerRouter({
+    identityService,
+    customerService,
+    rbacStore,
+    config,
+  });
 
   app.use('/api/v1', healthRouter);
   app.use('/api/v1', identityRouter);
   app.use('/api/v1', rbacRouter);
+  app.use('/api/v1', customerRouter);
   app.use(healthRouter);
 
   app.use(notFoundHandler);

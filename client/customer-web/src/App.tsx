@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { AuthDialog } from './components/AuthDialog';
 import { BengaliBanner } from './components/BengaliBanner';
 import { Footer } from './components/Footer';
@@ -9,11 +9,19 @@ import { PillarsSection } from './components/PillarsSection';
 import { PilotInfoDialog } from './components/PilotInfoDialog';
 import { TrustProfileDialog } from './components/TrustProfileDialog';
 import { KOLKATA_ZONE_OPTIONS, VERIFIED_KOLKATA_KITCHENS } from './data/kitchens';
-import type { AuthSessionState, KitchenOutlet, KolkataZoneId } from './types/domain';
+import { apiRequest } from './lib/apiClient';
+import type {
+  AuthSessionState,
+  KitchenOutlet,
+  KolkataZoneId,
+  LocationPermissionState,
+} from './types/domain';
 
 export function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedZone, setSelectedZone] = useState<KolkataZoneId>('all');
+  const [locationPermissionState, setLocationPermissionState] =
+    useState<LocationPermissionState>('prompt');
   const [minScoreOnly, setMinScoreOnly] = useState(true);
   const [vegOnly, setVegOnly] = useState(false);
   const [bannerInEnglish, setBannerInEnglish] = useState(false);
@@ -22,6 +30,29 @@ export function App() {
   const [pilotInfoOpen, setPilotInfoOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authSession, setAuthSession] = useState<AuthSessionState | null>(null);
+
+  const handleDetectGpsZone = useCallback(
+    (
+      zone: Exclude<KolkataZoneId, 'all'>,
+      nextPerm: LocationPermissionState,
+      localityLabel: string,
+    ) => {
+      setSelectedZone(zone);
+      setLocationPermissionState(nextPerm);
+      if (authSession?.tokens.accessToken) {
+        void apiRequest('/customer/profile', {
+          method: 'PATCH',
+          token: authSession.tokens.accessToken,
+          body: {
+            savedDeliveryZoneId: zone,
+            locationPermissionState: nextPerm,
+            lastKnownLocalityLabel: localityLabel,
+          },
+        }).catch(() => {});
+      }
+    },
+    [authSession],
+  );
 
   const selectedZoneLabel = useMemo(() => {
     return KOLKATA_ZONE_OPTIONS.find((item) => item.id === selectedZone)?.label ?? 'All Kolkata';
@@ -88,12 +119,23 @@ export function App() {
         onClose={() => setSelectedTrustKitchen(null)}
       />
 
-      <PilotInfoDialog open={pilotInfoOpen} onClose={() => setPilotInfoOpen(false)} />
+      <PilotInfoDialog
+        open={pilotInfoOpen}
+        selectedZone={selectedZone}
+        permissionState={locationPermissionState}
+        onSelectZone={setSelectedZone}
+        onDetectGpsZone={handleDetectGpsZone}
+        onClose={() => setPilotInfoOpen(false)}
+      />
 
       <AuthDialog
         open={authModalOpen}
         session={authSession}
+        selectedZone={selectedZone}
+        locationPermissionState={locationPermissionState}
         onSessionChange={setAuthSession}
+        onSelectZone={setSelectedZone}
+        onLocationPermissionChange={setLocationPermissionState}
         onClose={() => setAuthModalOpen(false)}
       />
 

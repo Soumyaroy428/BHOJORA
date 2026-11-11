@@ -6,11 +6,15 @@ import { applyBaseSchemaConventions, COLLECTION_NAMES } from '../../database/con
 import { withTransaction } from '../../database/repository';
 import {
   ACCOUNT_STATUSES,
+  CONSENT_SOURCES,
+  CONSENT_TYPES,
   LANGUAGE_PREFERENCES,
   USER_ROLES,
   type AuthChallengeRecord,
   type ChallengePurpose,
   type ConsentRecord,
+  type ConsentSource,
+  type ConsentType,
   type CreateChallengeInput,
   type CreateSessionInput,
   type CreateUserInput,
@@ -106,10 +110,12 @@ const authChallengeSchema = applyBaseSchemaConventions(
 const consentRecordSchema = applyBaseSchemaConventions(
   new Schema({
     userId: { type: String, required: true },
-    consentType: { type: String, enum: ['TERMS_AND_PRIVACY'], required: true },
+    consentType: { type: String, enum: CONSENT_TYPES, required: true },
+    granted: { type: Boolean, required: true, default: true },
     policyVersion: { type: String, required: true },
     acceptedAt: { type: Date, required: true },
-    source: { type: String, enum: ['register', 'otp_register'], required: true },
+    source: { type: String, enum: CONSENT_SOURCES, required: true },
+    note: { type: String, required: false, default: null, maxlength: 240 },
   }),
   { appendOnly: true },
 );
@@ -261,6 +267,26 @@ function toChallengeRecord(
   };
 }
 
+function toConsentRecord(
+  doc: HydratedDocument<Record<string, unknown>> | Record<string, unknown>,
+): ConsentRecord {
+  const raw =
+    doc instanceof Object && 'toObject' in doc && typeof doc.toObject === 'function'
+      ? doc.toObject()
+      : doc;
+  const record = raw as Record<string, unknown>;
+  return {
+    id: String(record['id'] ?? record['_id']),
+    userId: String(record['userId']),
+    consentType: record['consentType'] as ConsentType,
+    granted: record['granted'] === undefined ? true : Boolean(record['granted']),
+    policyVersion: String(record['policyVersion']),
+    acceptedAt: record['acceptedAt'] instanceof Date ? record['acceptedAt'] : new Date(),
+    source: record['source'] as ConsentSource,
+    note: typeof record['note'] === 'string' ? record['note'] : null,
+  };
+}
+
 export class MongooseIdentityStore implements IdentityStore {
   private readonly models: MongooseIdentityModels;
 
@@ -337,9 +363,11 @@ export class MongooseIdentityStore implements IdentityStore {
               {
                 userId: record.id,
                 consentType: consent.consentType,
+                granted: true,
                 policyVersion: consent.policyVersion,
                 acceptedAt: userInput.now,
                 source: consent.source,
+                note: null,
               },
             ],
             { session },
@@ -644,6 +672,39 @@ export class MongooseIdentityStore implements IdentityStore {
   async resetRateLimit(scope: RateLimitScope, subjectKey: string): Promise<void> {
     await this.models.AuthRateLimit.deleteOne({ scope, subjectKey });
   }
+
+  async appendConsentRecord(input: {
+    userId: string;
+    consentType: ConsentType;
+    granted: boolean;
+    policyVersion: string;
+    source: ConsentSource;
+    note?: string | null;
+    now: Date;
+  }): Promise<ConsentRecord> {
+    const [created] = await this.models.ConsentRecord.create([
+      {
+        userId: input.userId,
+        consentType: input.consentType,
+        granted: input.granted,
+        policyVersion: input.policyVersion,
+        acceptedAt: input.now,
+        source: input.source,
+        note: input.note ?? null,
+      },
+    ]);
+    if (!created) {
+      throw new Error('Failed to append consent record');
+    }
+    return toConsentRecord(created);
+  }
+
+  async listConsentRecordsForUser(userId: string, limit = 50): Promise<ConsentRecord[]> {
+    const docs = await this.models.ConsentRecord.find({ userId })
+      .sort({ acceptedAt: -1 })
+      .limit(Math.min(Math.max(1, limit), 100));
+    return docs.map((doc) => toConsentRecord(doc));
+  }
 }
 
 interface InMemoryRateEntry {
@@ -736,9 +797,11 @@ export class InMemoryIdentityStore implements IdentityStore {
         id: crypto.randomUUID(),
         userId: user.id,
         consentType: consent.consentType,
+        granted: true,
         policyVersion: consent.policyVersion,
         acceptedAt: userInput.now,
         source: consent.source,
+        note: null,
       });
     }
 
@@ -1037,5 +1100,36 @@ export class InMemoryIdentityStore implements IdentityStore {
 
   async resetRateLimit(scope: RateLimitScope, subjectKey: string): Promise<void> {
     this.rateLimits.delete(this.rateKey(scope, subjectKey));
+  }
+
+  async appendConsentRecord(input: {
+    userId: string;
+    consentType: ConsentType;
+    granted: boolean;
+    policyVersion: string;
+    source: ConsentSource;
+    note?: string | null;
+    now: Date;
+  }): Promise<ConsentRecord> {
+    const record: ConsentRecord = {
+      id: crypto.randomUUID(),
+      userId: input.userId,
+      consentType: input.consentType,
+      granted: input.granted,
+      policyVersion: input.policyVersion,
+      acceptedAt: input.now,
+      source: input.source,
+      note: input.note ?? null,
+    };
+    this.consents.push(record);
+    return record;
+  }
+
+  async listConsentRecordsForUser(userId: string, limit = 50): Promise<ConsentRecord[]> {
+    const capped = Math.min(Math.max(1, limit), 100);
+    return this.consents
+      .filter((c) => c.userId === userId)
+      .sort((a, b) => b.acceptedAt.getTime() - a.acceptedAt.getTime())
+      .slice(0, capped);
   }
 }

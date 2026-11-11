@@ -32,7 +32,7 @@ export function createCorsMiddleware(allowedOrigins: readonly string[]) {
       res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
       res.setHeader(
         'Access-Control-Allow-Headers',
-        'Content-Type,Authorization,X-Request-Id,Idempotency-Key,X-Csrf-Token,X-Requested-With,X-Bhojora-Session-Mode,X-Device-Name',
+        'Content-Type,Authorization,X-Request-Id,Idempotency-Key,X-Csrf-Token,X-Requested-With,X-Bhojora-Session-Mode,X-Bhojora-Active-Role,X-Device-Name',
       );
       res.setHeader('Access-Control-Expose-Headers', 'X-Request-Id,X-Csrf-Token');
     }

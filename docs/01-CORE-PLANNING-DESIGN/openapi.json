@@ -549,6 +549,72 @@
         "tags": ["RBAC & Tenant Isolation"],
         "responses": { "200": { "description": "Audit log entries" } }
       }
+    },
+    "/customer/profile": {
+      "get": {
+        "summary": "Get authenticated customer account profile, preferences, deletion state, and recent consents",
+        "tags": ["Customer Profile & Privacy"],
+        "responses": { "200": { "description": "Customer profile bundle" } }
+      },
+      "patch": {
+        "summary": "Update authenticated customer profile, dietary preference, Kolkata zone, location state, and notifications",
+        "tags": ["Customer Profile & Privacy"],
+        "responses": { "200": { "description": "Updated customer profile bundle" } }
+      }
+    },
+    "/addresses/{addressId}": {
+      "get": {
+        "summary": "Get single saved delivery address owned by authenticated customer",
+        "tags": ["Customer Profile & Privacy"],
+        "parameters": [{ "name": "addressId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Saved address" }, "403": { "description": "Cross-customer access forbidden" } }
+      },
+      "patch": {
+        "summary": "Update owned delivery address",
+        "tags": ["Customer Profile & Privacy"],
+        "parameters": [{ "name": "addressId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Updated address" }, "403": { "description": "Cross-customer access forbidden" } }
+      },
+      "delete": {
+        "summary": "Delete owned delivery address",
+        "tags": ["Customer Profile & Privacy"],
+        "parameters": [{ "name": "addressId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Address deleted" }, "403": { "description": "Cross-customer access forbidden" } }
+      }
+    },
+    "/addresses/{addressId}/default": {
+      "post": {
+        "summary": "Mark an owned Kolkata address as default delivery destination",
+        "tags": ["Customer Profile & Privacy"],
+        "parameters": [{ "name": "addressId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Default address switched" } }
+      }
+    },
+    "/customer/consents": {
+      "get": {
+        "summary": "List append-only consent grant and withdrawal records for authenticated customer",
+        "tags": ["Customer Profile & Privacy"],
+        "responses": { "200": { "description": "Consent history" } }
+      },
+      "post": {
+        "summary": "Record explicit consent opt-in or withdrawal",
+        "tags": ["Customer Profile & Privacy"],
+        "responses": { "201": { "description": "Consent event appended" } }
+      }
+    },
+    "/customer/privacy/export": {
+      "get": {
+        "summary": "Export authenticated customer profile, addresses, consents, and retention summary",
+        "tags": ["Customer Profile & Privacy"],
+        "responses": { "200": { "description": "Self-service customer data export JSON" } }
+      }
+    },
+    "/customer/account/deletion-request": {
+      "post": {
+        "summary": "Initiate self-service account deletion, revoke sessions, and start 30-day statutory hold",
+        "tags": ["Customer Profile & Privacy"],
+        "responses": { "200": { "description": "Account marked DELETION_REQUESTED and sessions revoked" } }
+      }
     }
   }
 }

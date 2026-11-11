@@ -1,11 +1,24 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { useDialogLightDismiss } from '../hooks/useDialogLightDismiss';
-import type { AuthPanelName, AuthSessionState, LanguagePreference } from '../types/domain';
+import { useFormAriaValidation } from '../hooks/useFormAriaValidation';
+import { apiRequest } from '../lib/apiClient';
+import type {
+  AuthPanelName,
+  AuthSessionState,
+  KolkataZoneId,
+  LanguagePreference,
+  LocationPermissionState,
+} from '../types/domain';
+import { CustomerAccountPanel } from './CustomerAccountPanel';
 
 interface AuthDialogProps {
   open: boolean;
   session: AuthSessionState | null;
+  selectedZone: KolkataZoneId;
+  locationPermissionState: LocationPermissionState;
   onSessionChange: (session: AuthSessionState | null) => void;
+  onSelectZone: (zone: KolkataZoneId) => void;
+  onLocationPermissionChange: (state: LocationPermissionState) => void;
   onClose: () => void;
 }
 
@@ -97,43 +110,19 @@ function PasswordField({
   );
 }
 
-async function postAuthJson<T>(
-  path: string,
-  body: Record<string, unknown>,
-  token?: string,
-): Promise<T> {
-  const apiBase = typeof window.BHOJORA_API_BASE === 'string' ? window.BHOJORA_API_BASE : '/api/v1';
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    'X-Requested-With': 'fetch',
-  };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  const res = await fetch(`${apiBase}${path}`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body),
-  });
-  const contentType = res.headers.get('content-type') ?? '';
-  if (!contentType.includes('application/json')) {
-    throw new Error('PREVIEW_NO_API');
-  }
-  const json = (await res.json()) as {
-    success?: boolean;
-    data?: T;
-    error?: { message?: string };
-  };
-  if (!res.ok || !json.success || json.data === undefined) {
-    throw new Error(json.error?.message ?? 'Request failed');
-  }
-  return json.data;
-}
-
 const STRONG_PASSWORD_PATTERN = '(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\\W_]).{8,}';
 const INDIAN_MOBILE_PATTERN = '(?:\\+?91|0)?[6-9]\\d{9}';
 
-export function AuthDialog({ open, session, onSessionChange, onClose }: AuthDialogProps) {
+export function AuthDialog({
+  open,
+  session,
+  selectedZone,
+  locationPermissionState,
+  onSessionChange,
+  onSelectZone,
+  onLocationPermissionChange,
+  onClose,
+}: AuthDialogProps) {
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const otpVerifyFormRef = useRef<HTMLFormElement | null>(null);
   const otpAbortRef = useRef<AbortController | null>(null);
@@ -244,86 +233,7 @@ export function AuthDialog({ open, session, onSessionChange, onClose }: AuthDial
     };
   }, [stopSmsOtpListener, clearResendCountdown]);
 
-  // Post-interaction validation (:user-invalid + dynamic aria-describedby + polite live region)
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) {
-      return;
-    }
-    const announcer = document.createElement('div');
-    announcer.setAttribute('aria-live', 'polite');
-    announcer.classList.add('visually-hidden');
-    document.body.append(announcer);
-
-    let announceTimer: number | undefined;
-    const announced = new WeakSet<Element>();
-
-    const linkError = (el: HTMLElement, shown: boolean): void => {
-      const errorId = el.dataset['error'];
-      if (!errorId) {
-        return;
-      }
-      const ids = (el.getAttribute('aria-describedby') ?? '')
-        .split(/\s+/)
-        .filter((id) => id && id !== errorId);
-      if (shown) {
-        ids.push(errorId);
-      }
-      if (ids.length > 0) {
-        el.setAttribute('aria-describedby', ids.join(' '));
-      } else {
-        el.removeAttribute('aria-describedby');
-      }
-    };
-
-    const syncAria = (target: EventTarget | null, announce: boolean): void => {
-      if (!(target instanceof HTMLElement) || !target.matches('.auth-input')) {
-        return;
-      }
-      const invalid = target.matches(':user-invalid');
-      if (invalid) {
-        target.setAttribute('aria-invalid', 'true');
-        linkError(target, true);
-        if (announce && !announced.has(target)) {
-          const errorEl = document.getElementById(target.dataset['error'] ?? '');
-          if (errorEl?.textContent) {
-            const msg = errorEl.textContent.trim();
-            window.clearTimeout(announceTimer);
-            announceTimer = window.setTimeout(() => {
-              announcer.textContent = msg;
-            }, 350);
-          }
-          announced.add(target);
-        }
-      } else {
-        target.setAttribute('aria-invalid', 'false');
-        linkError(target, false);
-        announced.delete(target);
-      }
-    };
-
-    dialog.querySelectorAll('.auth-input').forEach((el) => syncAria(el, false));
-    const onBlur = (e: FocusEvent): void => syncAria(e.target, true);
-    const onInput = (e: Event): void => syncAria(e.target, false);
-    const onInvalid = (e: Event): void => {
-      if (e.target instanceof Element) {
-        announced.add(e.target);
-      }
-      syncAria(e.target, false);
-    };
-
-    dialog.addEventListener('blur', onBlur, true);
-    dialog.addEventListener('input', onInput, true);
-    dialog.addEventListener('invalid', onInvalid, true);
-
-    return () => {
-      window.clearTimeout(announceTimer);
-      dialog.removeEventListener('blur', onBlur, true);
-      dialog.removeEventListener('input', onInput, true);
-      dialog.removeEventListener('invalid', onInvalid, true);
-      announcer.remove();
-    };
-  }, [open, activePanel, session]);
+  useFormAriaValidation(dialogRef, [open, activePanel, session]);
 
   const switchPanel = (panel: AuthPanelName): void => {
     stopSmsOtpListener();
@@ -353,9 +263,11 @@ export function AuthDialog({ open, session, onSessionChange, onClose }: AuthDial
     }
     setBusy(true);
     try {
-      const data = await postAuthJson<AuthSessionState>('/auth/login', {
-        identifier: loginIdentifier.trim(),
-        password: loginPassword,
+      const data = await apiRequest<AuthSessionState>('/auth/login', {
+        body: {
+          identifier: loginIdentifier.trim(),
+          password: loginPassword,
+        },
       });
       onSessionChange(data);
       setBanner({
@@ -380,11 +292,11 @@ export function AuthDialog({ open, session, onSessionChange, onClose }: AuthDial
     const identifier = otpPhone.trim();
     setBusy(true);
     try {
-      const data = await postAuthJson<{
+      const data = await apiRequest<{
         challengeId: string;
         maskedDestination: string;
         resendAfterSeconds: number;
-      }>('/auth/otp/send', { identifier, channel: 'sms' });
+      }>('/auth/otp/send', { body: { identifier, channel: 'sms' } });
       setOtpChallengeId(data.challengeId);
       setOtpActiveIdentifier(identifier);
       setOtpStepVisible(true);
@@ -416,11 +328,13 @@ export function AuthDialog({ open, session, onSessionChange, onClose }: AuthDial
     }
     setBusy(true);
     try {
-      const data = await postAuthJson<AuthSessionState>('/auth/otp/verify', {
-        challengeId: otpChallengeId ?? '00000000-0000-0000-0000-000000000000',
-        identifier: otpActiveIdentifier || otpPhone.trim(),
-        otp: otpCode.trim(),
-        languagePreference: otpLang,
+      const data = await apiRequest<AuthSessionState>('/auth/otp/verify', {
+        body: {
+          challengeId: otpChallengeId ?? '00000000-0000-0000-0000-000000000000',
+          identifier: otpActiveIdentifier || otpPhone.trim(),
+          otp: otpCode.trim(),
+          languagePreference: otpLang,
+        },
       });
       onSessionChange(data);
       setBanner({ text: 'Phone OTP verified. Active session established.', kind: 'success' });
@@ -442,13 +356,15 @@ export function AuthDialog({ open, session, onSessionChange, onClose }: AuthDial
     setBusy(true);
     try {
       const phoneVal = regPhone.trim();
-      const data = await postAuthJson<AuthSessionState>('/auth/register', {
-        name: regName.trim(),
-        email: regEmail.trim(),
-        ...(phoneVal ? { phone: phoneVal } : {}),
-        password: regPassword,
-        languagePreference: regLang,
-        acceptTerms: true,
+      const data = await apiRequest<AuthSessionState>('/auth/register', {
+        body: {
+          name: regName.trim(),
+          email: regEmail.trim(),
+          ...(phoneVal ? { phone: phoneVal } : {}),
+          password: regPassword,
+          languagePreference: regLang,
+          acceptTerms: true,
+        },
       });
       onSessionChange(data);
       setBanner({ text: 'BHOJORA account created and signed in.', kind: 'success' });
@@ -469,8 +385,8 @@ export function AuthDialog({ open, session, onSessionChange, onClose }: AuthDial
     }
     setBusy(true);
     try {
-      const data = await postAuthJson<{ message: string }>('/auth/forgot-password', {
-        identifier: recoverIdentifier.trim(),
+      const data = await apiRequest<{ message: string }>('/auth/forgot-password', {
+        body: { identifier: recoverIdentifier.trim() },
       });
       setBanner({ text: data.message, kind: 'success' });
     } catch (error) {
@@ -490,10 +406,12 @@ export function AuthDialog({ open, session, onSessionChange, onClose }: AuthDial
     }
     setBusy(true);
     try {
-      await postAuthJson('/auth/reset-password', {
-        identifier: recoverIdentifier.trim(),
-        token: resetToken.trim(),
-        newPassword: resetNewPassword,
+      await apiRequest('/auth/reset-password', {
+        body: {
+          identifier: recoverIdentifier.trim(),
+          token: resetToken.trim(),
+          newPassword: resetNewPassword,
+        },
       });
       switchPanel('login');
       setBanner({
@@ -514,7 +432,7 @@ export function AuthDialog({ open, session, onSessionChange, onClose }: AuthDial
     const token = session?.tokens.accessToken;
     try {
       if (token) {
-        await postAuthJson(allDevices ? '/auth/logout-all' : '/auth/logout', {}, token);
+        await apiRequest(allDevices ? '/auth/logout-all' : '/auth/logout', { body: {}, token });
       }
     } catch {
       // Clear local session cleanly even if server session already expired
@@ -1193,6 +1111,16 @@ export function AuthDialog({ open, session, onSessionChange, onClose }: AuthDial
             >
               Sign Out All Devices
             </button>
+
+            <CustomerAccountPanel
+              session={session}
+              selectedZone={selectedZone}
+              locationPermissionState={locationPermissionState}
+              onSessionUpdate={onSessionChange}
+              onZoneSelect={onSelectZone}
+              onLocationPermissionChange={onLocationPermissionChange}
+              onStatusMessage={setBanner}
+            />
           </>
         ) : null}
       </section>

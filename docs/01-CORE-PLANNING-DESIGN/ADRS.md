@@ -232,3 +232,22 @@ Checkpoint 08 requires least-privilege RBAC across 12 platform/partner/customer 
 ### Consequences
 - **Positive:** Eliminates horizontal IDOR, cross-outlet leaks, privilege escalation, and unverified privileged mutations behind composable Express middleware and testable pure policy guards.
 - **Negative:** Privileged operators must verify a second-factor session OTP after initial password login before executing administrative mutations.
+
+---
+
+## ADR-013: Customer Profile Ownership, Privacy-First Location UX & Deletion/Retention Lifecycle
+
+### Status: ACCEPTED (Locked Baseline — Checkpoint 09)
+
+### Context
+Checkpoint 09 introduces persistent customer profiles (`customer_profiles`), saved Kolkata landmark addresses with GeoJSON coordinates (`addresses`), granular notification/location consents (`consent_records`), and self-service data rights (`export`, `deletion-request`), while ensuring zero cross-customer IDOR leaks and transparent Indian tax vs. DPDP privacy retention rules.
+
+### Decision
+1. **Strict JWT-Derived Customer Ownership (`server/src/modules/customer/`):** Derive target `userId` exclusively from the authenticated session (`auth.userId`) and enforce `address.userId === auth.userId` on every `/addresses/:addressId` read, update, default toggle, and deletion (`403 FORBIDDEN` + `audit_logs` `DENIED` event on cross-customer access attempts).
+2. **Append-Only Consent Ledger (`consent_records` via `IdentityStore`):** Keep `consent_records` append-only (`applyBaseSchemaConventions({ appendOnly: true })`) for both initial registration terms and ongoing notification/location consent opt-in or withdrawal, avoiding duplicate Mongoose model ownership across modules (`ADR-001`).
+3. **30-Day Account Deletion & Statutory Retention Contract:** Transition accounts requesting erasure to `DELETION_REQUESTED`, immediately revoke all `user_sessions`, return `Clear-Site-Data: "cookies", "storage"`, schedule PII anonymization 30 days post-request, and document pseudonymous GST/order ledger retention alongside 24-hour live delivery GPS retention (`AUTH.md` §9).
+4. **Accessible Pre-Consented Customer Web UX (`client/customer-web`):** Implement WCAG AA / `modern-web-guidance` address autofill (`street-address`, `postal-code`, Unicode Bengali/English support), pre-interaction `aria-invalid` / polite live-region announcements, pre-prompt geolocation purpose disclosure with `ST-06` denied fallback, and self-service JSON export + `DELETE` confirmation modal.
+
+### Consequences
+- **Positive:** Eliminates horizontal customer IDOR, preserves verifiable proof of consent/withdrawal, and provides complete client + database parity ready for Phase 10+ discovery and checkout flows.
+- **Negative:** Automated purge worker scheduling must execute queued `PENDING_RETENTION` anonymization jobs once downstream order/payment tables exist in later checkpoints.

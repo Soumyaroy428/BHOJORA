@@ -65,3 +65,64 @@ export interface AuthSessionState {
   tokens: AuthTokensView;
   session: AuthSessionSummaryView;
 }
+
+export type CustomerDietaryPreference = 'NONE' | 'VEG' | 'EGGETARIAN' | 'VEGAN' | 'JAIN';
+export type LocationPermissionState = 'prompt' | 'granted' | 'denied' | 'manual';
+export type AddressLabel = 'Home' | 'Work' | 'Other';
+
+export interface NotificationPreferencesView {
+  orderUpdates: boolean;
+  safetyAlerts: boolean;
+  promotions: boolean;
+}
+
+export interface CustomerProfileView {
+  userId: string;
+  dietaryPreference: CustomerDietaryPreference;
+  savedDeliveryZoneId: Exclude<KolkataZoneId, 'all'> | null;
+  notificationPreferences: NotificationPreferencesView;
+  locationPermissionState: LocationPermissionState;
+  lastKnownLocalityLabel: string | null;
+  deletionRequest: {
+    status: 'NONE' | 'PENDING_RETENTION' | 'ANONYMIZED';
+    requestedAt: string | null;
+    scheduledPurgeAt: string | null;
+    reason?: string | null;
+    retentionDays: number;
+  };
+  updatedAt: string;
+}
+
+export interface SavedAddressView {
+  addressId: string;
+  userId: string;
+  label: AddressLabel;
+  customLabel?: string | null;
+  recipientName: string;
+  contactPhoneMasked?: string | null;
+  streetAddress: string;
+  landmark: string;
+  locality: string;
+  city: string;
+  postalCode: string;
+  zoneId?: Exclude<KolkataZoneId, 'all'> | null;
+  deliveryInstructions?: string | null;
+  location: {
+    type: 'Point';
+    coordinates: [number, number];
+  };
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ConsentRecordView {
+  id: string;
+  userId: string;
+  consentType: string;
+  granted: boolean;
+  policyVersion: string;
+  acceptedAt: string;
+  source: string;
+  note?: string | null;
+}

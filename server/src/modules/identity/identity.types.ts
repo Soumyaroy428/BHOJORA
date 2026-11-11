@@ -34,6 +34,27 @@ export type OtpPurpose = 'auth' | 'recovery' | 'mfa';
 export type ChallengePurpose = 'otp_auth' | 'password_recovery' | 'mfa_step_up';
 export type RateLimitScope = 'otp_send' | 'login_fail' | 'recovery_send';
 
+export const CONSENT_TYPES = [
+  'TERMS_AND_PRIVACY',
+  'ORDER_NOTIFICATIONS',
+  'SAFETY_ALERTS',
+  'MARKETING_PROMOTIONS',
+  'PRECISE_LOCATION',
+  'ACCOUNT_DELETION',
+] as const;
+
+export type ConsentType = (typeof CONSENT_TYPES)[number];
+
+export const CONSENT_SOURCES = [
+  'register',
+  'otp_register',
+  'profile_preferences',
+  'location_prompt',
+  'account_deletion',
+] as const;
+
+export type ConsentSource = (typeof CONSENT_SOURCES)[number];
+
 export const ACCOUNT_STATUS_TRANSITIONS: Readonly<Record<AccountStatus, readonly AccountStatus[]>> =
   {
     PENDING_VERIFICATION: ['ACTIVE', 'DEACTIVATED', 'DELETION_REQUESTED'],
@@ -135,10 +156,12 @@ export interface AuthChallengeRecord {
 export interface ConsentRecord {
   id: string;
   userId: string;
-  consentType: 'TERMS_AND_PRIVACY';
+  consentType: ConsentType;
+  granted: boolean;
   policyVersion: string;
   acceptedAt: Date;
-  source: 'register' | 'otp_register';
+  source: ConsentSource;
+  note?: string | null;
 }
 
 export interface UserProfileDto {
@@ -251,6 +274,16 @@ export interface IdentityStore {
       source: 'register' | 'otp_register';
     },
   ): Promise<UserRecord>;
+  appendConsentRecord(input: {
+    userId: string;
+    consentType: ConsentType;
+    granted: boolean;
+    policyVersion: string;
+    source: ConsentSource;
+    note?: string | null;
+    now: Date;
+  }): Promise<ConsentRecord>;
+  listConsentRecordsForUser(userId: string, limit?: number): Promise<ConsentRecord[]>;
   updateUser(
     userId: string,
     patch: Partial<

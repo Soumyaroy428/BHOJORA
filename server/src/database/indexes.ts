@@ -88,6 +88,31 @@ export const INITIAL_DATABASE_INDEXES: readonly DatabaseIndexSpec[] = [
     options: { name: 'idx_consent_records_user_type_accepted' },
   },
   {
+    collection: COLLECTION_NAMES.customerProfiles,
+    key: { userId: 1 },
+    options: { name: 'idx_customer_profiles_user_id_unique', unique: true },
+  },
+  {
+    collection: COLLECTION_NAMES.customerProfiles,
+    key: { 'deletionRequest.status': 1, 'deletionRequest.scheduledPurgeAt': 1 },
+    options: { name: 'idx_customer_profiles_deletion_schedule' },
+  },
+  {
+    collection: COLLECTION_NAMES.addresses,
+    key: { addressId: 1 },
+    options: { name: 'idx_addresses_id_unique', unique: true },
+  },
+  {
+    collection: COLLECTION_NAMES.addresses,
+    key: { userId: 1, isDefault: -1, createdAt: -1 },
+    options: { name: 'idx_addresses_user_default_created' },
+  },
+  {
+    collection: COLLECTION_NAMES.addresses,
+    key: { location: '2dsphere' },
+    options: { name: 'idx_addresses_location_2dsphere' },
+  },
+  {
     collection: COLLECTION_NAMES.authRateLimits,
     key: { scope: 1, subjectKey: 1 },
     options: { name: 'idx_auth_rate_limits_scope_subject_unique', unique: true },

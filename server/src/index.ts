@@ -9,13 +9,16 @@ import {
 } from './database/connection';
 import { applyInitialIndexes } from './database/indexes';
 import { runSeed } from './database/seed';
+import { CustomerService } from './modules/customer/customer.service';
+import { MongooseCustomerStore } from './modules/customer/customer.store';
 import { MongooseIdentityStore } from './modules/identity/identity.models';
 import { IdentityService } from './modules/identity/identity.service';
 import { SafeLogOtpSenderAdapter } from './modules/identity/otp.adapter';
+import { MongooseRbacStore } from './modules/rbac/rbac.store';
 
 export const SERVER_BASELINE = {
   service: 'bhojora-api',
-  checkpoint: '07',
+  checkpoint: '09',
   runtime: 'node-22-lts',
   currency: 'INR',
   currencyUnit: 'paise',
@@ -34,6 +37,9 @@ export {
   runSeed,
   IdentityService,
   MongooseIdentityStore,
+  MongooseRbacStore,
+  CustomerService,
+  MongooseCustomerStore,
   SafeLogOtpSenderAdapter,
 };
 
@@ -81,10 +87,22 @@ async function startServer(): Promise<void> {
     process.exit(1);
   }
 
+  const mongoConnection = dbManager.getConnection();
+  const identityStore = new MongooseIdentityStore(mongoConnection);
+  const rbacStore = new MongooseRbacStore(mongoConnection);
+  const customerStore = new MongooseCustomerStore(mongoConnection);
+
   const identityService = new IdentityService({
     config,
-    store: new MongooseIdentityStore(dbManager.getConnection()),
+    store: identityStore,
     otpAdapter: new SafeLogOtpSenderAdapter(logger),
+    logger,
+  });
+
+  const customerService = new CustomerService({
+    identityStore,
+    customerStore,
+    rbacStore,
     logger,
   });
 
@@ -94,6 +112,10 @@ async function startServer(): Promise<void> {
     readinessProbes: [dbManager.getReadinessProbe()],
     getIsShuttingDown: () => shuttingDown,
     identityService,
+    identityStore,
+    rbacStore,
+    customerStore,
+    customerService,
   });
 
   const server = http.createServer(app);

@@ -126,4 +126,5 @@ Persist policy version and evidence.
 
 -   **Automated backups:** Managed MongoDB cluster runs continuous oplog/point-in-time snapshots plus encrypted daily snapshots stored in a private `ap-south-1` object-storage vault isolated from application write keys.
 -   **Local hygiene:** Never copy production dumps containing Tier 3 PII or Tier 4 tokens onto developer workstations or commit database archives into Git.
+-   **Customer PII & Deletion Retention (Checkpoint 09):** `customer_profiles` (`userId` unique index + `deletionRequest.status`/`scheduledPurgeAt` schedule index) and `addresses` (`addressId` unique, `userId + isDefault`, `location: 2dsphere`) isolate customer PII cleanly from immutable `consent_records` and financial/order ledgers so 30-day self-service erasure requests anonymize personal fields without corrupting statutory tax records (`AUTH.md` §9).
 -   **Restore drills:** Verify snapshot restoration into a disposable non-production database quarterly, re-running `db:indexes` verification and verifying financial/inspection immutability invariants prior to sign-off.
