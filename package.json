@@ -10,6 +10,9 @@
   },
   "workspaces": [
     "client/shared",
+    "client/customer-web",
+    "client/restaurant-web",
+    "client/admin-web",
     "server"
   ],
   "scripts": {

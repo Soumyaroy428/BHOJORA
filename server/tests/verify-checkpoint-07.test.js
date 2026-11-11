@@ -690,26 +690,53 @@ async function main() {
     await mockConn.close();
   }
 
-  const customerHtml = fs.readFileSync(
-    path.join(REPO_ROOT, 'client/customer-web/index.html'),
-    'utf8',
-  );
-  assert.ok(customerHtml.includes('id="openAuthModalBtn"'), 'Header must expose Sign In trigger');
-  assert.ok(customerHtml.includes('<dialog id="authModal"'), 'Auth modal must use native dialog');
-  assert.ok(customerHtml.includes('id="otpCodeInput"'), 'OTP form must include #otpCodeInput');
+  function readFrontendTree(dirPath) {
+    let text = '';
+    for (const entry of fs.readdirSync(dirPath, { withFileTypes: true })) {
+      if (entry.name === 'node_modules' || entry.name === 'dist') {
+        continue;
+      }
+      const full = path.join(dirPath, entry.name);
+      if (entry.isDirectory()) {
+        text += readFrontendTree(full);
+      } else if (/\.(html|ts|tsx|css)$/i.test(entry.name)) {
+        text += '\n' + fs.readFileSync(full, 'utf8');
+      }
+    }
+    return text;
+  }
+
+  const customerFrontend = readFrontendTree(path.join(REPO_ROOT, 'client/customer-web'));
   assert.ok(
-    customerHtml.includes('inputmode="numeric"'),
+    customerFrontend.includes('id="openAuthModalBtn"'),
+    'Header must expose Sign In trigger',
+  );
+  assert.ok(
+    customerFrontend.includes('<dialog') && customerFrontend.includes('id="authModal"'),
+    'Auth modal must use native dialog',
+  );
+  assert.ok(customerFrontend.includes('id="otpCodeInput"'), 'OTP form must include #otpCodeInput');
+  assert.ok(
+    /inputmode=["']numeric["']/i.test(customerFrontend),
     'OTP field must declare numeric inputmode',
   );
   assert.ok(
-    customerHtml.includes('autocomplete="one-time-code"'),
+    /autocomplete=["']one-time-code["']/i.test(customerFrontend),
     'OTP field must support browser one-time-code autofill',
   );
-  assert.ok(customerHtml.includes('autocomplete="current-password"'));
-  assert.ok(customerHtml.includes('autocomplete="new-password"'));
-  assert.ok(customerHtml.includes('id="authSessionPanel"'));
-  assert.equal(customerHtml.includes('github.com'), false, 'Customer-web must omit GitHub links');
-  assert.ok(customerHtml.includes('./logo.png'), 'Brand logo ./logo.png must remain present');
+  assert.ok(/autocomplete=["']current-password["']/i.test(customerFrontend));
+  assert.ok(/autocomplete=["']new-password["']/i.test(customerFrontend));
+  assert.ok(customerFrontend.includes('id="authSessionPanel"'));
+  assert.equal(
+    customerFrontend.toLowerCase().includes('github.com'),
+    false,
+    'Customer-web must omit GitHub links',
+  );
+  assert.ok(customerFrontend.includes('./logo.png'), 'Brand logo ./logo.png must remain present');
+  assert.ok(
+    fs.existsSync(path.join(REPO_ROOT, 'client/customer-web/public/logo.png')),
+    'Vite public/logo.png asset must exist for production bundle',
+  );
 
   console.log(
     'Checkpoint 07 verification passed: identity APIs, scrypt, JWT rotation/replay, OTP throttling/expiry, recovery, Mongoose schemas & auth UI verified.',

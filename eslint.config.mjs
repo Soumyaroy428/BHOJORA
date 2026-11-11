@@ -37,6 +37,18 @@ export default tseslint.config(
     },
   },
   {
+    files: [
+      'client/customer-web/src/**/*.{ts,tsx}',
+      'client/restaurant-web/src/**/*.{ts,tsx}',
+      'client/admin-web/src/**/*.{ts,tsx}',
+    ],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+      },
+    },
+  },
+  {
     files: ['**/*.js', '**/*.cjs'],
     languageOptions: {
       sourceType: 'commonjs',

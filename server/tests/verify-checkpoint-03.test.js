@@ -135,21 +135,52 @@ console.log('✓ Shared API response and domain event contracts verified.');
 console.log(
   '[Test 5] Validating customer-web hygiene, native dialog, and public logo distribution...',
 );
-const webHtmlPath = path.join(ROOT_DIR, 'client/customer-web/index.html');
+function readTreeText(dirPath) {
+  let combined = '';
+  for (const entry of fs.readdirSync(dirPath, { withFileTypes: true })) {
+    if (entry.name === 'node_modules' || entry.name === 'dist') {
+      continue;
+    }
+    const full = path.join(dirPath, entry.name);
+    if (entry.isDirectory()) {
+      combined += readTreeText(full);
+    } else if (/\.(html|css|ts|tsx|json)$/i.test(entry.name)) {
+      combined += '\n' + fs.readFileSync(full, 'utf8');
+    }
+  }
+  return combined;
+}
+
+const customerWebRoot = path.join(ROOT_DIR, 'client/customer-web');
+const webHtmlPath = path.join(customerWebRoot, 'index.html');
 assert.ok(fs.existsSync(webHtmlPath), 'Missing client/customer-web/index.html');
-const html = fs.readFileSync(webHtmlPath, 'utf8');
+const customerWebText = readTreeText(customerWebRoot);
 assert.ok(
-  !html.toLowerCase().includes('github.com'),
+  !customerWebText.toLowerCase().includes('github.com'),
   'Header and footer must NOT display any GitHub repo link',
 );
 assert.ok(
-  html.includes('./logo.png'),
+  customerWebText.includes('./logo.png'),
   'Customer web must reference ./logo.png in favicon, header, and footer',
 );
 assert.ok(
-  html.includes('<dialog id="trustModal"') && html.includes('.showModal()'),
+  customerWebText.includes('<dialog') &&
+    customerWebText.includes('id="trustModal"') &&
+    customerWebText.includes('.showModal()'),
   'Trust profile modal must use accessible native <dialog> + showModal()',
 );
+for (const appName of ['customer-web', 'restaurant-web', 'admin-web']) {
+  const pkgPath = path.join(ROOT_DIR, 'client', appName, 'package.json');
+  assert.ok(fs.existsSync(pkgPath), `Missing React package.json in client/${appName}`);
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+  assert.ok(pkg.dependencies && pkg.dependencies.react, `client/${appName} must use React`);
+  const appText = readTreeText(path.join(ROOT_DIR, 'client', appName));
+  assert.ok(
+    !appText.toLowerCase().includes('github.com'),
+    `client/${appName} must NOT display any GitHub repo link`,
+  );
+  assert.ok(appText.includes('./logo.png'), `client/${appName} must reference ./logo.png`);
+}
 
 const expectedLogos = [
   'client/public/logo.png',

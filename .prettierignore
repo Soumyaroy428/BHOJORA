@@ -6,7 +6,6 @@ out/
 coverage/
 .vercel/
 docs/
-client/customer-web/index.html
 client/public/
 *.png
 *.jpg

@@ -1,0 +1,255 @@
+:root {
+  --bg-canvas: #f7f1e6;
+  --bg-card: #ffffff;
+  --bg-alt: #efe8dc;
+  --ink-950: #171412;
+  --ink-800: #3a3430;
+  --ink-600: #635b55;
+  --border: #ddd5cd;
+  --terracotta: #8d352a;
+  --terracotta-dark: #6d271e;
+  --trust-green: #344b3e;
+  --trust-green-light: #edf3ef;
+  --trust-green-ink: #1e3025;
+  --saffron: #e4a746;
+  --saffron-light: #fcf5e8;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', 'Noto Sans Bengali', system-ui, sans-serif;
+  background: var(--bg-canvas);
+  color: var(--ink-950);
+  line-height: 1.5;
+}
+
+.topbar {
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-card);
+  padding: 0.9rem 1.25rem;
+}
+
+.topbar-inner,
+.shell {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.topbar-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.brand img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--border);
+}
+
+.brand-name {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.brand-sub {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink-600);
+}
+
+.shell {
+  padding: 2rem 1.25rem 3.5rem;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.grid-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.9fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.5rem;
+}
+
+.panel-alt {
+  background: var(--bg-alt);
+}
+
+h1,
+h2 {
+  font-family: 'Manrope', sans-serif;
+  margin-top: 0;
+  letter-spacing: -0.02em;
+}
+
+h1 {
+  font-size: clamp(1.65rem, 2.8vw, 2.25rem);
+  line-height: 1.15;
+  margin-bottom: 0.65rem;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid var(--trust-green);
+  background: var(--trust-green-light);
+  color: var(--trust-green-ink);
+}
+
+.pill-warn {
+  border-color: var(--saffron);
+  background: var(--saffron-light);
+  color: var(--ink-950);
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.filter-btn {
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--ink-800);
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.filter-btn[aria-pressed='true'] {
+  background: var(--terracotta);
+  border-color: var(--terracotta);
+  color: #ffffff;
+}
+
+.queue-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.queue-item {
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.role-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.role-chip {
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: var(--bg-canvas);
+}
+
+.field {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+}
+
+.field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-800);
+}
+
+.field input {
+  width: 100%;
+  padding: 0.65rem 0.8rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  color: var(--ink-950);
+  font-size: 0.95rem;
+}
+
+.field input:user-invalid {
+  border-color: var(--terracotta);
+}
+
+.field input:user-valid {
+  border-color: var(--trust-green);
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 0.72rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--terracotta-dark);
+  background: var(--terracotta);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background: var(--terracotta-dark);
+}
+
+.status-note {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+  color: var(--ink-800);
+}
+
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 1.5rem 1.25rem;
+  color: var(--ink-600);
+  font-size: 0.85rem;
+}
+
+@media (max-width: 820px) {
+  .grid-split {
+    grid-template-columns: 1fr;
+  }
+}
