@@ -1,5 +1,25 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { z } from 'zod';
 import type { AppConfig, LogLevel, NodeEnvironment } from './env-types';
+
+export function loadLocalEnvIfPresent(): void {
+  const candidatePaths = [
+    path.resolve(process.cwd(), '.env'),
+    path.resolve(process.cwd(), '../.env'),
+  ];
+  const loadEnvFile = (process as unknown as { loadEnvFile?: (filePath: string) => void })
+    .loadEnvFile;
+  if (typeof loadEnvFile !== 'function') {
+    return;
+  }
+  for (const envPath of candidatePaths) {
+    if (fs.existsSync(envPath)) {
+      loadEnvFile(envPath);
+      return;
+    }
+  }
+}
 
 export interface ConfigIssue {
   field: string;
@@ -82,6 +102,13 @@ const rawEnvSchema = z.object({
     .refine((uri) => uri.startsWith('mongodb://') || uri.startsWith('mongodb+srv://'), {
       message: 'Must start with mongodb:// or mongodb+srv://',
     }),
+  MONGODB_SERVER_SELECTION_TIMEOUT_MS: z.coerce.number().int().min(100).max(30000).default(5000),
+  MONGODB_CONNECT_TIMEOUT_MS: z.coerce.number().int().min(100).max(30000).default(5000),
+  MONGODB_MAX_POOL_SIZE: z.coerce.number().int().min(1).max(100).default(10),
+  MONGODB_AUTO_INDEX: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((value) => (value === undefined ? undefined : value === 'true')),
   REDIS_URL: z
     .string()
     .trim()
@@ -167,6 +194,10 @@ export function validateEnv(
     defaultCityCode: data.DEFAULT_CITY_CODE,
     defaultCurrency: data.DEFAULT_CURRENCY,
     mongodbUri: data.MONGODB_URI,
+    mongodbServerSelectionTimeoutMs: data.MONGODB_SERVER_SELECTION_TIMEOUT_MS,
+    mongodbConnectTimeoutMs: data.MONGODB_CONNECT_TIMEOUT_MS,
+    mongodbMaxPoolSize: data.MONGODB_MAX_POOL_SIZE,
+    mongodbAutoIndex: data.MONGODB_AUTO_INDEX ?? data.NODE_ENV !== 'production',
     redisUrl: data.REDIS_URL,
     jwtAccessSecret: data.JWT_ACCESS_SECRET,
     jwtRefreshSecret: data.JWT_REFRESH_SECRET,

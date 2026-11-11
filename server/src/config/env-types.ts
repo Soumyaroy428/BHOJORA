@@ -12,6 +12,10 @@ export interface AppConfig {
   defaultCityCode: string;
   defaultCurrency: 'INR';
   mongodbUri: string;
+  mongodbServerSelectionTimeoutMs: number;
+  mongodbConnectTimeoutMs: number;
+  mongodbMaxPoolSize: number;
+  mongodbAutoIndex: boolean;
   redisUrl: string;
   jwtAccessSecret: string;
   jwtRefreshSecret: string;

@@ -131,7 +131,7 @@ assert.ok(
   'Violation: .env file must never exist in tracked workspace baseline.',
 );
 
-const prematureRuntimeLibs = ['mongoose', 'next', 'react', 'bullmq', 'ioredis', 'prisma'];
+const prematureRuntimeLibs = ['next', 'react', 'bullmq', 'ioredis', 'prisma'];
 const serverPkg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'server/package.json'), 'utf8'));
 const allServerDeps = { ...(serverPkg.dependencies || {}), ...(serverPkg.devDependencies || {}) };
 for (const pkg of prematureRuntimeLibs) {

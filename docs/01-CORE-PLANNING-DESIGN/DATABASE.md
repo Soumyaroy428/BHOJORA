@@ -109,3 +109,21 @@ Persist policy version and evidence.
   "reportVersion": 1
 }
 ```
+
+## 8. Model conventions (Checkpoint 06)
+
+-   All domain schemas call `applyBaseSchemaConventions()` (`server/src/database/conventions.ts`), enforcing `timestamps: true` (UTC), `strict: true`, `versionKey: false`, and string `id` JSON serialization.
+-   Monetary fields must use `paiseField()` (non-negative safe integers per ADR-003).
+-   Spatial coordinates use `createGeoPointSubSchema()` and `createGeoPolygonSubSchema()` (`[longitude, latitude]` GeoJSON standard).
+-   Append-only audit and ledger collections (`payment_events`, `order_events`, `safety_events`, `audit_logs`) enable `{ appendOnly: true }` to block in-place `updateOne`/`deleteOne` mutations at the Mongoose layer.
+
+## 9. Repeatable index and seed strategy
+
+-   `MONGODB_AUTO_INDEX=false` is enforced by default in `production`; indexes are provisioned declaratively via `npm run db:indexes --workspace=server` (`server/src/database/indexes.ts`) using idempotent `createIndexes` definitions matching Section 4.
+-   Starter market and policy configuration (`KOLKATA` launch city record, sample Kolkata `Polygon` zones, and initial independent inspection policy template `v1.0.0`) is seeded idempotently via `npm run db:seed --workspace=server` using `$setOnInsert` upserts. Seeds never insert production credentials, real PII, or live financial records, and refuse to run in `production` without `ALLOW_PRODUCTION_BOOTSTRAP_SEED=true`.
+
+## 10. Backup, retention and restore notes
+
+-   **Automated backups:** Managed MongoDB cluster runs continuous oplog/point-in-time snapshots plus encrypted daily snapshots stored in a private `ap-south-1` object-storage vault isolated from application write keys.
+-   **Local hygiene:** Never copy production dumps containing Tier 3 PII or Tier 4 tokens onto developer workstations or commit database archives into Git.
+-   **Restore drills:** Verify snapshot restoration into a disposable non-production database quarterly, re-running `db:indexes` verification and verifying financial/inspection immutability invariants prior to sign-off.

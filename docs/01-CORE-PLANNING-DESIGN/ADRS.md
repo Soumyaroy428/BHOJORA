@@ -174,3 +174,22 @@ Starting Checkpoint 05, the backend API foundation requires HTTP request correla
 ### Consequences
 - **Positive:** Safe zero-leak startup failures, deterministic HTTP error contracts matching `ErrorResponse`, and test-ready graceful shutdown handling prior to Checkpoint 06 database wiring.
 - **Negative:** Dependent downstream checkpoints (MongoDB, Redis) must register readiness probes into `createApp({ readinessProbes })` during bootstrap.
+
+---
+
+## ADR-010: Mongoose Connection Resilience, Schema Conventions & Idempotent Index/Seed Strategy
+
+### Status: ACCEPTED (Locked Baseline — Checkpoint 06)
+
+### Context
+Checkpoint 06 introduces MongoDB persistence via Mongoose (`ADR-002`) across an ecosystem that stores integer paise (`ADR-003`), GeoJSON delivery polygons, immutable safety/payment events, and sensitive connection credentials (`ADR-007`).
+
+### Decision
+1. **Isolated Connection Lifecycle (`server/src/database/connection.ts`):** Manage MongoDB connectivity through `mongoose.createConnection()` with bounded timeouts, retry backoff, sanitized URI logging (`sanitizeMongoUri`), graceful shutdown disconnect hooks, and a live `/api/v1/ready` `mongodb` readiness probe (`503 SERVICE_UNAVAILABLE` on disconnect or failed ping).
+2. **Enforced Schema Conventions (`server/src/database/conventions.ts`):** Standardize UTC timestamps, `strict: true`, integer `paiseField`, GeoJSON `Point`/`Polygon` validation, and Mongoose middleware blocking `updateOne`/`deleteOne` on append-only collections.
+3. **Repository & Transaction Boundary (`server/src/database/repository.ts`):** Expose typed `BaseRepository` with cursor pagination (`_id` lookahead `limit + 1`), atomic conditional updates (`findOneAndUpdate`), and `withTransaction` session lifecycle helpers.
+4. **Declarative Indexes & Synthetic Seeds (`server/src/database/indexes.ts`, `server/src/database/seed.ts`):** Disable `autoIndex` in `production`, manage repeatable indexes through idempotent `createIndexes` specs, and guard `$setOnInsert` seeds against destructive production runs or PII inclusion.
+
+### Consequences
+- **Positive:** Repeatable multi-environment index builds, deterministic failure behavior when MongoDB is unreachable, and consistent domain isolation across future feature modules.
+- **Negative:** Production deployments must run `npm run db:indexes --workspace=server` cleanly during release automation before enabling traffic.

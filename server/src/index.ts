@@ -1,40 +1,37 @@
-import fs from 'node:fs';
 import http from 'node:http';
-import path from 'node:path';
 import { createApp } from './app';
-import { ConfigValidationError, validateEnv } from './config/env';
+import { ConfigValidationError, loadLocalEnvIfPresent, validateEnv } from './config/env';
 import { createLogger } from './config/logger';
+import {
+  createDatabaseManager,
+  DatabaseConnectionError,
+  sanitizeMongoUri,
+} from './database/connection';
+import { applyInitialIndexes } from './database/indexes';
+import { runSeed } from './database/seed';
 
 export const SERVER_BASELINE = {
   service: 'bhojora-api',
-  checkpoint: '05',
+  checkpoint: '06',
   runtime: 'node-22-lts',
   currency: 'INR',
   currencyUnit: 'paise',
   timezone: 'Asia/Kolkata',
 } as const;
 
-export { createApp, validateEnv, ConfigValidationError, createLogger };
+export {
+  createApp,
+  validateEnv,
+  ConfigValidationError,
+  createLogger,
+  createDatabaseManager,
+  DatabaseConnectionError,
+  sanitizeMongoUri,
+  applyInitialIndexes,
+  runSeed,
+};
 
-function loadLocalEnvIfPresent(): void {
-  const candidatePaths = [
-    path.resolve(process.cwd(), '.env'),
-    path.resolve(process.cwd(), '../.env'),
-  ];
-  const loadEnvFile = (process as unknown as { loadEnvFile?: (filePath: string) => void })
-    .loadEnvFile;
-  if (typeof loadEnvFile !== 'function') {
-    return;
-  }
-  for (const envPath of candidatePaths) {
-    if (fs.existsSync(envPath)) {
-      loadEnvFile(envPath);
-      return;
-    }
-  }
-}
-
-function startServer(): void {
+async function startServer(): Promise<void> {
   loadLocalEnvIfPresent();
 
   let config;
@@ -66,9 +63,22 @@ function startServer(): void {
     includeStack: config.nodeEnv !== 'production',
   });
 
+  const dbManager = createDatabaseManager({ config, logger });
+  try {
+    await dbManager.connect();
+  } catch (error) {
+    if (error instanceof DatabaseConnectionError) {
+      logger.error('server.database.startup_failed', { uri: error.sanitizedUri });
+    } else {
+      logger.error('server.database.unexpected_error', { error });
+    }
+    process.exit(1);
+  }
+
   const app = createApp({
     config,
     logger,
+    readinessProbes: [dbManager.getReadinessProbe()],
     getIsShuttingDown: () => shuttingDown,
   });
 
@@ -97,13 +107,16 @@ function startServer(): void {
     forceTimer.unref();
 
     server.close((err) => {
-      clearTimeout(forceTimer);
-      if (err) {
-        logger.error('server.shutdown.error', { error: err });
-        process.exit(1);
-      }
-      logger.info('server.shutdown.completed');
-      process.exit(0);
+      void (async () => {
+        await dbManager.disconnect();
+        clearTimeout(forceTimer);
+        if (err) {
+          logger.error('server.shutdown.error', { error: err });
+          process.exit(1);
+        }
+        logger.info('server.shutdown.completed');
+        process.exit(0);
+      })();
     });
   };
 
@@ -112,5 +125,5 @@ function startServer(): void {
 }
 
 if (require.main === module) {
-  startServer();
+  void startServer();
 }
