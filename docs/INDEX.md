@@ -6,8 +6,10 @@
 -   `01-CORE-PLANNING-DESIGN/PRD.md`
 -   `01-CORE-PLANNING-DESIGN/DESIGN.md`
 -   `01-CORE-PLANNING-DESIGN/ARCHITECTURE.md`
+-   `01-CORE-PLANNING-DESIGN/ADRS.md` (Architecture Decision Records ADR-001 through ADR-007)
 -   `01-CORE-PLANNING-DESIGN/DATABASE.md`
 -   `01-CORE-PLANNING-DESIGN/API.md`
+-   `01-CORE-PLANNING-DESIGN/openapi.json` (OpenAPI 3.1.0 Contract Specification)
 -   `01-CORE-PLANNING-DESIGN/USER_JOURNEYS.md` (Detailed Multi-Persona End-to-End Journeys)
 -   `01-CORE-PLANNING-DESIGN/SITEMAP_AND_SCREENS.md` (Complete Sitemaps, Screens & 9 Standard UX States)
 -   `01-CORE-PLANNING-DESIGN/USER_STORIES.md` (Gherkin Acceptance Criteria across 13 Feature Domains)

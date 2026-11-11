@@ -1,0 +1,413 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "BHOJORA Platform API",
+    "version": "1.0.0",
+    "description": "Official API contract for the BHOJORA Food Delivery and Independent Kitchen Trust Transparency Platform (Kolkata Pilot & Multi-City Engine). All financial values use integer paise (INR). Timestamps use ISO 8601 UTC.",
+    "contact": {
+      "name": "Bhojora Engineering",
+      "url": "https://bhojora.vercel.app"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.bhojora.in/api/v1",
+      "description": "Production API Server"
+    },
+    {
+      "url": "http://localhost:4000/api/v1",
+      "description": "Local Development Server"
+    }
+  ],
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "WebhookSignature": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Webhook-Signature"
+      }
+    },
+    "parameters": {
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "description": "Unique UUID v4 preventing duplicate financial or order mutations."
+      }
+    },
+    "schemas": {
+      "PaginationMeta": {
+        "type": "object",
+        "required": ["hasMore", "limit"],
+        "properties": {
+          "cursor": { "type": ["string", "null"] },
+          "nextCursor": { "type": ["string", "null"] },
+          "hasMore": { "type": "boolean" },
+          "limit": { "type": "integer", "minimum": 1 },
+          "totalCount": { "type": "integer", "minimum": 0 }
+        }
+      },
+      "ErrorCode": {
+        "type": "string",
+        "enum": [
+          "VALIDATION_ERROR",
+          "UNAUTHORIZED",
+          "FORBIDDEN",
+          "NOT_FOUND",
+          "CONFLICT",
+          "RATE_LIMITED",
+          "IDEMPOTENCY_CONFLICT",
+          "ITEM_PRICE_CHANGED",
+          "OUTLET_OUT_OF_ZONE",
+          "CRITICAL_VIOLATION_SUSPENDED",
+          "SELF_APPROVAL_PROHIBITED",
+          "INTERNAL_SERVER_ERROR"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": ["success", "error", "requestId", "timestamp"],
+        "properties": {
+          "success": { "type": "boolean", "const": false },
+          "requestId": { "type": "string" },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "error": {
+            "type": "object",
+            "required": ["code", "message"],
+            "properties": {
+              "code": { "$ref": "#/components/schemas/ErrorCode" },
+              "message": { "type": "string", "example": "Invalid payload parameters" },
+              "details": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["issue"],
+                  "properties": {
+                    "field": { "type": "string" },
+                    "issue": { "type": "string" },
+                    "code": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "SafetyStatusEnum": {
+        "type": "string",
+        "enum": [
+          "NOT_INSPECTED",
+          "PENDING_REVIEW",
+          "VERIFIED_CLEAN",
+          "ACTION_REQUIRED",
+          "SUSPENDED",
+          "EXPIRED"
+        ]
+      },
+      "MoneyPaise": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "Monetary amount strictly in integer paise (1 INR = 100 paise)."
+      },
+      "GeoPoint": {
+        "type": "object",
+        "required": ["type", "coordinates"],
+        "properties": {
+          "type": { "type": "string", "enum": ["Point"] },
+          "coordinates": {
+            "type": "array",
+            "items": { "type": "number" },
+            "minItems": 2,
+            "maxItems": 2,
+            "example": [88.437, 22.58]
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "API Health Check",
+        "security": [],
+        "tags": ["System"],
+        "responses": {
+          "200": { "description": "API service and database connectivity status." }
+        }
+      }
+    },
+    "/auth/otp/send": {
+      "post": {
+        "summary": "Send 6-digit SMS OTP",
+        "security": [],
+        "tags": ["Identity"],
+        "responses": {
+          "200": { "description": "OTP sent successfully" },
+          "429": { "description": "Rate limit exceeded" }
+        }
+      }
+    },
+    "/auth/otp/verify": {
+      "post": {
+        "summary": "Verify OTP and issue tokens",
+        "security": [],
+        "tags": ["Identity"],
+        "responses": {
+          "200": { "description": "Authenticated session issued" },
+          "401": { "description": "Invalid or expired OTP" }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "summary": "Register user account",
+        "security": [],
+        "tags": ["Identity"],
+        "responses": { "201": { "description": "Account created" } }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Password-based authentication",
+        "security": [],
+        "tags": ["Identity"],
+        "responses": { "200": { "description": "Tokens issued" } }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "summary": "Rotate refresh token",
+        "tags": ["Identity"],
+        "responses": { "200": { "description": "New token pair issued" } }
+      }
+    },
+    "/users/me": {
+      "get": {
+        "summary": "Get current authenticated user profile",
+        "tags": ["Users"],
+        "responses": { "200": { "description": "User profile details" } }
+      },
+      "patch": {
+        "summary": "Update user language preference (en-IN / bn-IN) and details",
+        "tags": ["Users"],
+        "responses": { "200": { "description": "Profile updated" } }
+      }
+    },
+    "/addresses": {
+      "get": {
+        "summary": "List saved Kolkata delivery addresses",
+        "tags": ["Users"],
+        "responses": { "200": { "description": "Array of saved addresses" } }
+      },
+      "post": {
+        "summary": "Save new Kolkata landmark address with GeoJSON Point",
+        "tags": ["Users"],
+        "responses": { "201": { "description": "Address saved" } }
+      }
+    },
+    "/restaurants": {
+      "get": {
+        "summary": "Geospatial restaurant discovery with Kolkata zone & Trust Score filters",
+        "security": [],
+        "tags": ["Discovery"],
+        "responses": { "200": { "description": "Paginated serviceable restaurant list" } }
+      }
+    },
+    "/outlets/{id}/menu": {
+      "get": {
+        "summary": "Fetch outlet active catalog, items in paise, and declared allergens",
+        "security": [],
+        "tags": ["Catalog"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Structured menu categories and items" } }
+      }
+    },
+    "/safety/outlets/{id}": {
+      "get": {
+        "summary": "Fetch canonical public Bhojora Trust profile for an outlet",
+        "security": [],
+        "tags": ["Trust Profile"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Verified score, audit date, photo hashes, and FSSAI notice" } }
+      }
+    },
+    "/safety/outlets/{id}/history": {
+      "get": {
+        "summary": "Fetch immutable historical audit versions for an outlet",
+        "security": [],
+        "tags": ["Trust Profile"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Array of immutable historical inspection reports" } }
+      }
+    },
+    "/cart": {
+      "get": {
+        "summary": "Get active single-outlet user cart",
+        "tags": ["Cart & Ordering"],
+        "responses": { "200": { "description": "Active cart contents" } }
+      }
+    },
+    "/cart/items": {
+      "post": {
+        "summary": "Add or update cart item (enforces single-outlet rule)",
+        "tags": ["Cart & Ordering"],
+        "responses": { "200": { "description": "Updated cart" } }
+      }
+    },
+    "/checkout/quote": {
+      "post": {
+        "summary": "Generate server-authoritative pricing quote in integer paise",
+        "tags": ["Cart & Ordering"],
+        "responses": { "200": { "description": "Signed quoteId valid for 600 seconds" } }
+      }
+    },
+    "/orders": {
+      "post": {
+        "summary": "Create order from authoritative quoteId",
+        "tags": ["Cart & Ordering"],
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "responses": { "201": { "description": "Order created in AWAITING_PAYMENT state" } }
+      },
+      "get": {
+        "summary": "List user orders",
+        "tags": ["Cart & Ordering"],
+        "responses": { "200": { "description": "Paginated user order history" } }
+      }
+    },
+    "/orders/{id}/tracking": {
+      "get": {
+        "summary": "Get real-time order state and delivery rider location",
+        "tags": ["Cart & Ordering"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Order live timeline and delivery tracking metadata" } }
+      }
+    },
+    "/payments/create": {
+      "post": {
+        "summary": "Initialize payment provider order session",
+        "tags": ["Payments"],
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "responses": { "200": { "description": "Gateway session payload" } }
+      }
+    },
+    "/webhooks/payments/{provider}": {
+      "post": {
+        "summary": "Idempotent payment webhook receiver with HMAC signature check",
+        "security": [{ "WebhookSignature": [] }],
+        "tags": ["Payments"],
+        "parameters": [{ "name": "provider", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Event processed or deduplicated" },
+          "401": { "description": "Invalid cryptographic webhook signature" }
+        }
+      }
+    },
+    "/refunds": {
+      "post": {
+        "summary": "Initiate partial or full order refund",
+        "tags": ["Payments"],
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "responses": { "201": { "description": "Refund request queued" } }
+      }
+    },
+    "/restaurant/orders": {
+      "get": {
+        "summary": "Fetch live kitchen prep queue for authenticated outlet staff",
+        "tags": ["Restaurant Operations"],
+        "responses": { "200": { "description": "Active incoming, preparing, and ready orders" } }
+      }
+    },
+    "/restaurant/orders/{id}/status": {
+      "patch": {
+        "summary": "Transition order prep status (ACCEPT / REJECT / READY)",
+        "tags": ["Restaurant Operations"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Order state transitioned" } }
+      }
+    },
+    "/delivery/jobs/available": {
+      "get": {
+        "summary": "List available delivery offers in rider zone",
+        "tags": ["Delivery Logistics"],
+        "responses": { "200": { "description": "List of active delivery offers" } }
+      }
+    },
+    "/delivery/jobs/{id}/accept": {
+      "post": {
+        "summary": "Lock delivery assignment to partner",
+        "tags": ["Delivery Logistics"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Job assigned" } }
+      }
+    },
+    "/delivery/jobs/{id}/complete": {
+      "post": {
+        "summary": "Verify 4-digit customer Delivery OTP and complete job",
+        "tags": ["Delivery Logistics"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Delivery confirmed and rider credited" } }
+      }
+    },
+    "/inspections/assigned": {
+      "get": {
+        "summary": "Fetch assigned kitchen audit schedule for authorized inspector",
+        "tags": ["Independent Inspection"],
+        "responses": { "200": { "description": "List of upcoming inspections" } }
+      }
+    },
+    "/inspections/{id}/submit": {
+      "patch": {
+        "summary": "Submit tamper-evident audit checklist and evidence hashes for review",
+        "tags": ["Independent Inspection"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Submitted to independent reviewer queue" } }
+      }
+    },
+    "/inspections/{id}/approve": {
+      "post": {
+        "summary": "Approve inspection report (prohibited if reviewer == inspector)",
+        "tags": ["Independent Inspection"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Immutable safety version published" },
+          "403": { "description": "Self-approval violation prevented" }
+        }
+      }
+    },
+    "/safety/complaints": {
+      "post": {
+        "summary": "Submit customer food-safety complaint with evidence",
+        "tags": ["Support & Complaints"],
+        "responses": { "201": { "description": "Safety investigation ticket opened" } }
+      }
+    },
+    "/admin/inspections": {
+      "get": {
+        "summary": "Admin inspection governance queue",
+        "tags": ["Admin Governance"],
+        "responses": { "200": { "description": "Pending and audited inspections" } }
+      }
+    },
+    "/admin/audit-logs": {
+      "get": {
+        "summary": "Query immutable platform administrative audit logs",
+        "tags": ["Admin Governance"],
+        "responses": { "200": { "description": "Paginated audit logs" } }
+      }
+    }
+  }
+}

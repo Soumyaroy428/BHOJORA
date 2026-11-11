@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BHOJORA — Food You Love. Trust You Deserve.</title>
   <meta name="description" content="Kolkata's first food delivery and trust transparency platform combining seamless ordering with independent, evidence-backed kitchen verification.">
+  <link rel="icon" type="image/png" href="./logo.png">
+  <link rel="apple-touch-icon" href="./logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700;800&family=Noto+Sans+Bengali:wght@500;700&display=swap" rel="stylesheet">
@@ -62,6 +64,36 @@
       text-decoration: none;
     }
 
+    :where(a:any-link, button, input):focus-visible {
+      outline: 3px solid var(--terracotta);
+      outline-offset: 2px;
+    }
+
+    .visually-hidden:where(:not(:focus-within, :active)) {
+      position: absolute !important;
+      clip-path: inset(50%) !important;
+      overflow: hidden !important;
+      width: 1px !important;
+      height: 1px !important;
+      margin: -1px !important;
+      padding: 0 !important;
+      border: 0 !important;
+      white-space: nowrap !important;
+    }
+
+    .skip-link:focus {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 2000;
+      background: var(--terracotta);
+      color: #FFFFFF;
+      padding: 10px 16px;
+      border-radius: var(--radius-md);
+      font-weight: 700;
+      font-size: 13px;
+    }
+
     /* Container */
     .container {
       max-width: 1240px;
@@ -97,15 +129,24 @@
     }
 
     .logo-emblem {
-      width: 40px;
-      height: 40px;
-      background: var(--terracotta);
+      width: 42px;
+      height: 42px;
+      background: var(--cream);
+      border: 1px solid var(--neutral-200);
       border-radius: var(--radius-full);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--cream);
+      overflow: hidden;
+      flex-shrink: 0;
       box-shadow: var(--shadow-subtle);
+    }
+
+    .logo-emblem img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
 
     .location-pill {
@@ -116,8 +157,11 @@
       border: 1px solid var(--neutral-200);
       border-radius: var(--radius-full);
       padding: 6px 14px;
+      font-family: inherit;
       font-size: 13px;
       font-weight: 600;
+      color: var(--neutral-800);
+      min-height: 36px;
       cursor: pointer;
       transition: all 0.2s;
     }
@@ -261,9 +305,11 @@
       border: 1px solid var(--neutral-200);
       border-radius: var(--radius-full);
       padding: 6px 14px;
+      font-family: inherit;
       font-size: 12px;
       font-weight: 500;
       color: var(--neutral-600);
+      min-height: 32px;
       cursor: pointer;
       transition: all 0.2s;
     }
@@ -481,36 +527,30 @@
       max-width: 650px;
     }
 
-    /* Modal / Drawer for Trust Profile */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(23, 20, 18, 0.6);
-      backdrop-filter: blur(4px);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .modal-overlay.active {
-      display: flex;
-    }
-
-    .modal-content {
+    /* Native Modal Dialog for Trust Profile */
+    dialog.trust-dialog {
       background: var(--cream-card);
       border-radius: var(--radius-xl);
-      width: 100%;
+      width: calc(100% - 32px);
       max-width: 580px;
       max-height: 90vh;
       overflow-y: auto;
+      margin: auto;
       box-shadow: var(--shadow-modal);
       padding: 28px 32px;
       border: 1px solid var(--neutral-200);
+      color: var(--neutral-800);
+    }
+
+    dialog.trust-dialog:modal {
+      overscroll-behavior: contain;
+    }
+
+    dialog.trust-dialog::backdrop {
+      background: rgba(23, 20, 18, 0.6);
+      backdrop-filter: blur(4px);
+      overflow: hidden;
+      overscroll-behavior: contain;
     }
 
     .modal-header {
@@ -520,14 +560,27 @@
       border-bottom: 1px solid var(--neutral-200);
       padding-bottom: 16px;
       margin-bottom: 20px;
+      gap: 12px;
     }
 
     .modal-close {
       background: transparent;
       border: none;
-      font-size: 22px;
+      font-size: 24px;
+      line-height: 1;
+      min-width: 36px;
+      min-height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-md);
       cursor: pointer;
       color: var(--neutral-600);
+    }
+
+    .modal-close:hover {
+      background: var(--neutral-100);
+      color: var(--neutral-950);
     }
 
     .score-banner {
@@ -623,53 +676,71 @@
       font-size: 12px;
     }
 
+    .filter-status {
+      font-size: 13px;
+      color: var(--neutral-600);
+      margin-bottom: 16px;
+      min-height: 20px;
+    }
+
     @media (max-width: 768px) {
       .hero-title { font-size: 32px; }
-      .bengali-banner { flex-direction: column; text-align: center; }
+      .bengali-banner { flex-direction: column; text-align: center; padding: 28px 22px; }
+      .section-header { flex-direction: column; align-items: flex-start; gap: 12px; }
       .footer-grid { grid-template-columns: 1fr; }
+      .footer-bottom { flex-direction: column; gap: 8px; text-align: center; }
       .navbar .nav-links { display: none; }
+    }
+
+    @media (max-width: 480px) {
+      .navbar { height: auto; min-height: 68px; padding: 10px 0; gap: 8px; flex-wrap: wrap; }
+      .brand-logo { font-size: 20px; }
+      .location-pill { padding: 5px 10px; font-size: 12px; }
+      .search-container { flex-direction: column; align-items: stretch; gap: 8px; padding: 10px; }
+      .search-container .btn { width: 100%; }
+      dialog.trust-dialog { padding: 20px; }
+      .pillars-section { padding: 32px 20px; }
     }
   </style>
 </head>
 <body>
+  <a href="#main-content" class="skip-link visually-hidden">Skip to main content</a>
 
   <!-- Header -->
   <header>
     <div class="container navbar">
-      <div style="display: flex; align-items: center; gap: 24px;">
+      <div style="display: flex; align-items: center; gap: 20px;">
         <a href="/" class="brand-logo">
           <div class="logo-emblem">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-4.5a1 1 0 0 1-2 0V7a1 1 0 0 1 2 0z"/>
-            </svg>
+            <img src="./logo.png" alt="BHOJORA Logo">
           </div>
           <span>BHOJORA</span>
         </a>
 
-        <div class="location-pill" onclick="alert('Bhojora is currently live in Kolkata, West Bengal (Zones: Salt Lake, New Town, Park Street, Ballygunge, Shyambazar).')">
-          <span>📍</span>
-          <span>Salt Lake, Sector V</span>
-          <span style="color: var(--neutral-400);">▼</span>
-        </div>
+        <button type="button" class="location-pill" onclick="openAppBanner()" aria-label="Current delivery zone: Salt Lake, Sector V, Kolkata">
+          <span aria-hidden="true">📍</span>
+          <span id="headerZoneLabel">Salt Lake, Sector V</span>
+          <span aria-hidden="true" style="color: var(--neutral-400);">▼</span>
+        </button>
       </div>
 
-      <nav class="nav-links">
+      <nav class="nav-links" aria-label="Primary">
         <a href="#discover">Discovery</a>
-        <a href="#trust">Trust Engine</a>
-        <a href="#pillars">Architecture</a>
-        <a href="https://github.com/Soumyaroy428/BHOJORA" target="_blank">GitHub Repo</a>
-        <button class="btn btn-primary" onclick="alert('Bhojora Mobile Apps for iOS and Android are configured in client/customer-mobile and client/delivery-mobile!')">
+        <a href="#pillars">Trust Engine</a>
+        <a href="#kolkata-launch">Kolkata Zones</a>
+        <button type="button" class="btn btn-primary" onclick="openAppBanner()">
           Get Bhojora App
         </button>
       </nav>
     </div>
   </header>
 
+  <main id="main-content" tabindex="-1">
   <!-- Hero Section -->
   <section class="hero">
     <div class="container">
       <div class="hero-badge">
-        <span>🛡️</span>
+        <span aria-hidden="true">🛡️</span>
         <span>Independent Kitchen Verification • Launching in Kolkata</span>
       </div>
       <h1 class="hero-title">
@@ -681,20 +752,21 @@
       </p>
 
       <!-- Search Box -->
-      <div class="search-container">
-        <span style="font-size: 18px; color: var(--neutral-400); margin-left: 6px;">🔍</span>
-        <input type="text" class="search-input" placeholder="Search for Arsalan Biryani, Mocambo Devilled Crab, Sweets...">
-        <button class="btn btn-primary" style="padding: 8px 18px; min-height: 38px;">Find Food</button>
-      </div>
+      <form class="search-container" onsubmit="event.preventDefault(); filterKitchens();">
+        <span aria-hidden="true" style="font-size: 18px; color: var(--neutral-400); margin-left: 6px;">🔍</span>
+        <label for="foodSearch" class="visually-hidden">Search Kolkata restaurants or dishes</label>
+        <input id="foodSearch" type="search" class="search-input" placeholder="Search for Arsalan Biryani, Mocambo Devilled Crab, Sweets..." oninput="filterKitchens()">
+        <button type="submit" class="btn btn-primary" style="padding: 8px 18px; min-height: 38px;">Find Food</button>
+      </form>
 
       <!-- Kolkata Landmark Chips -->
-      <div class="landmark-chips">
-        <span class="chip active">All Kolkata</span>
-        <span class="chip">Salt Lake / Sector V</span>
-        <span class="chip">Park Street / Central</span>
-        <span class="chip">New Town</span>
-        <span class="chip">Ballygunge / South</span>
-        <span class="chip">Shyambazar / North</span>
+      <div class="landmark-chips" role="group" aria-label="Filter kitchens by Kolkata zone">
+        <button type="button" class="chip active" data-zone="all" aria-pressed="true" onclick="selectZone(this)">All Kolkata</button>
+        <button type="button" class="chip" data-zone="salt-lake" aria-pressed="false" onclick="selectZone(this)">Salt Lake / Sector V</button>
+        <button type="button" class="chip" data-zone="central" aria-pressed="false" onclick="selectZone(this)">Park Street / Central</button>
+        <button type="button" class="chip" data-zone="new-town" aria-pressed="false" onclick="selectZone(this)">New Town</button>
+        <button type="button" class="chip" data-zone="south" aria-pressed="false" onclick="selectZone(this)">Ballygunge / South</button>
+        <button type="button" class="chip" data-zone="north" aria-pressed="false" onclick="selectZone(this)">Shyambazar / North</button>
       </div>
     </div>
   </section>
@@ -706,20 +778,22 @@
         <h2 class="section-title">Verified Kitchens in Kolkata</h2>
         <p class="section-desc">Audited on-site by independent hygiene inspectors with verifiable cryptographic photo proof.</p>
       </div>
-      <div style="display: flex; gap: 8px;">
-        <span class="chip active" style="font-size: 11px;">🛡️ Score ≥ 90</span>
-        <span class="chip" style="font-size: 11px;">🟢 Pure Veg</span>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button type="button" id="scoreFilterBtn" class="chip active" style="font-size: 11px;" aria-pressed="true" onclick="toggleScoreFilter(this)">🛡️ Score ≥ 90</button>
+        <button type="button" id="vegFilterBtn" class="chip" style="font-size: 11px;" aria-pressed="false" onclick="toggleVegFilter(this)">🟢 Pure Veg</button>
       </div>
     </div>
 
-    <div class="grid-cards">
+    <p id="filterStatus" class="filter-status" aria-live="polite">Showing 4 verified kitchens in All Kolkata</p>
+
+    <div class="grid-cards" id="kitchenGrid">
       <!-- Card 1: Arsalan -->
-      <div class="card">
+      <article class="card" data-zones="central,south,salt-lake" data-score="94" data-veg="false" data-search="arsalan park circus mughlai kolkata biryani kebabs">
         <div class="card-media" style="background-image: url('https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=600&q=80');">
-          <div class="trust-pill" onclick="openTrustModal('Arsalan (Park Circus)', 94, '14 Oct 2026', '12821008000491')">
-            <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+          <button type="button" class="trust-pill" aria-label="View Arsalan Park Circus trust safety report, verified score 94 out of 100" onclick="openTrustModal('arsalan')">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
             <span>VERIFIED • 94/100</span>
-          </div>
+          </button>
         </div>
         <div class="card-body">
           <div class="card-title-row">
@@ -732,15 +806,15 @@
             <span class="audit-status">🛡️ Audited Oct 2026</span>
           </div>
         </div>
-      </div>
+      </article>
 
       <!-- Card 2: Peter Cat -->
-      <div class="card">
+      <article class="card" data-zones="central,salt-lake" data-score="92" data-veg="false" data-search="peter cat park street continental chelo kebab sizzlers">
         <div class="card-media" style="background-image: url('https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80');">
-          <div class="trust-pill" onclick="openTrustModal('Peter Cat (Park Street)', 92, '28 Oct 2026', '12820002000189')">
-            <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+          <button type="button" class="trust-pill" aria-label="View Peter Cat Park Street trust safety report, verified score 92 out of 100" onclick="openTrustModal('peter-cat')">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
             <span>VERIFIED • 92/100</span>
-          </div>
+          </button>
         </div>
         <div class="card-body">
           <div class="card-title-row">
@@ -753,15 +827,15 @@
             <span class="audit-status">🛡️ Audited Oct 2026</span>
           </div>
         </div>
-      </div>
+      </article>
 
       <!-- Card 3: Mocambo -->
-      <div class="card">
+      <article class="card" data-zones="central,new-town" data-score="95" data-veg="false" data-search="mocambo free school st heritage continental devilled crab">
         <div class="card-media" style="background-image: url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80');">
-          <div class="trust-pill" onclick="openTrustModal('Mocambo (Free School St)', 95, '02 Nov 2026', '12819001000842')">
-            <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+          <button type="button" class="trust-pill" aria-label="View Mocambo Free School St trust safety report, verified score 95 out of 100" onclick="openTrustModal('mocambo')">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
             <span>VERIFIED • 95/100</span>
-          </div>
+          </button>
         </div>
         <div class="card-body">
           <div class="card-title-row">
@@ -774,15 +848,15 @@
             <span class="audit-status">🛡️ Audited Nov 2026</span>
           </div>
         </div>
-      </div>
+      </article>
 
       <!-- Card 4: Balaram Mullick -->
-      <div class="card">
+      <article class="card" data-zones="south,central,salt-lake,new-town,north" data-score="96" data-veg="true" data-search="balaram mullick radharaman bhowanipore bengali mishti baked rosogolla sandesh sweets veg">
         <div class="card-media" style="background-image: url('https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=600&q=80');">
-          <div class="trust-pill" onclick="openTrustModal('Balaram Mullick & Radharaman Mullick', 96, '05 Nov 2026', '12822004000321')">
-            <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+          <button type="button" class="trust-pill" aria-label="View Balaram Mullick trust safety report, verified score 96 out of 100" onclick="openTrustModal('balaram')">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
             <span>VERIFIED • 96/100</span>
-          </div>
+          </button>
         </div>
         <div class="card-body">
           <div class="card-title-row">
@@ -795,7 +869,7 @@
             <span class="audit-status">🛡️ Audited Nov 2026</span>
           </div>
         </div>
-      </div>
+      </article>
     </div>
   </section>
 
@@ -803,13 +877,13 @@
   <section class="container">
     <div class="bengali-banner">
       <div>
-        <h3 class="bengali-title">খাবার আপনি ভালোবাসেন। বিশ্বাস আপনি প্রাপ্য।</h3>
-        <p class="bengali-text">
+        <h3 id="bannerTitle" class="bengali-title" lang="bn">খাবার আপনি ভালোবাসেন। বিশ্বাস আপনি প্রাপ্য।</h3>
+        <p id="bannerText" class="bengali-text" lang="bn">
           ভোজোরা (Bhojora) কলকাতার প্রতিটি রেস্তোরাঁ ও ক্লাউড কিচেন স্বাধীন পরিদর্শকদের দ্বারা যাচাই করে। পরিষ্কার রান্নাঘর, খাঁটি স্বাদ এবং নিরাপদ ডেলিভারি—এখন একই ছাদের নিচে।
         </p>
       </div>
-      <button class="btn btn-outline" style="background: var(--cream); color: var(--terracotta); border: none; font-weight: 700; white-space: nowrap;" onclick="alert('Language toggled to Bengali (বাংলা)!')">
-        বাংলা সংস্করণ
+      <button type="button" id="langToggleBtn" class="btn btn-outline" style="background: var(--cream); color: var(--terracotta); border: none; font-weight: 700; white-space: nowrap;" onclick="toggleBannerLanguage()">
+        Read in English
       </button>
     </div>
   </section>
@@ -824,82 +898,104 @@
 
       <div class="pillars-grid">
         <div class="pillar-card">
-          <div class="pillar-icon" style="background: var(--terracotta-light); color: var(--terracotta);">🛵</div>
+          <div class="pillar-icon" aria-hidden="true" style="background: var(--terracotta-light); color: var(--terracotta);">🛵</div>
           <h3 class="pillar-title">1. Food Delivery</h3>
           <p class="pillar-text">Geospatial Kolkata dispatch engine, authoritative server price quotes in integer paise, live map tracking, and secure 4-digit Delivery OTP handovers.</p>
         </div>
 
         <div class="pillar-card">
-          <div class="pillar-icon" style="background: var(--trust-green-light); color: var(--trust-green);">🛡️</div>
+          <div class="pillar-icon" aria-hidden="true" style="background: var(--trust-green-light); color: var(--trust-green);">🛡️</div>
           <h3 class="pillar-title">2. Trust Transparency</h3>
           <p class="pillar-text">Standardized on-site kitchen inspections, tamper-evident SHA-256 photo hashes, strict separation of inspector and reviewer duties, and instant critical violation suspensions.</p>
         </div>
 
         <div class="pillar-card">
-          <div class="pillar-icon" style="background: var(--saffron-light); color: #B3740D;">🤖</div>
+          <div class="pillar-icon" aria-hidden="true" style="background: var(--saffron-light); color: #B3740D;">🤖</div>
           <h3 class="pillar-title">3. Supervised AI</h3>
           <p class="pillar-text">Human-supervised computer vision flagging potential kitchen risk anomalies, demand prediction, and smart dish recommendations without automated score certification.</p>
         </div>
       </div>
     </div>
   </section>
+  </main>
 
-  <!-- Trust Profile Modal (Interactive) -->
-  <div id="trustModal" class="modal-overlay" onclick="closeTrustModal(event)">
-    <div class="modal-content" onclick="event.stopPropagation()">
-      <div class="modal-header">
-        <div>
-          <h3 id="modalOutletName" style="font-size: 18px;">Arsalan (Park Circus)</h3>
-          <p id="modalFssai" style="font-size: 12px; color: var(--neutral-600);">FSSAI Lic. No: 12821008000491</p>
-        </div>
-        <button class="modal-close" onclick="document.getElementById('trustModal').classList.remove('active')">&times;</button>
+  <!-- Trust Profile Native Modal Dialog -->
+  <dialog id="trustModal" class="trust-dialog" closedby="any" aria-labelledby="modalOutletName">
+    <div class="modal-header">
+      <div>
+        <h2 id="modalOutletName" style="font-size: 18px;">Arsalan (Park Circus)</h2>
+        <p id="modalFssai" style="font-size: 12px; color: var(--neutral-600);">FSSAI Lic. No: 12821008000491</p>
       </div>
-
-      <div class="score-banner">
-        <div>
-          <div style="font-size: 12px; font-weight: 700; color: var(--trust-green); text-transform: uppercase;">Independent Audit Result</div>
-          <div style="font-size: 16px; font-weight: 700; color: var(--trust-green-text);">VERIFIED CLEAN KITCHEN</div>
-          <div id="modalAuditDate" style="font-size: 12px; color: var(--neutral-600); margin-top: 2px;">Inspected on: 14 Oct 2026</div>
-        </div>
-        <div id="modalScoreNum" class="score-number">94<span style="font-size: 16px; color: var(--neutral-600);">/100</span></div>
-      </div>
-
-      <h4 style="font-size: 14px; margin-bottom: 12px;">Category Score Breakdown</h4>
-      <div class="category-row">
-        <div class="category-label"><span>1. Food Storage & Cold Chain (25%)</span><span>96%</span></div>
-        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 96%;"></div></div>
-      </div>
-      <div class="category-row">
-        <div class="category-label"><span>2. Personal Hygiene & Gear (20%)</span><span>92%</span></div>
-        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 92%;"></div></div>
-      </div>
-      <div class="category-row">
-        <div class="category-label"><span>3. Sanitation & Pest Control (25%)</span><span>95%</span></div>
-        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 95%;"></div></div>
-      </div>
-      <div class="category-row">
-        <div class="category-label"><span>4. Water & Raw Material Quality (15%)</span><span>90%</span></div>
-        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 90%;"></div></div>
-      </div>
-      <div class="category-row">
-        <div class="category-label"><span>5. Waste Management & Drainage (10%)</span><span>98%</span></div>
-        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 98%;"></div></div>
-      </div>
-
-      <div class="disclaimer-box">
-        <strong>⚠️ Statutory Transparency Notice:</strong><br>
-        This independent platform assessment reflects on-site physical observations recorded under Bhojora Verification Protocol v2.1. It is NOT a statutory government certification issued by FSSAI and does not guarantee that every meal is 100% risk-free.
-      </div>
+      <form method="dialog">
+        <button type="submit" class="modal-close" aria-label="Close trust profile dialog">&times;</button>
+      </form>
     </div>
-  </div>
+
+    <div class="score-banner">
+      <div>
+        <div style="font-size: 12px; font-weight: 700; color: var(--trust-green); text-transform: uppercase;">Independent Audit Result</div>
+        <div style="font-size: 16px; font-weight: 700; color: var(--trust-green-text);">VERIFIED CLEAN KITCHEN</div>
+        <div id="modalAuditDate" style="font-size: 12px; color: var(--neutral-600); margin-top: 2px;">Inspected on: 14 Oct 2026</div>
+      </div>
+      <div class="score-number"><span id="modalScoreVal">94</span><span style="font-size: 16px; color: var(--neutral-600);">/100</span></div>
+    </div>
+
+    <h3 style="font-size: 14px; margin-bottom: 12px;">Category Score Breakdown</h3>
+    <div class="category-row">
+      <div class="category-label"><span>1. Food Storage & Cold Chain (25%)</span><span id="catPct0">96%</span></div>
+      <div class="progress-bar-bg"><div id="catBar0" class="progress-bar-fill" style="width: 96%;"></div></div>
+    </div>
+    <div class="category-row">
+      <div class="category-label"><span>2. Personal Hygiene & Gear (20%)</span><span id="catPct1">92%</span></div>
+      <div class="progress-bar-bg"><div id="catBar1" class="progress-bar-fill" style="width: 92%;"></div></div>
+    </div>
+    <div class="category-row">
+      <div class="category-label"><span>3. Sanitation & Pest Control (25%)</span><span id="catPct2">95%</span></div>
+      <div class="progress-bar-bg"><div id="catBar2" class="progress-bar-fill" style="width: 95%;"></div></div>
+    </div>
+    <div class="category-row">
+      <div class="category-label"><span>4. Water & Raw Material Quality (15%)</span><span id="catPct3">90%</span></div>
+      <div class="progress-bar-bg"><div id="catBar3" class="progress-bar-fill" style="width: 90%;"></div></div>
+    </div>
+    <div class="category-row">
+      <div class="category-label"><span>5. Waste Management & Drainage (15%)</span><span id="catPct4">96%</span></div>
+      <div class="progress-bar-bg"><div id="catBar4" class="progress-bar-fill" style="width: 96%;"></div></div>
+    </div>
+
+    <div class="disclaimer-box">
+      <strong>⚠️ Statutory Transparency Notice:</strong><br>
+      This independent platform assessment reflects on-site physical observations recorded under Bhojora Verification Protocol v2.1. It is NOT a statutory government certification issued by FSSAI and does not guarantee that every meal is 100% risk-free.
+    </div>
+  </dialog>
+
+  <!-- Info / App Pilot Dialog -->
+  <dialog id="infoModal" class="trust-dialog" closedby="any" aria-labelledby="infoModalTitle">
+    <div class="modal-header">
+      <div>
+        <h2 id="infoModalTitle" style="font-size: 18px;">BHOJORA Kolkata Pilot</h2>
+        <p style="font-size: 12px; color: var(--neutral-600);">Web &amp; Expo Mobile Ecosystem (Checkpoint 03)</p>
+      </div>
+      <form method="dialog">
+        <button type="submit" class="modal-close" aria-label="Close information dialog">&times;</button>
+      </form>
+    </div>
+    <p style="font-size: 14px; line-height: 1.6; margin-bottom: 16px;">
+      Bhojora serves active pilot corridors across <strong>Salt Lake (Sector V)</strong>, <strong>New Town</strong>, <strong>Park Street / Central</strong>, <strong>Ballygunge / South</strong>, and <strong>Shyambazar / North</strong>.
+    </p>
+    <p style="font-size: 13px; color: var(--neutral-600); line-height: 1.55;">
+      Mobile builds for Customers, Delivery Partners, and Kitchen Inspectors are wired to the shared API contract (<code style="font-size: 12px;">/api/v1</code>) with INR integer paise precision and independent safety audits.
+    </p>
+  </dialog>
 
   <!-- Footer -->
-  <footer>
+  <footer id="kolkata-launch">
     <div class="container">
       <div class="footer-grid">
         <div class="footer-col">
           <div class="brand-logo" style="margin-bottom: 12px;">
-            <div class="logo-emblem" style="width: 32px; height: 32px; font-size: 14px;">B</div>
+            <div class="logo-emblem" style="width: 34px; height: 34px;">
+              <img src="./logo.png" alt="BHOJORA Logo">
+            </div>
             <span style="font-size: 20px;">BHOJORA</span>
           </div>
           <p style="font-size: 13px; line-height: 1.6; max-width: 320px;">
@@ -908,25 +1004,25 @@
           </p>
         </div>
         <div class="footer-col">
-          <h4>Ecosystem</h4>
+          <h3 style="font-size: 14px; color: var(--neutral-950); margin-bottom: 14px;">Ecosystem</h3>
           <ul>
-            <li><a href="#">Bhojora Consumer Web</a></li>
-            <li><a href="#">Bhojora Partner Portal</a></li>
-            <li><a href="#">Bhojora Delivery Fleet</a></li>
-            <li><a href="#">Bhojora Inspect Tool</a></li>
+            <li><a href="#discover">Bhojora Consumer Web</a></li>
+            <li><a href="#pillars">Bhojora Partner Portal</a></li>
+            <li><a href="#pillars">Bhojora Delivery Fleet</a></li>
+            <li><a href="#pillars">Bhojora Inspect Tool</a></li>
           </ul>
         </div>
         <div class="footer-col">
-          <h4>Trust & Safety</h4>
+          <h3 style="font-size: 14px; color: var(--neutral-950); margin-bottom: 14px;">Trust &amp; Safety</h3>
           <ul>
-            <li><a href="#">Inspection Methodology</a></li>
-            <li><a href="#">Scoring Policy v2.1</a></li>
-            <li><a href="#">Inspector Code of Conduct</a></li>
-            <li><a href="#">Report a Food Issue</a></li>
+            <li><a href="#pillars">Inspection Methodology</a></li>
+            <li><a href="#discover">Scoring Policy v2.1</a></li>
+            <li><a href="#pillars">Inspector Code of Conduct</a></li>
+            <li><a href="#discover">Verified Kitchen Audits</a></li>
           </ul>
         </div>
         <div class="footer-col">
-          <h4>Kolkata Launch</h4>
+          <h3 style="font-size: 14px; color: var(--neutral-950); margin-bottom: 14px;">Kolkata Launch</h3>
           <ul>
             <li>Salt Lake (Sector V)</li>
             <li>Park Street / Central</li>
@@ -938,25 +1034,161 @@
 
       <div class="footer-bottom">
         <div>&copy; 2026 BHOJORA Technologies Pvt. Ltd. All rights reserved.</div>
-        <div>
-          <a href="https://github.com/Soumyaroy428/BHOJORA" target="_blank" style="color: var(--terracotta); font-weight: 600;">GitHub Repository: Soumyaroy428/BHOJORA</a>
-        </div>
+        <div style="color: var(--trust-green-text); font-weight: 600;">Kolkata Launch • Independent Kitchen Transparency</div>
       </div>
     </div>
   </footer>
 
   <script>
-    function openTrustModal(name, score, date, fssai) {
-      document.getElementById('modalOutletName').innerText = name;
-      document.getElementById('modalScoreNum').innerHTML = score + '<span style="font-size: 16px; color: var(--neutral-600);">/100</span>';
-      document.getElementById('modalAuditDate').innerText = 'Inspected on: ' + date;
-      document.getElementById('modalFssai').innerText = 'FSSAI Lic. No: ' + fssai;
-      document.getElementById('trustModal').classList.add('active');
+    const TRUST_PROFILES = {
+      arsalan: {
+        name: 'Arsalan (Park Circus)',
+        score: 94,
+        date: '14 Oct 2026',
+        fssai: '12821008000491',
+        cats: [96, 92, 95, 90, 96]
+      },
+      'peter-cat': {
+        name: 'Peter Cat (Park Street)',
+        score: 92,
+        date: '28 Oct 2026',
+        fssai: '12820002000189',
+        cats: [94, 90, 92, 88, 95]
+      },
+      mocambo: {
+        name: 'Mocambo (Free School St)',
+        score: 95,
+        date: '02 Nov 2026',
+        fssai: '12819001000842',
+        cats: [96, 94, 96, 92, 96]
+      },
+      balaram: {
+        name: 'Balaram Mullick & Radharaman Mullick',
+        score: 96,
+        date: '05 Nov 2026',
+        fssai: '12822004000321',
+        cats: [98, 95, 97, 94, 95]
+      }
+    };
+
+    const filterState = {
+      zone: 'all',
+      zoneLabel: 'All Kolkata',
+      minScore: true,
+      vegOnly: false
+    };
+
+    let bannerInEnglish = false;
+
+    function openTrustModal(key) {
+      const profile = TRUST_PROFILES[key];
+      if (!profile) return;
+      document.getElementById('modalOutletName').textContent = profile.name;
+      document.getElementById('modalScoreVal').textContent = String(profile.score);
+      document.getElementById('modalAuditDate').textContent = 'Inspected on: ' + profile.date;
+      document.getElementById('modalFssai').textContent = 'FSSAI Lic. No: ' + profile.fssai;
+      profile.cats.forEach((pct, idx) => {
+        document.getElementById('catPct' + idx).textContent = pct + '%';
+        document.getElementById('catBar' + idx).style.width = pct + '%';
+      });
+      document.getElementById('trustModal').showModal();
     }
 
-    function closeTrustModal(e) {
-      if (e.target.id === 'trustModal') {
-        document.getElementById('trustModal').classList.remove('active');
+    function openAppBanner() {
+      document.getElementById('infoModal').showModal();
+    }
+
+    function selectZone(btn) {
+      document.querySelectorAll('.landmark-chips .chip').forEach((chip) => {
+        const active = chip === btn;
+        chip.classList.toggle('active', active);
+        chip.setAttribute('aria-pressed', String(active));
+      });
+      filterState.zone = btn.dataset.zone || 'all';
+      filterState.zoneLabel = btn.textContent.trim();
+      const headerLabel = document.getElementById('headerZoneLabel');
+      if (headerLabel) {
+        headerLabel.textContent = filterState.zone === 'all' ? 'Salt Lake, Sector V' : filterState.zoneLabel;
+      }
+      filterKitchens();
+    }
+
+    function toggleScoreFilter(btn) {
+      filterState.minScore = !filterState.minScore;
+      btn.classList.toggle('active', filterState.minScore);
+      btn.setAttribute('aria-pressed', String(filterState.minScore));
+      filterKitchens();
+    }
+
+    function toggleVegFilter(btn) {
+      filterState.vegOnly = !filterState.vegOnly;
+      btn.classList.toggle('active', filterState.vegOnly);
+      btn.setAttribute('aria-pressed', String(filterState.vegOnly));
+      filterKitchens();
+    }
+
+    function filterKitchens() {
+      const query = (document.getElementById('foodSearch')?.value || '').trim().toLowerCase();
+      const cards = document.querySelectorAll('#kitchenGrid .card');
+      let visibleCount = 0;
+
+      cards.forEach((card) => {
+        const zones = (card.dataset.zones || '').split(',');
+        const score = Number(card.dataset.score || 0);
+        const isVeg = card.dataset.veg === 'true';
+        const haystack = card.dataset.search || '';
+
+        const matchZone = filterState.zone === 'all' || zones.includes(filterState.zone);
+        const matchScore = !filterState.minScore || score >= 90;
+        const matchVeg = !filterState.vegOnly || isVeg;
+        const matchQuery = !query || haystack.includes(query);
+
+        const visible = matchZone && matchScore && matchVeg && matchQuery;
+        card.style.display = visible ? '' : 'none';
+        if (visible) visibleCount += 1;
+      });
+
+      const statusEl = document.getElementById('filterStatus');
+      if (statusEl) {
+        statusEl.textContent = visibleCount === 0
+          ? 'No verified kitchens match your current filters. Try choosing All Kolkata or clearing the search box.'
+          : `Showing ${visibleCount} verified kitchen${visibleCount === 1 ? '' : 's'} in ${filterState.zoneLabel}`;
+      }
+    }
+
+    function toggleBannerLanguage() {
+      const titleEl = document.getElementById('bannerTitle');
+      const textEl = document.getElementById('bannerText');
+      const btnEl = document.getElementById('langToggleBtn');
+      bannerInEnglish = !bannerInEnglish;
+
+      if (bannerInEnglish) {
+        titleEl.setAttribute('lang', 'en');
+        textEl.setAttribute('lang', 'en');
+        titleEl.textContent = 'Food You Love. Trust You Deserve.';
+        textEl.textContent = 'Bhojora audits every restaurant and cloud kitchen in Kolkata through independent inspectors — clean kitchens, authentic taste, and safer delivery under one roof.';
+        btnEl.textContent = 'বাংলা সংস্করণ';
+      } else {
+        titleEl.setAttribute('lang', 'bn');
+        textEl.setAttribute('lang', 'bn');
+        titleEl.textContent = 'খাবার আপনি ভালোবাসেন। বিশ্বাস আপনি প্রাপ্য।';
+        textEl.textContent = 'ভোজোরা (Bhojora) কলকাতার প্রতিটি রেস্তোরাঁ ও ক্লাউড কিচেন স্বাধীন পরিদর্শকদের দ্বারা যাচাই করে। পরিষ্কার রান্নাঘর, খাঁটি স্বাদ এবং নিরাপদ ডেলিভারি—এখন একই ছাদের নিচে।';
+        btnEl.textContent = 'Read in English';
+      }
+    }
+
+    // Light-dismiss fallback for browsers without <dialog closedby="any"> support (e.g., Safari)
+    if (!('closedBy' in HTMLDialogElement.prototype)) {
+      const outside = (e, dialog) => {
+        const r = dialog.getBoundingClientRect();
+        return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom;
+      };
+      for (const dialog of document.querySelectorAll('dialog[closedby="any"]')) {
+        let pressedOutside = false;
+        dialog.addEventListener('pointerdown', (e) => { pressedOutside = outside(e, dialog); });
+        dialog.addEventListener('pointerup', (e) => {
+          if (pressedOutside && outside(e, dialog)) dialog.close();
+        });
       }
     }
   </script>
