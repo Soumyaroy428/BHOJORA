@@ -689,16 +689,16 @@ export function OutletZonesPanel({
                         />
                       </td>
                       <td>
-                        <input
-                          id={`closed-${slot.dayOfWeek}`}
-                          type="checkbox"
-                          checked={slot.isClosed}
-                          onChange={(e) =>
-                            updateSlot(slot.dayOfWeek, { isClosed: e.target.checked })
-                          }
-                        />
-                        <label htmlFor={`closed-${slot.dayOfWeek}`} className="visually-hidden">
-                          Mark {slot.dayOfWeek} closed
+                        <label htmlFor={`closed-${slot.dayOfWeek}`} className="table-check-label">
+                          <input
+                            id={`closed-${slot.dayOfWeek}`}
+                            type="checkbox"
+                            checked={slot.isClosed}
+                            onChange={(e) =>
+                              updateSlot(slot.dayOfWeek, { isClosed: e.target.checked })
+                            }
+                          />
+                          <span className="visually-hidden">Mark {slot.dayOfWeek} closed</span>
                         </label>
                       </td>
                     </tr>

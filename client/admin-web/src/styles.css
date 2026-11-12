@@ -1,6 +1,6 @@
 :root {
   --bg-canvas: #f7f1e6;
-  --bg-card: #ffffff;
+  --bg-card: #fffcf8;
   --bg-alt: #efe8dc;
   --ink-950: #171412;
   --ink-800: #3a3430;
@@ -83,6 +83,12 @@ body {
   gap: 1.5rem;
 }
 
+.shell > *,
+.grid-split > *,
+.detail-grid > * {
+  min-width: 0;
+}
+
 .grid-split {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.9fr);
@@ -95,6 +101,7 @@ body {
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 1.5rem;
+  min-width: 0;
 }
 
 .panel-alt {
@@ -143,7 +150,8 @@ h1 {
   border: 1px solid var(--border);
   background: var(--bg-card);
   color: var(--ink-800);
-  padding: 0.5rem 0.9rem;
+  padding: 0.55rem 0.95rem;
+  min-height: 44px;
   border-radius: 999px;
   font-weight: 600;
   font-size: 0.85rem;
@@ -203,12 +211,13 @@ h1 {
 
 .field input {
   width: 100%;
+  min-height: 44px;
   padding: 0.65rem 0.8rem;
   border-radius: 10px;
   border: 1px solid var(--border);
-  background: #ffffff;
+  background: var(--bg-card);
   color: var(--ink-950);
-  font-size: 0.95rem;
+  font-size: max(1rem, 1em);
 }
 
 .field input:user-invalid {
@@ -224,12 +233,13 @@ h1 {
 .field select,
 .field textarea {
   width: 100%;
+  min-height: 44px;
   padding: 0.65rem 0.8rem;
   border-radius: 10px;
   border: 1px solid var(--border);
-  background: #ffffff;
+  background: var(--bg-card);
   color: var(--ink-950);
-  font-size: 0.95rem;
+  font-size: max(1rem, 1em);
   font-family: inherit;
 }
 
@@ -313,7 +323,8 @@ h1 {
   border: 1px solid var(--border);
   background: var(--bg-card);
   color: var(--ink-950);
-  padding: 0.5rem 0.85rem;
+  padding: 0.55rem 0.95rem;
+  min-height: 44px;
   border-radius: 10px;
   font-weight: 600;
   font-size: 0.85rem;
@@ -326,11 +337,12 @@ h1 {
 
 .btn-primary {
   width: 100%;
+  min-height: 44px;
   padding: 0.72rem 1rem;
   border-radius: 10px;
   border: 1px solid var(--terracotta-dark);
   background: var(--terracotta);
-  color: #ffffff;
+  color: #fffcf8;
   font-weight: 600;
   font-size: 0.95rem;
   cursor: pointer;

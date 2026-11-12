@@ -19,10 +19,12 @@ import { OutletService } from './modules/outlet/outlet.service';
 import { InMemoryOutletStore, MongooseOutletStore } from './modules/outlet/outlet.store';
 import { RestaurantService } from './modules/restaurant/restaurant.service';
 import { MongooseRestaurantStore } from './modules/restaurant/restaurant.store';
+import { CatalogService } from './modules/catalog/catalog.service';
+import { InMemoryCatalogStore, MongooseCatalogStore } from './modules/catalog/catalog.store';
 
 export const SERVER_BASELINE = {
   service: 'bhojora-api',
-  checkpoint: '11',
+  checkpoint: '12',
   runtime: 'node-22-lts',
   currency: 'INR',
   currencyUnit: 'paise',
@@ -49,6 +51,9 @@ export {
   OutletService,
   MongooseOutletStore,
   InMemoryOutletStore,
+  CatalogService,
+  MongooseCatalogStore,
+  InMemoryCatalogStore,
   SafeLogOtpSenderAdapter,
 };
 
@@ -102,6 +107,7 @@ async function startServer(): Promise<void> {
   const customerStore = new MongooseCustomerStore(mongoConnection);
   const restaurantStore = new MongooseRestaurantStore(mongoConnection);
   const outletStore = new MongooseOutletStore(mongoConnection);
+  const catalogStore = new MongooseCatalogStore(mongoConnection);
 
   const identityService = new IdentityService({
     config,
@@ -132,6 +138,13 @@ async function startServer(): Promise<void> {
     logger,
   });
 
+  const catalogService = new CatalogService({
+    catalogStore,
+    restaurantStore,
+    rbacStore,
+    logger,
+  });
+
   const app = createApp({
     config,
     logger,
@@ -146,6 +159,8 @@ async function startServer(): Promise<void> {
     restaurantService,
     outletStore,
     outletService,
+    catalogStore,
+    catalogService,
   });
 
   const server = http.createServer(app);

@@ -6,6 +6,7 @@ import {
   type RbacContextDto,
   type UserProfileDto,
 } from '@bhojora/shared';
+import { MenuCatalogPanel } from './components/MenuCatalogPanel';
 import { OutletZonesPanel } from './components/OutletZonesPanel';
 import { RestaurantOnboardingPanel } from './components/RestaurantOnboardingPanel';
 
@@ -322,6 +323,13 @@ export function App() {
         />
 
         <OutletZonesPanel
+          apiBase={getApiBase()}
+          accessToken={accessToken}
+          activeRole={partnerActiveRole}
+          onStatusUpdate={setStatusMessage}
+        />
+
+        <MenuCatalogPanel
           apiBase={getApiBase()}
           accessToken={accessToken}
           activeRole={partnerActiveRole}

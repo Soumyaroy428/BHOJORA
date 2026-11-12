@@ -3,7 +3,7 @@
   --terracotta-dark: #6d271e;
   --terracotta-light: #fbefef;
   --cream: #f7f1e6;
-  --cream-card: #ffffff;
+  --cream-card: #fffcf8;
   --cream-alt: #efe8dc;
   --trust-green: #344b3e;
   --trust-green-light: #edf3ef;
@@ -162,7 +162,7 @@ header {
   font-size: 13px;
   font-weight: 600;
   color: var(--neutral-800);
-  min-height: 36px;
+  min-height: 44px;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -201,7 +201,7 @@ header {
 
 .btn-primary {
   background: var(--terracotta);
-  color: #ffffff;
+  color: #fffcf8;
   box-shadow: 0 2px 4px rgba(141, 53, 42, 0.2);
 }
 
@@ -287,10 +287,11 @@ header {
   flex: 1;
   border: none;
   outline: none;
-  font-size: 15px;
+  font-size: max(1rem, 1em);
   font-family: inherit;
   color: var(--neutral-800);
   background: transparent;
+  min-height: 44px;
   padding: 8px;
 }
 
@@ -310,12 +311,12 @@ header {
   background: var(--cream-card);
   border: 1px solid var(--neutral-200);
   border-radius: var(--radius-full);
-  padding: 6px 14px;
+  padding: 8px 14px;
   font-family: inherit;
   font-size: 12px;
   font-weight: 500;
   color: var(--neutral-600);
-  min-height: 32px;
+  min-height: 44px;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -387,11 +388,12 @@ header {
   position: absolute;
   top: 12px;
   right: 12px;
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 252, 248, 0.95);
   backdrop-filter: blur(4px);
   border: 1px solid var(--trust-green);
   border-radius: var(--radius-full);
-  padding: 5px 12px;
+  padding: 6px 12px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -579,8 +581,8 @@ dialog.trust-dialog::backdrop {
   border: none;
   font-size: 24px;
   line-height: 1;
-  min-width: 36px;
-  min-height: 36px;
+  min-width: 44px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -980,6 +982,185 @@ footer {
   border-radius: var(--radius-md);
   padding: 14px;
   background: #fff9f9;
+}
+
+.card-actions-row {
+  margin-top: 12px;
+}
+
+.card-menu-btn {
+  width: 100%;
+  min-height: 44px;
+}
+
+.menu-dialog {
+  max-width: 700px;
+}
+
+.menu-source-note {
+  font-size: 12px;
+  color: var(--neutral-600);
+  margin-top: 2px;
+}
+
+.menu-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.menu-category-stack {
+  display: grid;
+  gap: 18px;
+}
+
+.menu-category-title {
+  font-size: 16px;
+  margin-bottom: 2px;
+}
+
+.menu-category-desc {
+  font-size: 13px;
+  color: var(--neutral-600);
+  margin-bottom: 10px;
+}
+
+.menu-item-list {
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+
+.menu-item-card {
+  background: var(--cream);
+  border: 1px solid var(--neutral-200);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  display: grid;
+  gap: 8px;
+}
+
+.menu-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.menu-item-title {
+  font-size: 16px;
+  margin: 6px 0 4px;
+}
+
+.menu-item-desc {
+  font-size: 13px;
+  color: var(--neutral-600);
+}
+
+.menu-price-col {
+  text-align: right;
+  flex-shrink: 0;
+  display: grid;
+  gap: 4px;
+  justify-items: end;
+}
+
+.menu-price-inr {
+  font-family: 'Manrope', sans-serif;
+  font-size: 17px;
+  color: var(--neutral-950);
+}
+
+.menu-avail-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--neutral-200);
+}
+
+.menu-avail-pill.is-open {
+  background: var(--trust-green-light);
+  border-color: var(--trust-green);
+  color: var(--trust-green-text);
+}
+
+.menu-avail-pill.is-soldout {
+  background: var(--terracotta-light);
+  border-color: var(--terracotta);
+  color: var(--terracotta-dark);
+}
+
+.dietary-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--neutral-200);
+  background: var(--cream-card);
+}
+
+.dietary-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid currentColor;
+  border-radius: 3px;
+  font-size: 9px;
+  line-height: 1;
+}
+
+.dietary-veg {
+  color: #0e8345;
+  border-color: #0e8345;
+}
+
+.dietary-nonveg {
+  color: #9e3b2e;
+  border-color: #9e3b2e;
+}
+
+.dietary-egg {
+  color: #b45309;
+  border-color: #d97706;
+}
+
+.menu-allergen-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.allergen-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: var(--radius-full);
+  background: var(--saffron-light);
+  border: 1px solid var(--saffron);
+  color: var(--neutral-950);
+}
+
+.allergen-pill.is-clear {
+  background: var(--trust-green-light);
+  border-color: var(--trust-green);
+  color: var(--trust-green-text);
+}
+
+.menu-custom-meta {
+  font-size: 12px;
+  color: var(--neutral-800);
+  border-top: 1px dashed var(--neutral-200);
+  padding-top: 6px;
 }
 
 @media (max-width: 768px) {

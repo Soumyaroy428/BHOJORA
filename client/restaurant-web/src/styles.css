@@ -1,6 +1,6 @@
 :root {
   --bg-canvas: #f7f1e6;
-  --bg-card: #ffffff;
+  --bg-card: #fffcf8;
   --bg-alt: #efe8dc;
   --ink-950: #171412;
   --ink-800: #3a3430;
@@ -84,6 +84,13 @@ body {
   gap: 1.5rem;
 }
 
+.shell > *,
+.hero-split > *,
+.form-grid-2 > *,
+.metrics-row > * {
+  min-width: 0;
+}
+
 .hero-split {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.9fr);
@@ -96,6 +103,7 @@ body {
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 1.5rem;
+  min-width: 0;
 }
 
 .panel-alt {
@@ -146,7 +154,8 @@ h1 {
   border: 1px solid var(--border);
   background: var(--bg-card);
   color: var(--ink-800);
-  padding: 0.55rem 0.9rem;
+  padding: 0.55rem 0.95rem;
+  min-height: 44px;
   border-radius: 999px;
   font-weight: 600;
   font-size: 0.875rem;
@@ -194,12 +203,13 @@ h1 {
 
 .field input {
   width: 100%;
+  min-height: 44px;
   padding: 0.65rem 0.8rem;
   border-radius: 10px;
   border: 1px solid var(--border);
-  background: #ffffff;
+  background: var(--bg-card);
   color: var(--ink-950);
-  font-size: 0.95rem;
+  font-size: max(1rem, 1em);
 }
 
 .field input:user-invalid {
@@ -215,12 +225,13 @@ h1 {
 .field select,
 .field textarea {
   width: 100%;
+  min-height: 44px;
   padding: 0.65rem 0.8rem;
   border-radius: 10px;
   border: 1px solid var(--border);
-  background: #ffffff;
+  background: var(--bg-card);
   color: var(--ink-950);
-  font-size: 0.95rem;
+  font-size: max(1rem, 1em);
   font-family: inherit;
 }
 
@@ -243,6 +254,8 @@ h1 {
 }
 
 .fieldset-group {
+  min-width: 0;
+  max-width: 100%;
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 1rem;
@@ -282,6 +295,7 @@ h1 {
 }
 
 .table-scroll {
+  max-width: 100%;
   overflow-x: auto;
 }
 
@@ -315,11 +329,12 @@ h1 {
 
 .btn-primary {
   width: 100%;
+  min-height: 44px;
   padding: 0.72rem 1rem;
   border-radius: 10px;
   border: 1px solid var(--terracotta-dark);
   background: var(--terracotta);
-  color: #ffffff;
+  color: #fffcf8;
   font-weight: 600;
   font-size: 0.95rem;
   cursor: pointer;
@@ -333,8 +348,88 @@ h1 {
   border: 1px solid var(--border);
   background: var(--bg-card);
   color: var(--ink-950);
-  padding: 0.5rem 0.9rem;
+  padding: 0.55rem 0.95rem;
+  min-height: 44px;
   border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dietary-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  border: 1px solid var(--border);
+  background: var(--bg-canvas);
+}
+
+.dietary-tag-veg {
+  border-color: var(--trust-green);
+  background: var(--trust-green-light);
+  color: var(--trust-green-ink);
+}
+
+.dietary-tag-nonveg {
+  border-color: var(--terracotta);
+  background: var(--terracotta-light);
+  color: var(--terracotta-dark);
+}
+
+.dietary-tag-egg {
+  border-color: var(--saffron);
+  background: var(--saffron-light);
+  color: var(--ink-950);
+}
+
+.allergen-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.data-table input[type='time'] {
+  min-height: 44px;
+  min-width: 112px;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--ink-950);
+  font-size: max(1rem, 1em);
+  font-family: inherit;
+}
+
+.table-check-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.table-check-label input[type='checkbox'],
+.allergen-toggle input {
+  width: 20px;
+  height: 20px;
+  font-size: max(1rem, 1em);
+  accent-color: var(--terracotta);
+}
+
+.allergen-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 44px;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-card);
+  font-size: 0.84rem;
   font-weight: 600;
   cursor: pointer;
 }

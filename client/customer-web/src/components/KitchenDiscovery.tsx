@@ -11,6 +11,7 @@ interface KitchenDiscoveryProps {
   onToggleMinScore: () => void;
   onToggleVegOnly: () => void;
   onOpenTrustProfile: (kitchen: KitchenOutlet) => void;
+  onOpenMenu: (kitchen: KitchenOutlet) => void;
 }
 
 const SERVICEABILITY_PRESETS: ReadonlyArray<{ label: string; lng: string; lat: string }> = [
@@ -27,6 +28,7 @@ export function KitchenDiscovery({
   onToggleMinScore,
   onToggleVegOnly,
   onOpenTrustProfile,
+  onOpenMenu,
 }: KitchenDiscoveryProps) {
   const [checkLng, setCheckLng] = useState('88.4317');
   const [checkLat, setCheckLat] = useState('22.5806');
@@ -273,6 +275,15 @@ export function KitchenDiscovery({
                   {kitchen.locality} • {kitchen.etaMinutes}
                 </span>
                 <span className="audit-status">🛡️ Audited {kitchen.auditedMonth}</span>
+              </div>
+              <div className="card-actions-row">
+                <button
+                  type="button"
+                  className="btn btn-outline card-menu-btn"
+                  onClick={() => onOpenMenu(kitchen)}
+                >
+                  View Menu &amp; Allergens
+                </button>
               </div>
             </div>
           </article>

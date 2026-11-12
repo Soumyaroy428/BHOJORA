@@ -55,11 +55,7 @@ export function HeroSection({
             value={searchQuery}
             onChange={(event) => onSearchChange(event.target.value)}
           />
-          <button
-            type="submit"
-            className="btn btn-primary"
-            style={{ padding: '8px 18px', minHeight: '38px' }}
-          >
+          <button type="submit" className="btn btn-primary" style={{ padding: '8px 18px' }}>
             Find Food
           </button>
         </form>

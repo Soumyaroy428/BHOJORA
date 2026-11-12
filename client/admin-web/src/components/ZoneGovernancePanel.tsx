@@ -106,8 +106,10 @@ export function ZoneGovernancePanel({
   }
 
   useEffect(() => {
-    void loadZones();
-  }, [apiBase]);
+    if (accessToken) {
+      void loadZones();
+    }
+  }, [apiBase, accessToken]);
 
   async function handleToggleZone(zone: DeliveryZoneDto) {
     if (!apiBase || !accessToken || !mfaVerified) {

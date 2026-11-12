@@ -290,3 +290,22 @@ Checkpoint 11 establishes multi-branch outlet management, GeoJSON `[longitude, l
 ### Consequences
 - **Positive:** Guarantees consistent Kolkata geospatial behavior across MongoDB `2dsphere` queries and circuit-breaker ray-casting fallbacks (`ARCHITECTURE.md` §5.3) with zero client-trust leakage.
 - **Negative:** External polygon zones covering regions outside `[88.1..88.7, 22.3..22.85]` require explicit bounds expansion when onboarding cities beyond the Kolkata pilot.
+
+---
+
+## ADR-016: Catalog & Menu Management, Integer Paise Pricing, Declared Allergens & Audited Mutations
+
+### Status: ACCEPTED (Locked Baseline — Checkpoint 12)
+
+### Context
+Checkpoint 12 establishes multi-outlet catalog management (`menu_categories`, `menu_items`, `item_customizations`, `inventory_records`), variants and add-on groups, public customer menu discovery, dietary classification (`PURE_VEG` / `NON_VEG` / `EGG`), explicit allergen labeling, and audit trails for all price, allergen, and stock changes while enforcing `ADR-003` (integer paise) and `ADR-007` (public Tier-1 cleanliness).
+
+### Decision
+1. **Dedicated Catalog Domain (`server/src/modules/catalog/`):** Own `BhojoraMenuCategory` (`menu_categories`), `BhojoraMenuItem` (`menu_items`), `BhojoraItemCustomization` (`item_customizations`), and `BhojoraInventoryRecord` (`inventory_records`) while reading outlet/tenant metadata via injected `RestaurantStore` and `RbacStore` (`ADR-001`).
+2. **Strict Integer Paise Across Monetary Fields (`paiseField()` + Zod `.int().min(0)`):** Item `pricePaise`, variant `priceDeltaPaise`, and add-on `pricePaise` reject floats, negative numbers, and unvalidated currency strings across both Zod schemas and Mongoose schemas (`ADR-003`).
+3. **Mandatory Allergen Disclosure & Non-Color-Only Dietary Badges:** Every dish requires `allergenDisclosureConfirmed: true` alongside canonical `ALLERGEN_CODES` (`DAIRY`, `EGG`, `GLUTEN`, `PEANUTS`, `TREE_NUTS`, `SOY`, `FISH`, `SHELLFISH`, `SESAME`, `MUSTARD`, `SULPHITES`) mapped to explicit customer labels (`Contains Dairy`, etc.) and paired with text-and-symbol `DietaryBadge` badges (`● Pure Veg`, `▲ Non-Veg`, `● Contains Egg`).
+4. **Role Segregation, Safe Media URLs & Append-Only Menu Audits:** Mutations require `restaurant:menu:manage` (`RESTAURANT_OWNER` / `RESTAURANT_MANAGER` only; `KITCHEN_STAFF` denied `403`) plus active outlet membership (`DENIED` attempts audited). Public `imageUrl` validates safe `https://` or `./assets/` paths only (never `private/compliance` or inline scripts), and every category, price, allergen, or availability mutation appends an audit record to `audit_logs`.
+
+### Consequences
+- **Positive:** Prevents floating-point rupee rounding errors, guarantees explicit allergen transparency for customers, and provides an immutable audit trail on every catalog edit prior to Checkpoint 13 cart and checkout work.
+- **Negative:** Partners must explicitly confirm declared allergens when creating dishes even when no major allergens apply.

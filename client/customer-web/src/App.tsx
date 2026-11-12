@@ -5,6 +5,7 @@ import { Footer } from './components/Footer';
 import { Header } from './components/Header';
 import { HeroSection } from './components/HeroSection';
 import { KitchenDiscovery } from './components/KitchenDiscovery';
+import { OutletMenuDialog } from './components/OutletMenuDialog';
 import { PillarsSection } from './components/PillarsSection';
 import { PilotInfoDialog } from './components/PilotInfoDialog';
 import { TrustProfileDialog } from './components/TrustProfileDialog';
@@ -27,6 +28,7 @@ export function App() {
   const [bannerInEnglish, setBannerInEnglish] = useState(false);
 
   const [selectedTrustKitchen, setSelectedTrustKitchen] = useState<KitchenOutlet | null>(null);
+  const [selectedMenuKitchen, setSelectedMenuKitchen] = useState<KitchenOutlet | null>(null);
   const [pilotInfoOpen, setPilotInfoOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authSession, setAuthSession] = useState<AuthSessionState | null>(null);
@@ -104,6 +106,7 @@ export function App() {
           onToggleMinScore={() => setMinScoreOnly((prev) => !prev)}
           onToggleVegOnly={() => setVegOnly((prev) => !prev)}
           onOpenTrustProfile={(kitchen) => setSelectedTrustKitchen(kitchen)}
+          onOpenMenu={(kitchen) => setSelectedMenuKitchen(kitchen)}
         />
 
         <BengaliBanner
@@ -117,6 +120,11 @@ export function App() {
       <TrustProfileDialog
         kitchen={selectedTrustKitchen}
         onClose={() => setSelectedTrustKitchen(null)}
+      />
+
+      <OutletMenuDialog
+        kitchen={selectedMenuKitchen}
+        onClose={() => setSelectedMenuKitchen(null)}
       />
 
       <PilotInfoDialog

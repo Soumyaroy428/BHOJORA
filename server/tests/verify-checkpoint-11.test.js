@@ -234,7 +234,7 @@ async function runTests() {
 
   // 1. Server baseline, shared contracts & index specifications
   const shared = await import('../../client/shared/dist/contracts/outlet.js');
-  assert.equal(SERVER_BASELINE.checkpoint, '11');
+  assert.ok(Number(SERVER_BASELINE.checkpoint) >= 11);
   assert.equal(SERVER_BASELINE.timezone, 'Asia/Kolkata');
   assert.equal(shared.DEFAULT_OUTLET_DELIVERY_RADIUS_METERS, 5000);
   assert.ok(shared.OUTLET_OPERATIONAL_STATUSES.includes('TEMPORARILY_CLOSED'));

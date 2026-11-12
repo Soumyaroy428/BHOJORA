@@ -26,6 +26,10 @@ import { createRestaurantRouter } from './modules/restaurant/restaurant.routes';
 import { RestaurantService } from './modules/restaurant/restaurant.service';
 import { MongooseRestaurantStore } from './modules/restaurant/restaurant.store';
 import type { RestaurantStore } from './modules/restaurant/restaurant.types';
+import { createCatalogRouter } from './modules/catalog/catalog.routes';
+import { CatalogService } from './modules/catalog/catalog.service';
+import { MongooseCatalogStore } from './modules/catalog/catalog.store';
+import type { CatalogStore } from './modules/catalog/catalog.types';
 
 export interface CreateAppOptions {
   config: AppConfig;
@@ -41,6 +45,8 @@ export interface CreateAppOptions {
   restaurantService?: RestaurantService;
   outletStore?: OutletStore;
   outletService?: OutletService;
+  catalogStore?: CatalogStore;
+  catalogService?: CatalogService;
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -111,6 +117,15 @@ export function createApp(options: CreateAppOptions): Express {
       rbacStore,
       logger,
     });
+  const catalogStore = options.catalogStore ?? new MongooseCatalogStore(mongoose.connection);
+  const catalogService =
+    options.catalogService ??
+    new CatalogService({
+      catalogStore,
+      restaurantStore,
+      rbacStore,
+      logger,
+    });
   const identityRouter = createIdentityRouter(identityService, config);
   const rbacRouter = createRbacRouter({
     identityService,
@@ -137,6 +152,12 @@ export function createApp(options: CreateAppOptions): Express {
     rbacStore,
     config,
   });
+  const catalogRouter = createCatalogRouter({
+    identityService,
+    catalogService,
+    rbacStore,
+    config,
+  });
 
   app.use('/api/v1', healthRouter);
   app.use('/api/v1', identityRouter);
@@ -144,6 +165,7 @@ export function createApp(options: CreateAppOptions): Express {
   app.use('/api/v1', customerRouter);
   app.use('/api/v1', restaurantRouter);
   app.use('/api/v1', outletRouter);
+  app.use('/api/v1', catalogRouter);
   app.use(healthRouter);
 
   app.use(notFoundHandler);

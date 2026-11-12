@@ -383,6 +383,52 @@
         "responses": { "200": { "description": "Structured menu categories and items" } }
       }
     },
+    "/restaurant/outlets/{outletId}/menu": {
+      "get": {
+        "summary": "Read partner outlet menu catalog and scoped catalog audit trail",
+        "tags": ["Catalog"],
+        "parameters": [{ "name": "outletId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Partner outlet catalog and audit log" } }
+      }
+    },
+    "/restaurant/menu/categories": {
+      "post": {
+        "summary": "Create menu category on tenant-owned outlet (restaurant:menu:manage)",
+        "tags": ["Catalog"],
+        "responses": { "201": { "description": "Category created and audited" } }
+      }
+    },
+    "/restaurant/menu/categories/{categoryId}": {
+      "patch": {
+        "summary": "Update menu category name, order, or active status (audited)",
+        "tags": ["Catalog"],
+        "parameters": [{ "name": "categoryId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Category updated and audited" } }
+      }
+    },
+    "/restaurant/menu/items": {
+      "post": {
+        "summary": "Create menu item with integer paise price, dietary badge, confirmed allergens, variants, and add-ons",
+        "tags": ["Catalog"],
+        "responses": { "201": { "description": "Menu item created and audited" } }
+      }
+    },
+    "/restaurant/menu/items/{itemId}": {
+      "patch": {
+        "summary": "Update menu item integer paise pricing, allergens, customizations, or availability (audited)",
+        "tags": ["Catalog"],
+        "parameters": [{ "name": "itemId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Menu item updated and audited" } }
+      }
+    },
+    "/restaurant/menu/items/{itemId}/availability": {
+      "patch": {
+        "summary": "Toggle menu item live kitchen stock and availability (audited)",
+        "tags": ["Catalog"],
+        "parameters": [{ "name": "itemId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Availability updated and audited" } }
+      }
+    },
     "/safety/outlets/{id}": {
       "get": {
         "summary": "Fetch canonical public Bhojora Trust profile for an outlet",
