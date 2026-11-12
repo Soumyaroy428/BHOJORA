@@ -237,7 +237,7 @@ async function runTests() {
 
   // 1. Server baseline, shared contracts, DB indexes & OpenAPI verification
   const sharedCatalog = await import('../../client/shared/dist/contracts/catalog.js');
-  assert.equal(SERVER_BASELINE.checkpoint, '12');
+  assert.ok(Number(SERVER_BASELINE.checkpoint) >= 12);
   assert.equal(SERVER_BASELINE.currencyUnit, 'paise');
   assert.deepEqual([...sharedCatalog.DIETARY_TYPES], [...SERVER_DIETARY_TYPES]);
   assert.deepEqual([...sharedCatalog.ALLERGEN_CODES], [...SERVER_ALLERGEN_CODES]);

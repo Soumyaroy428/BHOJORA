@@ -10,7 +10,7 @@ import { createHealthService, type ReadinessProbe } from './modules/health/healt
 import { MongooseIdentityStore } from './modules/identity/identity.models';
 import { createIdentityRouter } from './modules/identity/identity.routes';
 import { IdentityService } from './modules/identity/identity.service';
-import type { IdentityStore } from './modules/identity/identity.types';
+import type { Clock, IdentityStore } from './modules/identity/identity.types';
 import { SafeLogOtpSenderAdapter } from './modules/identity/otp.adapter';
 import { createCustomerRouter } from './modules/customer/customer.routes';
 import { CustomerService } from './modules/customer/customer.service';
@@ -20,20 +20,27 @@ import { createRbacRouter } from './modules/rbac/rbac.routes';
 import { MongooseRbacStore, type RbacStore } from './modules/rbac/rbac.store';
 import { createOutletRouter } from './modules/outlet/outlet.routes';
 import { OutletService } from './modules/outlet/outlet.service';
-import { MongooseOutletStore } from './modules/outlet/outlet.store';
+import { InMemoryOutletStore, MongooseOutletStore } from './modules/outlet/outlet.store';
 import type { OutletStore } from './modules/outlet/outlet.types';
 import { createRestaurantRouter } from './modules/restaurant/restaurant.routes';
 import { RestaurantService } from './modules/restaurant/restaurant.service';
-import { MongooseRestaurantStore } from './modules/restaurant/restaurant.store';
+import {
+  InMemoryRestaurantStore,
+  MongooseRestaurantStore,
+} from './modules/restaurant/restaurant.store';
 import type { RestaurantStore } from './modules/restaurant/restaurant.types';
 import { createCatalogRouter } from './modules/catalog/catalog.routes';
 import { CatalogService } from './modules/catalog/catalog.service';
-import { MongooseCatalogStore } from './modules/catalog/catalog.store';
+import { InMemoryCatalogStore, MongooseCatalogStore } from './modules/catalog/catalog.store';
 import type { CatalogStore } from './modules/catalog/catalog.types';
+import { createDiscoveryRouter } from './modules/discovery/discovery.routes';
+import { DiscoveryService } from './modules/discovery/discovery.service';
+import type { DiscoveryRateLimitOptions } from './modules/discovery/discovery.types';
 
 export interface CreateAppOptions {
   config: AppConfig;
   logger?: Logger;
+  clock?: Clock;
   readinessProbes?: readonly ReadinessProbe[];
   getIsShuttingDown?: () => boolean;
   identityService?: IdentityService;
@@ -47,6 +54,8 @@ export interface CreateAppOptions {
   outletService?: OutletService;
   catalogStore?: CatalogStore;
   catalogService?: CatalogService;
+  discoveryService?: DiscoveryService;
+  discoveryRateLimit?: DiscoveryRateLimitOptions;
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -108,7 +117,10 @@ export function createApp(options: CreateAppOptions): Express {
       signingSecret: config.jwtAccessSecret,
       logger,
     });
-  const outletStore = options.outletStore ?? new MongooseOutletStore(mongoose.connection);
+  const isInMemoryMode = restaurantStore instanceof InMemoryRestaurantStore;
+  const outletStore =
+    options.outletStore ??
+    (isInMemoryMode ? new InMemoryOutletStore() : new MongooseOutletStore(mongoose.connection));
   const outletService =
     options.outletService ??
     new OutletService({
@@ -116,8 +128,11 @@ export function createApp(options: CreateAppOptions): Express {
       outletStore,
       rbacStore,
       logger,
+      ...(options.clock ? { clock: options.clock } : {}),
     });
-  const catalogStore = options.catalogStore ?? new MongooseCatalogStore(mongoose.connection);
+  const catalogStore =
+    options.catalogStore ??
+    (isInMemoryMode ? new InMemoryCatalogStore() : new MongooseCatalogStore(mongoose.connection));
   const catalogService =
     options.catalogService ??
     new CatalogService({
@@ -125,6 +140,16 @@ export function createApp(options: CreateAppOptions): Express {
       restaurantStore,
       rbacStore,
       logger,
+    });
+  const discoveryService =
+    options.discoveryService ??
+    new DiscoveryService({
+      restaurantStore,
+      outletStore,
+      outletService,
+      catalogStore,
+      logger,
+      ...(options.clock ? { clock: options.clock } : {}),
     });
   const identityRouter = createIdentityRouter(identityService, config);
   const rbacRouter = createRbacRouter({
@@ -142,9 +167,13 @@ export function createApp(options: CreateAppOptions): Express {
   const restaurantRouter = createRestaurantRouter({
     identityService,
     restaurantService,
-    outletService,
     rbacStore,
     config,
+  });
+  const discoveryRouter = createDiscoveryRouter({
+    discoveryService,
+    rateLimit: options.discoveryRateLimit,
+    clock: options.clock ?? outletService.getClock(),
   });
   const outletRouter = createOutletRouter({
     identityService,
@@ -163,6 +192,7 @@ export function createApp(options: CreateAppOptions): Express {
   app.use('/api/v1', identityRouter);
   app.use('/api/v1', rbacRouter);
   app.use('/api/v1', customerRouter);
+  app.use('/api/v1', discoveryRouter);
   app.use('/api/v1', restaurantRouter);
   app.use('/api/v1', outletRouter);
   app.use('/api/v1', catalogRouter);

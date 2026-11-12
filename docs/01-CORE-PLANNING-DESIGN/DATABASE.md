@@ -57,6 +57,8 @@ publication status.
 -   unique operation + idempotency key
 -   unique `applicationId` and `restaurantId`, `ownerUserId + updatedAt`, and `onboardingStatus + submittedAt` on `restaurants`
 -   unique `outletId` and `2dsphere` location on `restaurant_outlets`
+-   compound discovery indexes on `restaurant_outlets`: `status + zoneId + platformInspectionStatus + publishedSafetyScore` and `status + cuisines + brandName`
+-   compound dish search indexes on `menu_items`: `outletId + isAvailable + dietaryType + pricePaise` and `isAvailable + title`
 -   unique `cityCode + zoneCode` and `2dsphere` boundary on `delivery_zones`
 -   unique `outletId` and `restaurantId` on `outlet_hours`
 -   unique `documentId` and `restaurantId + documentType + uploadedAt` on `restaurant_documents`
@@ -133,4 +135,5 @@ Persist policy version and evidence.
 -   **Local hygiene:** Never copy production dumps containing Tier 3 PII or Tier 4 tokens onto developer workstations or commit database archives into Git.
 -   **Customer PII & Deletion Retention (Checkpoint 09):** `customer_profiles` (`userId` unique index + `deletionRequest.status`/`scheduledPurgeAt` schedule index) and `addresses` (`addressId` unique, `userId + isDefault`, `location: 2dsphere`) isolate customer PII cleanly from immutable `consent_records` and financial/order ledgers so 30-day self-service erasure requests anonymize personal fields without corrupting statutory tax records (`AUTH.md` §9).
 -   **Restaurant Onboarding & Private KYC Vault (Checkpoint 10):** `restaurants`, `restaurant_outlets`, and `restaurant_documents` enforce `isPublic: false` (`PRIVATE_COMPLIANCE`) on uploaded compliance metadata, mask/HMAC-hash PAN and settlement bank numbers, and isolate statutory `fssaiVerificationStatus` from independent `platformInspectionStatus` (`NOT_INSPECTED` until field audit).
+-   **Discovery & Search Index Coverage (Checkpoint 13):** `restaurant_outlets` (`idx_outlets_discovery_zone_safety`, `idx_outlets_discovery_status_cuisine`) and `menu_items` (`idx_menu_items_discovery_avail_diet_price`, `idx_menu_items_available_title`) back bounded `limit <= 25` keyset cursor pagination without N+1 queries or misleading verified claims.
 -   **Restore drills:** Verify snapshot restoration into a disposable non-production database quarterly, re-running `db:indexes` verification and verifying financial/inspection immutability invariants prior to sign-off.

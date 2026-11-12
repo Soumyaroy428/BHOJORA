@@ -55,43 +55,81 @@ export function TrustProfileDialog({ kitchen, onClose }: TrustProfileDialogProps
             style={{
               fontSize: '12px',
               fontWeight: 700,
-              color: 'var(--trust-green)',
+              color: kitchen?.isVerified === false ? 'var(--neutral-800)' : 'var(--trust-green)',
               textTransform: 'uppercase',
             }}
           >
             Independent Audit Result
           </div>
-          <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--trust-green-text)' }}>
-            VERIFIED CLEAN KITCHEN
+          <div
+            style={{
+              fontSize: '16px',
+              fontWeight: 700,
+              color:
+                kitchen?.isVerified === false
+                  ? 'var(--terracotta-dark)'
+                  : 'var(--trust-green-text)',
+            }}
+          >
+            {kitchen?.isVerified === false
+              ? 'NOT YET INSPECTED BY BHOJORA'
+              : 'VERIFIED CLEAN KITCHEN'}
           </div>
           <div
             id="modalAuditDate"
             style={{ fontSize: '12px', color: 'var(--neutral-600)', marginTop: '2px' }}
           >
-            Inspected on: {kitchen?.auditDate ?? '14 Oct 2026'}
+            {kitchen?.isVerified === false
+              ? kitchen.statusExplanation
+              : `Inspected on: ${kitchen?.auditDate ?? '14 Oct 2026'}`}
           </div>
         </div>
         <div className="score-number">
-          <span id="modalScoreVal">{kitchen?.score ?? 94}</span>
-          <span style={{ fontSize: '16px', color: 'var(--neutral-600)' }}>/100</span>
+          {kitchen?.isVerified === false || kitchen?.score === null ? (
+            <span id="modalScoreVal" style={{ fontSize: '16px' }}>
+              Pending Audit
+            </span>
+          ) : (
+            <>
+              <span id="modalScoreVal">{kitchen?.score ?? 94}</span>
+              <span style={{ fontSize: '16px', color: 'var(--neutral-600)' }}>/100</span>
+            </>
+          )}
         </div>
       </div>
 
-      <h3 style={{ fontSize: '14px', marginBottom: '12px' }}>Category Score Breakdown</h3>
-      {TRUST_CATEGORY_LABELS.map((label, idx) => {
-        const pct = kitchen?.categoryPercentages[idx] ?? 90;
-        return (
-          <div key={label} className="category-row">
-            <div className="category-label">
-              <span>{label}</span>
-              <span id={`catPct${idx}`}>{pct}%</span>
-            </div>
-            <div className="progress-bar-bg">
-              <div id={`catBar${idx}`} className="progress-bar-fill" style={{ width: `${pct}%` }} />
-            </div>
-          </div>
-        );
-      })}
+      {kitchen?.categoryPercentages ? (
+        <>
+          <h3 style={{ fontSize: '14px', marginBottom: '12px' }}>Category Score Breakdown</h3>
+          {TRUST_CATEGORY_LABELS.map((label, idx) => {
+            const pct = kitchen.categoryPercentages?.[idx] ?? 0;
+            return (
+              <div key={label} className="category-row">
+                <div className="category-label">
+                  <span>{label}</span>
+                  <span id={`catPct${idx}`}>{pct}%</span>
+                </div>
+                <div className="progress-bar-bg">
+                  <div
+                    id={`catBar${idx}`}
+                    className="progress-bar-fill"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </>
+      ) : (
+        <div
+          className="disclaimer-box"
+          style={{ marginTop: 0, marginBottom: '14px', background: 'var(--saffron-light)' }}
+        >
+          <strong>Verification Status Pending:</strong> Statutory FSSAI license{' '}
+          <code>{kitchen?.fssai}</code> is on file, but no independent Bhojora hygiene score has
+          been published yet. Category scores remain unpublished until physical audit sign-off.
+        </div>
+      )}
 
       <div className="disclaimer-box">
         <strong>⚠️ Statutory Transparency Notice:</strong>

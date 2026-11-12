@@ -309,3 +309,22 @@ Checkpoint 12 establishes multi-outlet catalog management (`menu_categories`, `m
 ### Consequences
 - **Positive:** Prevents floating-point rupee rounding errors, guarantees explicit allergen transparency for customers, and provides an immutable audit trail on every catalog edit prior to Checkpoint 13 cart and checkout work.
 - **Negative:** Partners must explicitly confirm declared allergens when creating dishes even when no major allergens apply.
+
+---
+
+## ADR-017: Discovery Search, Keyset Cursor Pagination, Index Pushdown & Truthful Safety Badges
+
+### Status: ACCEPTED (Locked Baseline — Checkpoint 13)
+
+### Context
+Checkpoint 13 delivers restaurant, cuisine, dish, dietary, and allergen search across Kolkata corridors (`GET /api/v1/search`, `GET /api/v1/restaurants`, `GET /api/v1/categories`), requiring deterministic multi-mode sorting without sponsored safety placement, bounded keyset cursor pagination backed by MongoDB compound indexes, abuse rate controls, and strict guarantees against misleading verified claims.
+
+### Decision
+1. **Dedicated Discovery Read Module (`server/src/modules/discovery/`) Within `ADR-001` Boundaries:** Consume injected `RestaurantStore`, `OutletStore`, `OutletService` (`listDeliveryZones`, `getClock`), and `CatalogStore` (`listPublicItemsForOutlets` batch lookup to eliminate N+1 queries) to join live IST open status, Haversine distance/ETA, menu dishes, and trust badges cleanly.
+2. **Compound Discovery Indexes (`server/src/database/indexes.ts`):** Provision `idx_outlets_discovery_zone_safety` (`status + zoneId + platformInspectionStatus + publishedSafetyScore`), `idx_outlets_discovery_status_cuisine` (`status + cuisines + brandName`), `idx_menu_items_discovery_avail_diet_price` (`outletId + isAvailable + dietaryType + pricePaise`), and `idx_menu_items_available_title` (`isAvailable + title`).
+3. **Deterministic Keyset Cursor Pagination & ReDoS-Free Query Hardening:** Cap `limit` (`1..25`) and `q` (`<= 80` chars), disallow control characters, tokenize text without unescaped dynamic `RegExp` execution, encode query-bound keyset tuples (`primarySort`, `secondarySort`, `outletId`) in Base64url cursors validated against active filter hashes (`400 VALIDATION_ERROR` on mismatch/tampering), and protect public search endpoints with an IP sliding-window rate limiter (`429 RATE_LIMITED`).
+4. **Non-Misleading Trust Badges & Anti-Sponsored Ranking:** Enforce `buildDiscoveryTrustBadge()` so `isVerified` is `true` strictly when `status === 'ACTIVE' && platformInspectionStatus === 'VERIFIED_CLEAN' && publishedSafetyScore > 0`; `NOT_INSPECTED`, `SCHEDULED`, `ACTION_REQUIRED`, and `EXPIRED` never claim `VERIFIED` or emit fabricated scores, `SUSPENDED` outlets are excluded, and `rankingDisclosure` confirms search rank never sells discovery placement.
+
+### Consequences
+- **Positive:** Prevents N+1 query amplification, ReDoS abuse, duplicate/skipped pagination items, and deceptive "Verified" marketing badges across both API payloads and `customer-web` React cards/map pins.
+- **Negative:** Changing search filters invalidates active pagination cursors (`400 VALIDATION_ERROR`), requiring clients to start from page 1 whenever filters or sort order change.

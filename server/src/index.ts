@@ -21,10 +21,11 @@ import { RestaurantService } from './modules/restaurant/restaurant.service';
 import { MongooseRestaurantStore } from './modules/restaurant/restaurant.store';
 import { CatalogService } from './modules/catalog/catalog.service';
 import { InMemoryCatalogStore, MongooseCatalogStore } from './modules/catalog/catalog.store';
+import { DiscoveryService, buildDiscoveryTrustBadge } from './modules/discovery/discovery.service';
 
 export const SERVER_BASELINE = {
   service: 'bhojora-api',
-  checkpoint: '12',
+  checkpoint: '13',
   runtime: 'node-22-lts',
   currency: 'INR',
   currencyUnit: 'paise',
@@ -54,6 +55,8 @@ export {
   CatalogService,
   MongooseCatalogStore,
   InMemoryCatalogStore,
+  DiscoveryService,
+  buildDiscoveryTrustBadge,
   SafeLogOtpSenderAdapter,
 };
 

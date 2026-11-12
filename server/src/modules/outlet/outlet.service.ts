@@ -205,6 +205,10 @@ export class OutletService {
     this.clock = options.clock ?? SYSTEM_CLOCK;
   }
 
+  getClock(): Clock {
+    return this.clock;
+  }
+
   private async getResolvedZones(includeInactive = false): Promise<DeliveryZoneRecord[]> {
     const stored = await this.outletStore.listDeliveryZones({ includeInactive });
     if (stored.length > 0 || includeInactive) {

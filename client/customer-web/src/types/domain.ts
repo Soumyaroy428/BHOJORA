@@ -1,3 +1,5 @@
+import type { DiscoveryDishMatchDto, PlatformInspectionStatus } from '@bhojora/shared';
+
 export type LanguagePreference = 'en-IN' | 'bn-IN';
 
 export type KolkataZoneId = 'all' | 'salt-lake' | 'central' | 'new-town' | 'south' | 'north';
@@ -8,23 +10,35 @@ export interface TrustCategoryScore {
 }
 
 export interface KitchenOutlet {
-  key: 'arsalan' | 'peter-cat' | 'mocambo' | 'balaram';
+  key: string;
+  outletId?: string;
   name: string;
   fullName: string;
   locality: string;
   etaMinutes: string;
+  etaMinValue: number;
   cuisines: string;
   rating: string;
+  ratingNumeric: number;
   reviewCount: string;
-  score: number;
+  platformInspectionStatus: PlatformInspectionStatus;
+  isVerified: boolean;
+  score: number | null;
   auditedMonth: string;
-  auditDate: string;
+  auditDate: string | null;
+  statusExplanation: string;
   fssai: string;
   isPureVeg: boolean;
+  isOpenNow: boolean;
+  minPricePaise: number;
+  coordinates: readonly [number, number];
+  distanceMeters?: number;
+  serviceable?: boolean;
   zones: readonly Exclude<KolkataZoneId, 'all'>[];
   searchText: string;
   imageUrl: string;
-  categoryPercentages: readonly [number, number, number, number, number];
+  categoryPercentages: readonly [number, number, number, number, number] | null;
+  matchedDishes?: readonly DiscoveryDishMatchDto[];
 }
 
 export type AuthPanelName = 'login' | 'otp' | 'register' | 'recover';

@@ -158,6 +158,16 @@ export const INITIAL_DATABASE_INDEXES: readonly DatabaseIndexSpec[] = [
     options: { name: 'idx_outlets_restaurant_status' },
   },
   {
+    collection: COLLECTION_NAMES.restaurantOutlets,
+    key: { status: 1, zoneId: 1, platformInspectionStatus: 1, publishedSafetyScore: -1 },
+    options: { name: 'idx_outlets_discovery_zone_safety' },
+  },
+  {
+    collection: COLLECTION_NAMES.restaurantOutlets,
+    key: { status: 1, cuisines: 1, brandName: 1 },
+    options: { name: 'idx_outlets_discovery_status_cuisine' },
+  },
+  {
     collection: COLLECTION_NAMES.restaurantDocuments,
     key: { documentId: 1 },
     options: { name: 'idx_restaurant_docs_doc_id_unique', unique: true },
@@ -206,6 +216,16 @@ export const INITIAL_DATABASE_INDEXES: readonly DatabaseIndexSpec[] = [
     collection: COLLECTION_NAMES.menuItems,
     key: { outletId: 1, isAvailable: 1, categoryId: 1 },
     options: { name: 'idx_menu_items_outlet_avail_category' },
+  },
+  {
+    collection: COLLECTION_NAMES.menuItems,
+    key: { outletId: 1, isAvailable: 1, dietaryType: 1, pricePaise: 1 },
+    options: { name: 'idx_menu_items_discovery_avail_diet_price' },
+  },
+  {
+    collection: COLLECTION_NAMES.menuItems,
+    key: { isAvailable: 1, title: 1 },
+    options: { name: 'idx_menu_items_available_title' },
   },
   {
     collection: COLLECTION_NAMES.itemCustomizations,

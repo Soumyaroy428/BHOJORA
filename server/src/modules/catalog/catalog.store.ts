@@ -332,6 +332,37 @@ export class MongooseCatalogStore implements CatalogStore {
     return docs.map((doc) => toMenuItemRecord(doc as Record<string, unknown>));
   }
 
+  async listPublicItemsForOutlets(
+    outletIds: readonly string[],
+    options?: {
+      dietary?: DietaryType;
+      excludeAllergens?: readonly AllergenCode[];
+      maxPricePaise?: number;
+    },
+  ): Promise<MenuItemRecord[]> {
+    if (outletIds.length === 0) {
+      return [];
+    }
+    const filter: Record<string, unknown> = {
+      outletId: { $in: [...outletIds] },
+      isAvailable: true,
+    };
+    if (options?.dietary) {
+      filter['dietaryType'] = options.dietary;
+    }
+    if (options?.maxPricePaise !== undefined) {
+      filter['pricePaise'] = { $lte: options.maxPricePaise };
+    }
+    if (options?.excludeAllergens && options.excludeAllergens.length > 0) {
+      filter['allergens'] = { $nin: [...options.excludeAllergens] };
+    }
+    const docs = await this.itemModel
+      .find(filter)
+      .sort({ outletId: 1, pricePaise: 1, itemId: 1 })
+      .lean();
+    return docs.map((doc) => toMenuItemRecord(doc as Record<string, unknown>));
+  }
+
   async updateMenuItem(
     itemId: string,
     patch: Partial<
@@ -517,6 +548,47 @@ export class InMemoryCatalogStore implements CatalogStore {
     return Array.from(this.items.values())
       .filter((item) => item.outletId === outletId && (!options?.availableOnly || item.isAvailable))
       .sort((a, b) => a.categoryId.localeCompare(b.categoryId) || a.title.localeCompare(b.title))
+      .map((item) => this.cloneItem(item));
+  }
+
+  async listPublicItemsForOutlets(
+    outletIds: readonly string[],
+    options?: {
+      dietary?: DietaryType;
+      excludeAllergens?: readonly AllergenCode[];
+      maxPricePaise?: number;
+    },
+  ): Promise<MenuItemRecord[]> {
+    if (outletIds.length === 0) {
+      return [];
+    }
+    const outletSet = new Set(outletIds);
+    const excludeSet =
+      options?.excludeAllergens && options.excludeAllergens.length > 0
+        ? new Set(options.excludeAllergens)
+        : null;
+    return Array.from(this.items.values())
+      .filter((item) => {
+        if (!outletSet.has(item.outletId) || !item.isAvailable) {
+          return false;
+        }
+        if (options?.dietary && item.dietaryType !== options.dietary) {
+          return false;
+        }
+        if (options?.maxPricePaise !== undefined && item.pricePaise > options.maxPricePaise) {
+          return false;
+        }
+        if (excludeSet && item.allergens.some((code) => excludeSet.has(code))) {
+          return false;
+        }
+        return true;
+      })
+      .sort(
+        (a, b) =>
+          a.outletId.localeCompare(b.outletId) ||
+          a.pricePaise - b.pricePaise ||
+          a.itemId.localeCompare(b.itemId),
+      )
       .map((item) => this.cloneItem(item));
   }
 

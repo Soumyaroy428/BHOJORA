@@ -296,16 +296,75 @@
     },
     "/restaurants": {
       "get": {
-        "summary": "Geospatial restaurant discovery with Kolkata zone, Haversine distance & IST openNow filters",
+        "summary": "Geospatial & filterable restaurant discovery with cursor pagination and truthful trust badges",
         "security": [],
         "tags": ["Discovery"],
         "parameters": [
+          { "name": "q", "in": "query", "required": false, "schema": { "type": "string", "maxLength": 80 } },
           { "name": "zoneId", "in": "query", "required": false, "schema": { "type": "string" } },
           { "name": "lng", "in": "query", "required": false, "schema": { "type": "number" } },
           { "name": "lat", "in": "query", "required": false, "schema": { "type": "number" } },
-          { "name": "openNow", "in": "query", "required": false, "schema": { "type": "boolean" } }
+          { "name": "openNow", "in": "query", "required": false, "schema": { "type": "boolean" } },
+          { "name": "verifiedOnly", "in": "query", "required": false, "schema": { "type": "boolean" } },
+          { "name": "safetyStatus", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "minSafetyScore", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 0, "maximum": 100 } },
+          { "name": "dietary", "in": "query", "required": false, "schema": { "type": "string", "enum": ["PURE_VEG", "NON_VEG", "EGG"] } },
+          { "name": "excludeAllergens", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "maxPricePaise", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 0 } },
+          { "name": "maxEtaMinutes", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 5, "maximum": 120 } },
+          { "name": "maxDistanceMeters", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 500, "maximum": 25000 } },
+          { "name": "sort", "in": "query", "required": false, "schema": { "type": "string", "enum": ["relevance", "distance", "eta", "price_asc", "price_desc", "safety_score"] } },
+          { "name": "cursor", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 25 } }
         ],
-        "responses": { "200": { "description": "Paginated serviceable restaurant list" } }
+        "responses": {
+          "200": { "description": "Cursor-paginated serviceable restaurant list with non-misleading trustBadge" },
+          "429": { "description": "Public discovery rate limit exceeded (RATE_LIMITED)" }
+        }
+      }
+    },
+    "/search": {
+      "get": {
+        "summary": "Unified restaurant, cuisine, dish & allergen-aware search with cursor pagination and anti-sponsored ranking disclosure",
+        "security": [],
+        "tags": ["Discovery"],
+        "parameters": [
+          { "name": "q", "in": "query", "required": false, "schema": { "type": "string", "maxLength": 80 } },
+          { "name": "zoneId", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "lng", "in": "query", "required": false, "schema": { "type": "number" } },
+          { "name": "lat", "in": "query", "required": false, "schema": { "type": "number" } },
+          { "name": "openNow", "in": "query", "required": false, "schema": { "type": "boolean" } },
+          { "name": "verifiedOnly", "in": "query", "required": false, "schema": { "type": "boolean" } },
+          { "name": "safetyStatus", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "minSafetyScore", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 0, "maximum": 100 } },
+          { "name": "dietary", "in": "query", "required": false, "schema": { "type": "string", "enum": ["PURE_VEG", "NON_VEG", "EGG"] } },
+          { "name": "excludeAllergens", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "maxPricePaise", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 0 } },
+          { "name": "maxEtaMinutes", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 5, "maximum": 120 } },
+          { "name": "maxDistanceMeters", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 500, "maximum": 25000 } },
+          { "name": "sort", "in": "query", "required": false, "schema": { "type": "string", "enum": ["relevance", "distance", "eta", "price_asc", "price_desc", "safety_score"] } },
+          { "name": "cursor", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 25 } }
+        ],
+        "responses": {
+          "200": { "description": "Matching outlets, dish matches, rankingDisclosure, and PaginationMeta" },
+          "400": { "description": "Invalid query bounds, coordinates, or pagination cursor" },
+          "429": { "description": "Public search rate limit exceeded (RATE_LIMITED)" }
+        }
+      }
+    },
+    "/categories": {
+      "get": {
+        "summary": "List curated Kolkata cuisine, dietary & verified-trust discovery collections with live counts",
+        "security": [],
+        "tags": ["Discovery"],
+        "parameters": [
+          { "name": "zoneId", "in": "query", "required": false, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Curated discovery collections" },
+          "429": { "description": "Public discovery rate limit exceeded (RATE_LIMITED)" }
+        }
       }
     },
     "/zones": {

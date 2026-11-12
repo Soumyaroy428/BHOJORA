@@ -2,6 +2,7 @@ export * from './api-response';
 export * from './auth';
 export * from './catalog';
 export * from './customer';
+export * from './discovery';
 export * from './events';
 export * from './outlet';
 export * from './rbac';

@@ -121,6 +121,14 @@ export interface CatalogStore {
     outletId: string,
     options?: { availableOnly?: boolean },
   ): Promise<MenuItemRecord[]>;
+  listPublicItemsForOutlets(
+    outletIds: readonly string[],
+    options?: {
+      dietary?: DietaryType;
+      excludeAllergens?: readonly AllergenCode[];
+      maxPricePaise?: number;
+    },
+  ): Promise<MenuItemRecord[]>;
   updateMenuItem(
     itemId: string,
     patch: Partial<
