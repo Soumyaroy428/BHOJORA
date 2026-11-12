@@ -1,15 +1,19 @@
 interface HeaderProps {
   headerZoneLabel: string;
   signedInFirstName: string | null;
+  cartItemCount: number;
   onOpenPilotInfo: () => void;
   onOpenAuthModal: () => void;
+  onOpenCartModal: () => void;
 }
 
 export function Header({
   headerZoneLabel,
   signedInFirstName,
+  cartItemCount,
   onOpenPilotInfo,
   onOpenAuthModal,
+  onOpenCartModal,
 }: HeaderProps) {
   return (
     <header>
@@ -45,6 +49,31 @@ export function Header({
               Get Bhojora App
             </button>
           </nav>
+          <button
+            type="button"
+            id="openCartModalBtn"
+            className="btn btn-outline cart-header-btn"
+            style={{ minHeight: '44px', padding: '8px 14px' }}
+            aria-label={`Open cart, ${cartItemCount} items`}
+            onClick={onOpenCartModal}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+              <path d="M3 6h18" />
+              <path d="M16 10a4 4 0 0 1-8 0" />
+            </svg>
+            <span>Cart ({cartItemCount})</span>
+          </button>
           <button
             type="button"
             id="openAuthModalBtn"

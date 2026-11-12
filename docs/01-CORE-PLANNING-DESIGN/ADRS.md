@@ -328,3 +328,22 @@ Checkpoint 13 delivers restaurant, cuisine, dish, dietary, and allergen search a
 ### Consequences
 - **Positive:** Prevents N+1 query amplification, ReDoS abuse, duplicate/skipped pagination items, and deceptive "Verified" marketing badges across both API payloads and `customer-web` React cards/map pins.
 - **Negative:** Changing search filters invalidates active pagination cursors (`400 VALIDATION_ERROR`), requiring clients to start from page 1 whenever filters or sort order change.
+
+---
+
+## ADR-018: Single-Outlet Cart Policy, Authoritative Paise Quote, Coupons & HMAC Signing
+
+### Status: ACCEPTED (Locked Baseline — Checkpoint 14)
+
+### Context
+Checkpoint 14 governs customer cart management and checkout pricing (`/cart*`, `/coupons/available`, `/checkout/quote*`). Food ordering platforms suffer critical revenue-loss and tax-compliance risks if client payloads can supply prices/totals, if carts mix items across multiple outlets in one dispatch, if coupons omit platform/restaurant funding attribution, or if stale checkout totals silently fluctuate at payment time.
+
+### Decision
+1. **Single-Outlet Cart Policy & Authoritative Catalog Pricing (`server/src/modules/cart/`):** Persist one cart per authenticated `customerId` (`idx_carts_customer_unique`). Adding an item from outlet B while items from outlet A remain returns `409 CONFLICT` (`SINGLE_OUTLET_CONFLICT`) unless `replaceOutlet: true` is explicitly confirmed by the customer. Line prices are computed strictly from server `CatalogStore` base prices plus validated variant and add-on selections.
+2. **Strict Anti-Tampering Input Rejections:** Reject any request to `/cart/items*` or `/checkout/quote` containing client monetary keys (`pricePaise`, `unitPricePaise`, `totalPayablePaise`, `discountPaise`, `gstTaxPaise`, `deliveryFeePaise`, `signature`, etc.) with `400 VALIDATION_ERROR` and log server warnings.
+3. **Deterministic Integer Paise Calculation & Transparent Tax/Funding Split (`server/src/modules/pricing/pricing.math.ts`):** Compute all amounts as safe integers in paise (`ADR-003`): delivery base fee + ₹6/km distance fee (`DELIVERY_PER_KM_PAISE = 600`), capped packaging (`PACKAGING_PER_UNIT_PAISE = 1000`, `PACKAGING_MAX_PAISE = 4000`), `PLATFORM_FEE_PAISE = 500`, GST by item slab (`5%` restaurant / `18%` bakery / `0%` exempt, split evenly into CGST + SGST), promotional discount attributed cleanly via `platformShareBps + restaurantShareBps = 10000` (e.g., `BHOJORA100` ₹100 off at 60% Platform / 40% Restaurant), and **untaxed** 100% pass-through rider `tipPaise` (`<= 50000`).
+4. **600-Second HMAC-SHA256 Signed Quote & Price-Drift Detection:** Sign the immutable quote breakdown (`quoteId`, `customerId`, `outletId`, `expiresAt`, `totalPayablePaise`, item/tax/discount subtotals) with HMAC-SHA256 for `QUOTE_TTL_SECONDS = 600`. Flag catalog price changes since add-to-cart (`priceDriftDetected`, `priceDriftWarnings`) and verify ownership (`403` cross-customer IDOR rejection), integrity (`403` tampered signature), and `600s` expiration (`409 CONFLICT`) prior to order creation.
+
+### Consequences
+- **Positive:** Eliminates floating-point rounding drift, client-side price tampering, ambiguous GST allocation, and silent checkout price surprises.
+- **Negative:** Carts cannot span multiple restaurants in a single order; quotes older than 600 seconds require explicit customer regeneration before payment capture.

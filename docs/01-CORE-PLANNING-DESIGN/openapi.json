@@ -508,23 +508,98 @@
     },
     "/cart": {
       "get": {
-        "summary": "Get active single-outlet user cart",
+        "summary": "Get active single-outlet user cart (recomputed live against current catalog prices)",
         "tags": ["Cart & Ordering"],
-        "responses": { "200": { "description": "Active cart contents" } }
+        "responses": {
+          "200": { "description": "Active customer cart with integer paise line totals and price-change flags" },
+          "401": { "description": "Authentication required" },
+          "403": { "description": "Permission order:own:read required" }
+        }
+      },
+      "delete": {
+        "summary": "Clear all items from the authenticated customer cart",
+        "tags": ["Cart & Ordering"],
+        "responses": {
+          "200": { "description": "Empty cart returned" },
+          "401": { "description": "Authentication required" }
+        }
       }
     },
     "/cart/items": {
       "post": {
-        "summary": "Add or update cart item (enforces single-outlet rule)",
+        "summary": "Add or increment menu item with authoritative variant/addon lookup and one-outlet enforcement",
         "tags": ["Cart & Ordering"],
-        "responses": { "200": { "description": "Updated cart" } }
+        "responses": {
+          "200": { "description": "Updated cart computed from authoritative server catalog prices" },
+          "400": { "description": "VALIDATION_ERROR (invalid options, quantity, or prohibited client monetary fields)" },
+          "409": { "description": "SINGLE_OUTLET_CONFLICT (unless replaceOutlet=true) or CRITICAL_VIOLATION_SUSPENDED" }
+        }
+      }
+    },
+    "/cart/items/{cartItemId}": {
+      "patch": {
+        "summary": "Update item quantity (0 deletes line) or customization choices",
+        "tags": ["Cart & Ordering"],
+        "parameters": [{ "name": "cartItemId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Updated cart" },
+          "400": { "description": "VALIDATION_ERROR including prohibited client monetary fields" },
+          "404": { "description": "Cart line item not found" }
+        }
+      },
+      "delete": {
+        "summary": "Remove a single line item from customer cart",
+        "tags": ["Cart & Ordering"],
+        "parameters": [{ "name": "cartItemId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Updated cart after deletion" },
+          "404": { "description": "Cart line item not found" }
+        }
+      }
+    },
+    "/coupons/available": {
+      "get": {
+        "summary": "List active promotional coupons with transparent platform vs. restaurant funding split percentages",
+        "tags": ["Cart & Ordering"],
+        "responses": {
+          "200": { "description": "Array of active public coupon summaries" }
+        }
       }
     },
     "/checkout/quote": {
       "post": {
-        "summary": "Generate server-authoritative pricing quote in integer paise",
+        "summary": "Generate HMAC-SHA256 signed server-authoritative pricing quote in integer paise (600s TTL)",
         "tags": ["Cart & Ordering"],
-        "responses": { "200": { "description": "Signed quoteId valid for 600 seconds" } }
+        "responses": {
+          "200": { "description": "Signed quoteId valid for 600 seconds with delivery fee, packaging, GST (CGST+SGST), coupon funding split, untaxed tip, and price-drift detection" },
+          "400": { "description": "Empty cart, coupon rule failure, or prohibited client monetary fields" },
+          "403": { "description": "Address ownership or permission check failed" },
+          "409": { "description": "Outlet suspended or closed" }
+        }
+      }
+    },
+    "/checkout/quotes/{quoteId}": {
+      "get": {
+        "summary": "Fetch an owned checkout quote with live expiration status",
+        "tags": ["Cart & Ordering"],
+        "parameters": [{ "name": "quoteId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Owned quote details" },
+          "403": { "description": "Cross-customer access forbidden" },
+          "404": { "description": "Quote not found" }
+        }
+      }
+    },
+    "/checkout/quotes/{quoteId}/verify": {
+      "post": {
+        "summary": "Verify quote ownership, 600s TTL expiry, and HMAC-SHA256 integrity before order creation",
+        "tags": ["Cart & Ordering"],
+        "parameters": [{ "name": "quoteId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Quote integrity and remaining validity confirmed" },
+          "403": { "description": "Cross-customer access forbidden or HMAC integrity check failed" },
+          "409": { "description": "Quote expired after 600s or total mismatch" }
+        }
       }
     },
     "/orders": {

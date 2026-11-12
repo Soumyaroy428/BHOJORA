@@ -22,10 +22,19 @@ import { MongooseRestaurantStore } from './modules/restaurant/restaurant.store';
 import { CatalogService } from './modules/catalog/catalog.service';
 import { InMemoryCatalogStore, MongooseCatalogStore } from './modules/catalog/catalog.store';
 import { DiscoveryService, buildDiscoveryTrustBadge } from './modules/discovery/discovery.service';
+import { CartService } from './modules/cart/cart.service';
+import { InMemoryCartStore, MongooseCartStore } from './modules/cart/cart.store';
+import { PricingService } from './modules/pricing/pricing.service';
+import { InMemoryPricingStore, MongoosePricingStore } from './modules/pricing/pricing.store';
+import {
+  computeServerPricingBreakdown,
+  signQuotePayload,
+  verifyQuoteSignature,
+} from './modules/pricing/pricing.math';
 
 export const SERVER_BASELINE = {
   service: 'bhojora-api',
-  checkpoint: '13',
+  checkpoint: '14',
   runtime: 'node-22-lts',
   currency: 'INR',
   currencyUnit: 'paise',
@@ -57,6 +66,15 @@ export {
   InMemoryCatalogStore,
   DiscoveryService,
   buildDiscoveryTrustBadge,
+  CartService,
+  MongooseCartStore,
+  InMemoryCartStore,
+  PricingService,
+  MongoosePricingStore,
+  InMemoryPricingStore,
+  computeServerPricingBreakdown,
+  signQuotePayload,
+  verifyQuoteSignature,
   SafeLogOtpSenderAdapter,
 };
 
@@ -111,6 +129,8 @@ async function startServer(): Promise<void> {
   const restaurantStore = new MongooseRestaurantStore(mongoConnection);
   const outletStore = new MongooseOutletStore(mongoConnection);
   const catalogStore = new MongooseCatalogStore(mongoConnection);
+  const cartStore = new MongooseCartStore(mongoConnection);
+  const pricingStore = new MongoosePricingStore(mongoConnection);
 
   const identityService = new IdentityService({
     config,
@@ -148,6 +168,24 @@ async function startServer(): Promise<void> {
     logger,
   });
 
+  const cartService = new CartService({
+    cartStore,
+    restaurantStore,
+    catalogStore,
+    logger,
+  });
+
+  const pricingService = new PricingService({
+    pricingStore,
+    cartService,
+    customerService,
+    restaurantStore,
+    outletService,
+    catalogStore,
+    signingSecret: config.jwtAccessSecret,
+    logger,
+  });
+
   const app = createApp({
     config,
     logger,
@@ -164,6 +202,10 @@ async function startServer(): Promise<void> {
     outletService,
     catalogStore,
     catalogService,
+    cartStore,
+    cartService,
+    pricingStore,
+    pricingService,
   });
 
   const server = http.createServer(app);

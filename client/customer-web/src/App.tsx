@@ -1,14 +1,22 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type {
+  CartAddonSelectionDto,
+  CartDto,
+  CartVariantSelectionDto,
+  CheckoutQuoteDto,
   CuratedDiscoveryCategoryDef,
   DiscoveryDishMatchDto,
   DiscoveryOutletResultDto,
   DiscoverySearchResponseDto,
   DiscoverySortOption,
+  MenuItemDto,
   PaginationMeta,
+  PublicCouponSummaryDto,
 } from '@bhojora/shared';
+import { formatInrFromPaise } from '@bhojora/shared';
 import { AuthDialog } from './components/AuthDialog';
 import { BengaliBanner } from './components/BengaliBanner';
+import { CartCheckoutDialog } from './components/CartCheckoutDialog';
 import { Footer } from './components/Footer';
 import { Header } from './components/Header';
 import { HeroSection } from './components/HeroSection';
@@ -19,12 +27,27 @@ import { PilotInfoDialog } from './components/PilotInfoDialog';
 import { TrustProfileDialog } from './components/TrustProfileDialog';
 import { KOLKATA_ZONE_OPTIONS, VERIFIED_KOLKATA_KITCHENS } from './data/kitchens';
 import { apiRequest } from './lib/apiClient';
+import {
+  applyPreviewCartAddition,
+  buildPreviewCheckoutQuote,
+  createEmptyCart,
+  KOLKATA_QUOTE_LOCATIONS,
+  PREVIEW_PILOT_COUPONS,
+  readStoredPreviewCart,
+  recalculatePreviewCartTotals,
+  writeStoredPreviewCart,
+} from './lib/cartHelpers';
 import type {
   AuthSessionState,
   KitchenOutlet,
   KolkataZoneId,
   LocationPermissionState,
 } from './types/domain';
+
+const HAS_CONFIGURED_API =
+  typeof window !== 'undefined' && typeof window.BHOJORA_API_BASE === 'string'
+    ? window.BHOJORA_API_BASE.trim().length > 0
+    : Boolean(import.meta.env.VITE_API_BASE?.trim());
 
 const RECENT_SEARCHES_KEY = 'bhojora_recent_searches_v1';
 const SAVED_KITCHENS_KEY = 'bhojora_saved_kitchens_v1';
@@ -134,6 +157,19 @@ export function App() {
   const [pilotInfoOpen, setPilotInfoOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authSession, setAuthSession] = useState<AuthSessionState | null>(null);
+  const [cartModalOpen, setCartModalOpen] = useState(false);
+  const [cart, setCart] = useState<CartDto>(() => readStoredPreviewCart());
+  const [quote, setQuote] = useState<CheckoutQuoteDto | null>(null);
+  const [availableCoupons, setAvailableCoupons] = useState<PublicCouponSummaryDto[]>(() => [
+    ...PREVIEW_PILOT_COUPONS,
+  ]);
+  const [selectedQuoteLocationId, setSelectedQuoteLocationId] =
+    useState<Exclude<KolkataZoneId, 'all'>>('salt-lake');
+  const [couponInput, setCouponInput] = useState('');
+  const [appliedCouponCode, setAppliedCouponCode] = useState('');
+  const [tipPaise, setTipPaise] = useState(0);
+  const [quoteLoading, setQuoteLoading] = useState(false);
+  const [quoteError, setQuoteError] = useState<string | null>(null);
 
   const configuredApiBase = useMemo(() => {
     const windowBase =
@@ -455,6 +491,332 @@ export function App() {
     ? (authSession.user.name.split(' ')[0] ?? 'Account')
     : null;
 
+  const isLiveCartMode = HAS_CONFIGURED_API && Boolean(authSession?.tokens.accessToken);
+
+  useEffect(() => {
+    if (!HAS_CONFIGURED_API) {
+      return;
+    }
+    let cancelled = false;
+    void apiRequest<{ coupons: PublicCouponSummaryDto[] }>('/coupons/available')
+      .then((res) => {
+        if (!cancelled && Array.isArray(res.coupons) && res.coupons.length > 0) {
+          setAvailableCoupons(res.coupons);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isLiveCartMode) {
+      writeStoredPreviewCart(cart);
+    }
+  }, [cart, isLiveCartMode]);
+
+  useEffect(() => {
+    const token = authSession?.tokens.accessToken;
+    if (!HAS_CONFIGURED_API || !token) {
+      return;
+    }
+    let cancelled = false;
+    void apiRequest<{ cart: CartDto }>('/cart', { token })
+      .then((res) => {
+        if (!cancelled && res.cart) {
+          setCart(res.cart);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [authSession?.tokens.accessToken]);
+
+  const computeQuoteForState = useCallback(
+    async (
+      acceptPriceChanges = false,
+      overrides?: {
+        cartSnapshot?: CartDto;
+        locationId?: Exclude<KolkataZoneId, 'all'>;
+        couponCode?: string;
+        nextTipPaise?: number;
+      },
+    ) => {
+      const targetCart = overrides?.cartSnapshot ?? cart;
+      const locId = overrides?.locationId ?? selectedQuoteLocationId;
+      const code = overrides?.couponCode ?? appliedCouponCode;
+      const nextTip = overrides?.nextTipPaise ?? tipPaise;
+
+      if (!targetCart.outletId || targetCart.items.length === 0) {
+        setQuote(null);
+        setQuoteError(null);
+        return;
+      }
+
+      if (isLiveCartMode && authSession?.tokens.accessToken) {
+        const loc =
+          KOLKATA_QUOTE_LOCATIONS.find((l) => l.id === locId) ?? KOLKATA_QUOTE_LOCATIONS[0]!;
+        setQuoteLoading(true);
+        setQuoteError(null);
+        try {
+          const res = await apiRequest<{ quote: CheckoutQuoteDto }>('/checkout/quote', {
+            method: 'POST',
+            token: authSession.tokens.accessToken,
+            body: {
+              coordinates: [...loc.coordinates],
+              couponCode: code.trim() ? code.trim().toUpperCase() : null,
+              tipPaise: nextTip,
+              acceptPriceChanges,
+            },
+          });
+          setQuote(res.quote);
+          if (acceptPriceChanges) {
+            const refreshedCart = await apiRequest<{ cart: CartDto }>('/cart', {
+              token: authSession.tokens.accessToken,
+            });
+            setCart(refreshedCart.cart);
+          }
+        } catch (err) {
+          setQuoteError(err instanceof Error ? err.message : 'Unable to generate checkout quote.');
+        } finally {
+          setQuoteLoading(false);
+        }
+        return;
+      }
+
+      const matchedKitchen =
+        liveResults?.find((k) => k.key === targetCart.outletId) ??
+        VERIFIED_KOLKATA_KITCHENS.find((k) => k.key === targetCart.outletId);
+      const preview = buildPreviewCheckoutQuote({
+        cart: targetCart,
+        kitchen: matchedKitchen,
+        locationId: locId,
+        couponCode: code,
+        tipPaise: nextTip,
+      });
+      setQuoteError(preview.couponError);
+      setQuote(preview.quote);
+    },
+    [
+      cart,
+      selectedQuoteLocationId,
+      appliedCouponCode,
+      tipPaise,
+      isLiveCartMode,
+      authSession?.tokens.accessToken,
+      liveResults,
+    ],
+  );
+
+  const handleOpenCartModal = useCallback(() => {
+    setCartModalOpen(true);
+    if (cart.items.length > 0) {
+      void computeQuoteForState(false);
+    }
+  }, [cart.items.length, computeQuoteForState]);
+
+  const handleAddToCart = useCallback(
+    async (params: {
+      kitchen: KitchenOutlet;
+      item: MenuItemDto;
+      selectedVariants: CartVariantSelectionDto[];
+      selectedAddons: CartAddonSelectionDto[];
+      replaceOutlet: boolean;
+    }): Promise<'ADDED' | 'CONFLICT'> => {
+      const { kitchen, item, selectedVariants, selectedAddons, replaceOutlet } = params;
+
+      if (isLiveCartMode && authSession?.tokens.accessToken) {
+        try {
+          const res = await apiRequest<{ cart: CartDto }>('/cart/items', {
+            method: 'POST',
+            token: authSession.tokens.accessToken,
+            body: {
+              outletId: kitchen.key,
+              menuItemId: item.itemId,
+              quantity: 1,
+              replaceOutlet,
+              selectedVariants: selectedVariants.map((v) => ({
+                groupId: v.groupId,
+                optionId: v.optionId,
+              })),
+              selectedAddons: selectedAddons.map((a) => ({
+                groupId: a.groupId,
+                optionId: a.optionId,
+              })),
+            },
+          });
+          setCart(res.cart);
+          if (replaceOutlet) {
+            setAppliedCouponCode('');
+            setCouponInput('');
+          }
+          if (cartModalOpen) {
+            void computeQuoteForState(false, {
+              cartSnapshot: res.cart,
+              couponCode: replaceOutlet ? '' : appliedCouponCode,
+            });
+          }
+          return 'ADDED';
+        } catch (err) {
+          const errObj =
+            typeof err === 'object' && err !== null
+              ? (err as { status?: number; code?: string; message?: string })
+              : null;
+          if (
+            errObj &&
+            (errObj.status === 409 ||
+              errObj.code === 'SINGLE_OUTLET_CONFLICT' ||
+              errObj.code === 'CONFLICT')
+          ) {
+            if (
+              errObj.code === 'SINGLE_OUTLET_CONFLICT' ||
+              (typeof errObj.message === 'string' &&
+                errObj.message.toLowerCase().includes('another outlet'))
+            ) {
+              return 'CONFLICT';
+            }
+          }
+          throw err;
+        }
+      }
+
+      const next = applyPreviewCartAddition({
+        current: cart,
+        kitchen,
+        item,
+        variants: selectedVariants,
+        addons: selectedAddons,
+        quantity: 1,
+        replaceOutlet,
+      });
+      if (!next.ok) {
+        return 'CONFLICT';
+      }
+      setCart(next.cart);
+      if (replaceOutlet) {
+        setAppliedCouponCode('');
+        setCouponInput('');
+      }
+      if (cartModalOpen) {
+        void computeQuoteForState(false, {
+          cartSnapshot: next.cart,
+          couponCode: replaceOutlet ? '' : appliedCouponCode,
+        });
+      }
+      return 'ADDED';
+    },
+    [
+      isLiveCartMode,
+      authSession?.tokens.accessToken,
+      cart,
+      cartModalOpen,
+      appliedCouponCode,
+      computeQuoteForState,
+    ],
+  );
+
+  const handleUpdateCartItemQty = useCallback(
+    async (cartItemId: string, nextQty: number) => {
+      if (isLiveCartMode && authSession?.tokens.accessToken) {
+        try {
+          const res =
+            nextQty <= 0
+              ? await apiRequest<{ cart: CartDto }>(
+                  `/cart/items/${encodeURIComponent(cartItemId)}`,
+                  {
+                    method: 'DELETE',
+                    token: authSession.tokens.accessToken,
+                  },
+                )
+              : await apiRequest<{ cart: CartDto }>(
+                  `/cart/items/${encodeURIComponent(cartItemId)}`,
+                  {
+                    method: 'PATCH',
+                    token: authSession.tokens.accessToken,
+                    body: { quantity: nextQty },
+                  },
+                );
+          setCart(res.cart);
+          void computeQuoteForState(false, { cartSnapshot: res.cart });
+        } catch (err) {
+          setQuoteError(err instanceof Error ? err.message : 'Unable to update cart item.');
+        }
+        return;
+      }
+
+      const updatedItems = cart.items
+        .map((line) => {
+          if (line.cartItemId !== cartItemId) {
+            return line;
+          }
+          if (nextQty <= 0) {
+            return { ...line, quantity: 0, lineTotalPaise: 0 };
+          }
+          const clamped = Math.min(20, nextQty);
+          return {
+            ...line,
+            quantity: clamped,
+            lineTotalPaise: line.effectiveUnitPricePaise * clamped,
+            formattedLineTotalInr: formatInrFromPaise(line.effectiveUnitPricePaise * clamped),
+          };
+        })
+        .filter((line) => line.quantity > 0);
+      const next = recalculatePreviewCartTotals({ ...cart, items: updatedItems }).cart;
+      setCart(next);
+      void computeQuoteForState(false, { cartSnapshot: next });
+    },
+    [isLiveCartMode, authSession?.tokens.accessToken, cart, computeQuoteForState],
+  );
+
+  const handleClearCart = useCallback(async () => {
+    if (isLiveCartMode && authSession?.tokens.accessToken) {
+      try {
+        const res = await apiRequest<{ cart: CartDto }>('/cart', {
+          method: 'DELETE',
+          token: authSession.tokens.accessToken,
+        });
+        setCart(res.cart);
+      } catch {
+        setCart(createEmptyCart());
+      }
+    } else {
+      setCart(createEmptyCart());
+    }
+    setQuote(null);
+    setQuoteError(null);
+    setAppliedCouponCode('');
+    setCouponInput('');
+    setTipPaise(0);
+  }, [isLiveCartMode, authSession?.tokens.accessToken]);
+
+  const handleSelectQuoteLocation = useCallback(
+    (locId: Exclude<KolkataZoneId, 'all'>) => {
+      setSelectedQuoteLocationId(locId);
+      void computeQuoteForState(false, { locationId: locId });
+    },
+    [computeQuoteForState],
+  );
+
+  const handleApplyCoupon = useCallback(
+    (rawCode: string) => {
+      const trimmed = rawCode.trim().toUpperCase();
+      setCouponInput(trimmed);
+      setAppliedCouponCode(trimmed);
+      void computeQuoteForState(false, { couponCode: trimmed });
+    },
+    [computeQuoteForState],
+  );
+
+  const handleChangeTipPaise = useCallback(
+    (nextTip: number) => {
+      setTipPaise(nextTip);
+      void computeQuoteForState(false, { nextTipPaise: nextTip });
+    },
+    [computeQuoteForState],
+  );
+
   return (
     <>
       <a href="#main-content" className="skip-link visually-hidden">
@@ -464,8 +826,10 @@ export function App() {
       <Header
         headerZoneLabel={headerZoneLabel}
         signedInFirstName={signedInFirstName}
+        cartItemCount={cart.itemCount}
         onOpenPilotInfo={() => setPilotInfoOpen(true)}
         onOpenAuthModal={() => setAuthModalOpen(true)}
+        onOpenCartModal={handleOpenCartModal}
       />
 
       <main id="main-content" tabIndex={-1}>
@@ -539,6 +903,14 @@ export function App() {
 
       <OutletMenuDialog
         kitchen={selectedMenuKitchen}
+        activeCartCount={cart.itemCount}
+        activeCartOutletName={cart.brandName ?? cart.outletName}
+        activeCartOutletId={cart.outletId}
+        onAddToCart={handleAddToCart}
+        onOpenCart={() => {
+          setSelectedMenuKitchen(null);
+          handleOpenCartModal();
+        }}
         onClose={() => setSelectedMenuKitchen(null)}
       />
 
@@ -562,6 +934,32 @@ export function App() {
         onClose={() => setAuthModalOpen(false)}
       />
 
+      <CartCheckoutDialog
+        open={cartModalOpen}
+        cart={cart}
+        quote={quote}
+        availableCoupons={availableCoupons}
+        selectedLocationId={selectedQuoteLocationId}
+        couponInput={couponInput}
+        tipPaise={tipPaise}
+        quoteLoading={quoteLoading}
+        quoteError={quoteError}
+        isLiveServerMode={isLiveCartMode}
+        onSelectLocation={handleSelectQuoteLocation}
+        onChangeCouponInput={setCouponInput}
+        onApplyCoupon={handleApplyCoupon}
+        onChangeTipPaise={handleChangeTipPaise}
+        onUpdateItemQty={handleUpdateCartItemQty}
+        onClearCart={handleClearCart}
+        onGenerateQuote={(acceptPriceChanges) =>
+          void computeQuoteForState(Boolean(acceptPriceChanges))
+        }
+        onOpenAuthModal={() => {
+          setCartModalOpen(false);
+          setAuthModalOpen(true);
+        }}
+        onClose={() => setCartModalOpen(false)}
+      />
       <Footer />
     </>
   );

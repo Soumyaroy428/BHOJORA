@@ -238,6 +238,36 @@ export const INITIAL_DATABASE_INDEXES: readonly DatabaseIndexSpec[] = [
     options: { name: 'idx_inventory_records_outlet_item_unique', unique: true },
   },
   {
+    collection: COLLECTION_NAMES.carts,
+    key: { customerId: 1 },
+    options: { name: 'idx_carts_customer_unique', unique: true },
+  },
+  {
+    collection: COLLECTION_NAMES.pricingQuotes,
+    key: { quoteId: 1 },
+    options: { name: 'idx_pricing_quotes_id_unique', unique: true },
+  },
+  {
+    collection: COLLECTION_NAMES.pricingQuotes,
+    key: { customerId: 1, issuedAt: -1 },
+    options: { name: 'idx_pricing_quotes_customer_issued_desc' },
+  },
+  {
+    collection: COLLECTION_NAMES.pricingQuotes,
+    key: { expiresAt: 1 },
+    options: { name: 'idx_pricing_quotes_expires_ttl', expireAfterSeconds: 86400 },
+  },
+  {
+    collection: COLLECTION_NAMES.coupons,
+    key: { code: 1 },
+    options: { name: 'idx_coupons_code_unique', unique: true },
+  },
+  {
+    collection: COLLECTION_NAMES.coupons,
+    key: { isActive: 1, validUntil: 1 },
+    options: { name: 'idx_coupons_active_valid_until' },
+  },
+  {
     collection: COLLECTION_NAMES.orders,
     key: { customerId: 1, createdAt: -1 },
     options: { name: 'idx_orders_customer_created_desc' },

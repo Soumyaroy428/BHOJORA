@@ -36,6 +36,14 @@ import type { CatalogStore } from './modules/catalog/catalog.types';
 import { createDiscoveryRouter } from './modules/discovery/discovery.routes';
 import { DiscoveryService } from './modules/discovery/discovery.service';
 import type { DiscoveryRateLimitOptions } from './modules/discovery/discovery.types';
+import { createCartRouter } from './modules/cart/cart.routes';
+import { CartService } from './modules/cart/cart.service';
+import { InMemoryCartStore, MongooseCartStore } from './modules/cart/cart.store';
+import type { CartStore } from './modules/cart/cart.types';
+import { createPricingRouter } from './modules/pricing/pricing.routes';
+import { PricingService } from './modules/pricing/pricing.service';
+import { InMemoryPricingStore, MongoosePricingStore } from './modules/pricing/pricing.store';
+import type { PricingStore } from './modules/pricing/pricing.types';
 
 export interface CreateAppOptions {
   config: AppConfig;
@@ -56,6 +64,10 @@ export interface CreateAppOptions {
   catalogService?: CatalogService;
   discoveryService?: DiscoveryService;
   discoveryRateLimit?: DiscoveryRateLimitOptions;
+  cartStore?: CartStore;
+  cartService?: CartService;
+  pricingStore?: PricingStore;
+  pricingService?: PricingService;
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -151,6 +163,34 @@ export function createApp(options: CreateAppOptions): Express {
       logger,
       ...(options.clock ? { clock: options.clock } : {}),
     });
+  const cartStore =
+    options.cartStore ??
+    (isInMemoryMode ? new InMemoryCartStore() : new MongooseCartStore(mongoose.connection));
+  const cartService =
+    options.cartService ??
+    new CartService({
+      cartStore,
+      restaurantStore,
+      catalogStore,
+      logger,
+      ...(options.clock ? { clock: options.clock } : {}),
+    });
+  const pricingStore =
+    options.pricingStore ??
+    (isInMemoryMode ? new InMemoryPricingStore() : new MongoosePricingStore(mongoose.connection));
+  const pricingService =
+    options.pricingService ??
+    new PricingService({
+      pricingStore,
+      cartService,
+      customerService,
+      restaurantStore,
+      outletService,
+      catalogStore,
+      signingSecret: config.jwtAccessSecret,
+      logger,
+      ...(options.clock ? { clock: options.clock } : {}),
+    });
   const identityRouter = createIdentityRouter(identityService, config);
   const rbacRouter = createRbacRouter({
     identityService,
@@ -187,6 +227,18 @@ export function createApp(options: CreateAppOptions): Express {
     rbacStore,
     config,
   });
+  const cartRouter = createCartRouter({
+    identityService,
+    cartService,
+    rbacStore,
+    config,
+  });
+  const pricingRouter = createPricingRouter({
+    identityService,
+    pricingService,
+    rbacStore,
+    config,
+  });
 
   app.use('/api/v1', healthRouter);
   app.use('/api/v1', identityRouter);
@@ -196,6 +248,8 @@ export function createApp(options: CreateAppOptions): Express {
   app.use('/api/v1', restaurantRouter);
   app.use('/api/v1', outletRouter);
   app.use('/api/v1', catalogRouter);
+  app.use('/api/v1', cartRouter);
+  app.use('/api/v1', pricingRouter);
   app.use(healthRouter);
 
   app.use(notFoundHandler);
