@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
@@ -118,6 +119,8 @@ const rawEnvSchema = z.object({
     }),
   JWT_ACCESS_SECRET: z.string().min(32, 'Must be at least 32 characters'),
   JWT_REFRESH_SECRET: z.string().min(32, 'Must be at least 32 characters'),
+  PAYMENT_WEBHOOK_SECRET: z.string().min(32, 'Must be at least 32 characters').optional(),
+  WEBHOOK_REPLAY_WINDOW_SECONDS: z.coerce.number().int().min(30).max(3600).default(300),
   JWT_ACCESS_TTL_SECONDS: z.coerce.number().int().min(60).max(86400).default(900),
   JWT_REFRESH_TTL_SECONDS: z.coerce.number().int().min(300).max(31536000).default(2592000),
   OTP_TTL_SECONDS: z.coerce.number().int().min(60).max(1800).default(300),
@@ -223,6 +226,13 @@ export function validateEnv(
     redisUrl: data.REDIS_URL,
     jwtAccessSecret: data.JWT_ACCESS_SECRET,
     jwtRefreshSecret: data.JWT_REFRESH_SECRET,
+    paymentWebhookSecret:
+      data.PAYMENT_WEBHOOK_SECRET ??
+      crypto
+        .createHmac('sha256', data.JWT_ACCESS_SECRET)
+        .update('bhojora-payment-webhook-signing')
+        .digest('hex'),
+    webhookReplayWindowSeconds: data.WEBHOOK_REPLAY_WINDOW_SECONDS,
     jwtAccessTtlSeconds: data.JWT_ACCESS_TTL_SECONDS,
     jwtRefreshTtlSeconds: data.JWT_REFRESH_TTL_SECONDS,
     otpTtlSeconds: data.OTP_TTL_SECONDS,

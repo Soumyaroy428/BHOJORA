@@ -6,5 +6,6 @@ export * from './customer';
 export * from './discovery';
 export * from './events';
 export * from './outlet';
+export * from './payments';
 export * from './rbac';
 export * from './restaurant';

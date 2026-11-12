@@ -625,21 +625,83 @@
     },
     "/payments/create": {
       "post": {
-        "summary": "Initialize payment provider order session",
+        "summary": "Initialize sandbox payment attempt from server-verified signed quote (zero raw card data)",
         "tags": ["Payments"],
         "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
-        "responses": { "200": { "description": "Gateway session payload" } }
+        "responses": {
+          "200": { "description": "Idempotent replay returning existing payment attempt" },
+          "201": { "description": "Sandbox gateway session and payment attempt created" },
+          "400": { "description": "Validation error or prohibited raw card/override field" },
+          "409": { "description": "Idempotency key payload conflict or expired/captured quote" }
+        }
+      }
+    },
+    "/payments": {
+      "get": {
+        "summary": "List authenticated customer payment attempts (masked/tokenized references only)",
+        "tags": ["Payments"],
+        "responses": {
+          "200": { "description": "Customer payment attempt list" },
+          "401": { "description": "Authentication required" }
+        }
+      }
+    },
+    "/payments/{paymentId}": {
+      "get": {
+        "summary": "Get payment attempt detail and append-only event timeline",
+        "tags": ["Payments"],
+        "parameters": [{ "name": "paymentId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Payment attempt and append-only event log" },
+          "403": { "description": "Forbidden cross-customer IDOR attempt" },
+          "404": { "description": "Payment not found" }
+        }
+      }
+    },
+    "/payments/verify": {
+      "post": {
+        "summary": "Verify pending payment against gateway sandbox adapter (never trusts browser redirect alone)",
+        "tags": ["Payments"],
+        "responses": {
+          "200": { "description": "Synchronized payment status from gateway adapter" },
+          "403": { "description": "Forbidden cross-customer verification attempt" }
+        }
+      }
+    },
+    "/payments/{paymentId}/reconcile": {
+      "post": {
+        "summary": "Reconcile UNKNOWN or PENDING payment attempt against gateway sandbox status API",
+        "tags": ["Payments"],
+        "parameters": [{ "name": "paymentId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Reconciliation result and updated event trail" },
+          "403": { "description": "Forbidden or missing MFA for finance admin" }
+        }
+      }
+    },
+    "/admin/payments/reconciliations": {
+      "get": {
+        "summary": "List open UNKNOWN payments and reconciliation audit records (FINANCE_ADMIN MFA)",
+        "tags": ["Payments"],
+        "responses": {
+          "200": { "description": "Pending payments and reconciliation records" },
+          "403": { "description": "Forbidden or missing finance MFA verification" }
+        }
       }
     },
     "/webhooks/payments/{provider}": {
       "post": {
-        "summary": "Idempotent payment webhook receiver with HMAC signature check",
+        "summary": "Idempotent payment webhook receiver with HMAC-SHA256, replay cutoff, event dedupe, and late-event handling",
         "security": [{ "WebhookSignature": [] }],
         "tags": ["Payments"],
-        "parameters": [{ "name": "provider", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "parameters": [
+          { "name": "provider", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "X-Webhook-Timestamp", "in": "header", "required": true, "schema": { "type": "string" } }
+        ],
         "responses": {
-          "200": { "description": "Event processed or deduplicated" },
-          "401": { "description": "Invalid cryptographic webhook signature" }
+          "200": { "description": "Event processed, late-reconciled, or deduplicated" },
+          "401": { "description": "Invalid cryptographic HMAC signature or stale replay timestamp" },
+          "409": { "description": "Amount mismatch against authorized payment attempt" }
         }
       }
     },

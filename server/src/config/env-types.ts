@@ -19,6 +19,8 @@ export interface AppConfig {
   redisUrl: string;
   jwtAccessSecret: string;
   jwtRefreshSecret: string;
+  paymentWebhookSecret: string;
+  webhookReplayWindowSeconds: number;
   jwtAccessTtlSeconds: number;
   jwtRefreshTtlSeconds: number;
   otpTtlSeconds: number;

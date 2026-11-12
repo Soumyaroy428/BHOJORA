@@ -31,10 +31,18 @@ import {
   signQuotePayload,
   verifyQuoteSignature,
 } from './modules/pricing/pricing.math';
+import {
+  SandboxPaymentGatewayAdapter,
+  buildCanonicalWebhookSignPayload,
+  signSandboxWebhook,
+  verifySandboxWebhookSignature,
+} from './modules/payments/payments.adapter';
+import { PaymentService } from './modules/payments/payments.service';
+import { InMemoryPaymentStore, MongoosePaymentStore } from './modules/payments/payments.store';
 
 export const SERVER_BASELINE = {
   service: 'bhojora-api',
-  checkpoint: '14',
+  checkpoint: '15',
   runtime: 'node-22-lts',
   currency: 'INR',
   currencyUnit: 'paise',
@@ -75,6 +83,13 @@ export {
   computeServerPricingBreakdown,
   signQuotePayload,
   verifyQuoteSignature,
+  PaymentService,
+  MongoosePaymentStore,
+  InMemoryPaymentStore,
+  SandboxPaymentGatewayAdapter,
+  buildCanonicalWebhookSignPayload,
+  signSandboxWebhook,
+  verifySandboxWebhookSignature,
   SafeLogOtpSenderAdapter,
 };
 
@@ -131,6 +146,7 @@ async function startServer(): Promise<void> {
   const catalogStore = new MongooseCatalogStore(mongoConnection);
   const cartStore = new MongooseCartStore(mongoConnection);
   const pricingStore = new MongoosePricingStore(mongoConnection);
+  const paymentStore = new MongoosePaymentStore(mongoConnection);
 
   const identityService = new IdentityService({
     config,
@@ -186,6 +202,17 @@ async function startServer(): Promise<void> {
     logger,
   });
 
+  const paymentGatewayAdapter = new SandboxPaymentGatewayAdapter();
+  const paymentService = new PaymentService({
+    paymentStore,
+    pricingService,
+    gatewayAdapter: paymentGatewayAdapter,
+    rbacStore,
+    webhookSecret: config.paymentWebhookSecret,
+    webhookReplayWindowSeconds: config.webhookReplayWindowSeconds,
+    logger,
+  });
+
   const app = createApp({
     config,
     logger,
@@ -206,6 +233,9 @@ async function startServer(): Promise<void> {
     cartService,
     pricingStore,
     pricingService,
+    paymentStore,
+    paymentService,
+    paymentGatewayAdapter,
   });
 
   const server = http.createServer(app);

@@ -279,13 +279,67 @@ export const INITIAL_DATABASE_INDEXES: readonly DatabaseIndexSpec[] = [
   },
   {
     collection: COLLECTION_NAMES.payments,
+    key: { paymentId: 1 },
+    options: { name: 'idx_payments_id_unique', unique: true },
+  },
+  {
+    collection: COLLECTION_NAMES.payments,
     key: { provider: 1, providerPaymentId: 1 },
     options: { name: 'idx_payments_provider_payment_unique', unique: true },
   },
   {
+    collection: COLLECTION_NAMES.payments,
+    key: { customerId: 1, createdAt: -1 },
+    options: { name: 'idx_payments_customer_created_desc' },
+  },
+  {
+    collection: COLLECTION_NAMES.payments,
+    key: { quoteId: 1, createdAt: -1 },
+    options: { name: 'idx_payments_quote_created_desc' },
+  },
+  {
+    collection: COLLECTION_NAMES.payments,
+    key: { status: 1, reconciliationRequired: 1, createdAt: 1 },
+    options: { name: 'idx_payments_reconciliation_queue' },
+  },
+  {
+    collection: COLLECTION_NAMES.paymentEvents,
+    key: { eventId: 1 },
+    options: { name: 'idx_payment_events_id_unique', unique: true },
+  },
+  {
+    collection: COLLECTION_NAMES.paymentEvents,
+    key: { paymentId: 1, occurredAt: 1 },
+    options: { name: 'idx_payment_events_payment_occurred' },
+  },
+  {
     collection: COLLECTION_NAMES.paymentEvents,
     key: { providerEventId: 1 },
-    options: { name: 'idx_payment_events_provider_event_unique', unique: true },
+    options: {
+      name: 'idx_payment_events_provider_event_unique',
+      unique: true,
+      partialFilterExpression: { providerEventId: { $type: 'string' } },
+    },
+  },
+  {
+    collection: COLLECTION_NAMES.integrationWebhookEvents,
+    key: { provider: 1, eventId: 1 },
+    options: { name: 'idx_webhook_events_provider_event_unique', unique: true },
+  },
+  {
+    collection: COLLECTION_NAMES.reconciliationRecords,
+    key: { reconciliationId: 1 },
+    options: { name: 'idx_reconciliation_records_id_unique', unique: true },
+  },
+  {
+    collection: COLLECTION_NAMES.reconciliationRecords,
+    key: { paymentId: 1, createdAt: -1 },
+    options: { name: 'idx_reconciliation_records_payment_created_desc' },
+  },
+  {
+    collection: COLLECTION_NAMES.reconciliationRecords,
+    key: { status: 1, createdAt: -1 },
+    options: { name: 'idx_reconciliation_records_status_created_desc' },
   },
   {
     collection: COLLECTION_NAMES.deliveryAssignments,

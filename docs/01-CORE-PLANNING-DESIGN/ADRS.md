@@ -347,3 +347,22 @@ Checkpoint 14 governs customer cart management and checkout pricing (`/cart*`, `
 ### Consequences
 - **Positive:** Eliminates floating-point rounding drift, client-side price tampering, ambiguous GST allocation, and silent checkout price surprises.
 - **Negative:** Carts cannot span multiple restaurants in a single order; quotes older than 600 seconds require explicit customer regeneration before payment capture.
+
+---
+
+## ADR-019: Sandbox Payment Gateway Adapter, Webhook Replay Defense & Unknown-Status Reconciliation
+
+### Status: ACCEPTED (Locked Baseline — Checkpoint 15)
+
+### Context
+Checkpoint 15 establishes the sandbox payment layer (`/payments/create`, `/payments/:paymentId`, `/payments/verify`, `/payments/:paymentId/reconcile`, `/webhooks/payments/:provider`, `/admin/payments/reconciliations`). Digital payments must never accept or persist raw PAN/CVV card details, must prevent duplicate charges across retries, and must resolve out-of-order, replayed, or delayed gateway notifications alongside indeterminate `UNKNOWN` gateway timeouts cleanly.
+
+### Decision
+1. **Zero Raw Card Data Storage (`ZERO_RAW_CARD_DATA_POLICY`):** Reject requests containing raw card fields (`cardNumber`, `pan`, `cvv`, `cvc`, `expiry`, `cardExpiry`, `pin`, `trackData`) or 13–19 digit PAN-shaped strings with `400 VALIDATION_ERROR`. Persist only tokenized gateway references and masked summaries (`upiVpaMasked`, `cardNetwork`, `cardLast4`, `bankCode`, `tokenReference`).
+2. **Idempotent Attempt Creation Tied to Verified Quote (`server/src/modules/payments/`):** Require an `Idempotency-Key` header on `POST /payments/create` scoped to `(operation, key)` with canonical SHA-256 request hashing (`409 IDEMPOTENCY_CONFLICT` on mismatched payload/actor, `200` cached replay on identical retry). Bind authorized `amountPaise` strictly from `PricingService.verifyQuoteForCheckout` (`ADR-003`).
+3. **Signed Webhook Verification, Replay Cutoff & Atomic Deduplication:** Require HMAC-SHA256 signatures checked via constant-time `crypto.timingSafeEqual` plus `X-Webhook-Timestamp` within `WEBHOOK_REPLAY_WINDOW_SECONDS` (`300s` default; `401 UNAUTHORIZED` otherwise). Record `(provider, eventId)` atomically in append-only `integration_webhook_events` so duplicate webhook deliveries return `200 { deduplicated: true }` without mutating state or appending duplicate ledger entries.
+4. **Late Webhook & Unknown-Status Reconciliation:** Never downgrade a terminal `CAPTURED` payment upon a late `payment.failed` notification (`LATE_WEBHOOK_IGNORED`). Reconcile `UNKNOWN` or timed-out attempts deterministically via late signed `payment.captured` webhooks (`LATE_WEBHOOK_APPLIED`) or `POST /payments/:paymentId/reconcile` polling `SandboxPaymentGatewayAdapter.fetchPaymentStatus()`, writing immutable `payment_events` and `reconciliation_records` (`finance:settlement:read` MFA queue for operations).
+
+### Consequences
+- **Positive:** Eliminates PCI raw-card exposure, double-capture on webhook retries, and stale-state corruption from out-of-order gateway events.
+- **Negative:** Live Razorpay/Cashfree SDK credentials remain intentionally stubbed behind `SandboxPaymentGatewayAdapter` until production merchant onboarding in a later milestone.

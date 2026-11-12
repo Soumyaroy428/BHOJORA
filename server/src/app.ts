@@ -44,6 +44,11 @@ import { createPricingRouter } from './modules/pricing/pricing.routes';
 import { PricingService } from './modules/pricing/pricing.service';
 import { InMemoryPricingStore, MongoosePricingStore } from './modules/pricing/pricing.store';
 import type { PricingStore } from './modules/pricing/pricing.types';
+import { SandboxPaymentGatewayAdapter } from './modules/payments/payments.adapter';
+import { createPaymentsRouter } from './modules/payments/payments.routes';
+import { PaymentService } from './modules/payments/payments.service';
+import { InMemoryPaymentStore, MongoosePaymentStore } from './modules/payments/payments.store';
+import type { PaymentStore } from './modules/payments/payments.types';
 
 export interface CreateAppOptions {
   config: AppConfig;
@@ -68,6 +73,9 @@ export interface CreateAppOptions {
   cartService?: CartService;
   pricingStore?: PricingStore;
   pricingService?: PricingService;
+  paymentStore?: PaymentStore;
+  paymentService?: PaymentService;
+  paymentGatewayAdapter?: SandboxPaymentGatewayAdapter;
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -191,6 +199,21 @@ export function createApp(options: CreateAppOptions): Express {
       logger,
       ...(options.clock ? { clock: options.clock } : {}),
     });
+  const paymentStore =
+    options.paymentStore ??
+    (isInMemoryMode ? new InMemoryPaymentStore() : new MongoosePaymentStore(mongoose.connection));
+  const paymentService =
+    options.paymentService ??
+    new PaymentService({
+      paymentStore,
+      pricingService,
+      gatewayAdapter: options.paymentGatewayAdapter ?? new SandboxPaymentGatewayAdapter(),
+      rbacStore,
+      webhookSecret: config.paymentWebhookSecret,
+      webhookReplayWindowSeconds: config.webhookReplayWindowSeconds,
+      logger,
+      ...(options.clock ? { clock: options.clock } : {}),
+    });
   const identityRouter = createIdentityRouter(identityService, config);
   const rbacRouter = createRbacRouter({
     identityService,
@@ -239,6 +262,12 @@ export function createApp(options: CreateAppOptions): Express {
     rbacStore,
     config,
   });
+  const paymentsRouter = createPaymentsRouter({
+    identityService,
+    paymentService,
+    rbacStore,
+    config,
+  });
 
   app.use('/api/v1', healthRouter);
   app.use('/api/v1', identityRouter);
@@ -250,6 +279,7 @@ export function createApp(options: CreateAppOptions): Express {
   app.use('/api/v1', catalogRouter);
   app.use('/api/v1', cartRouter);
   app.use('/api/v1', pricingRouter);
+  app.use('/api/v1', paymentsRouter);
   app.use(healthRouter);
 
   app.use(notFoundHandler);
