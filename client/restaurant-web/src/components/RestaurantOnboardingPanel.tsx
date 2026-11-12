@@ -973,6 +973,7 @@ export function RestaurantOnboardingPanel({
               <input
                 id="onb-bankAccountNumber"
                 type="password"
+                autoComplete="off"
                 inputMode="numeric"
                 required
                 aria-describedby="hint-bank"

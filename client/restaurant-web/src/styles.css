@@ -24,7 +24,7 @@
 
 body {
   margin: 0;
-  font-family: 'Inter', 'Noto Sans Bengali', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Noto Sans Bengali', system-ui, sans-serif;
   background: var(--bg-canvas);
   color: var(--ink-950);
   line-height: 1.5;
