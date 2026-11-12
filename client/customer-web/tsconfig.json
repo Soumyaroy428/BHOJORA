@@ -5,6 +5,9 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
+    "paths": {
+      "@bhojora/shared": ["../shared/contracts/index.ts"]
+    },
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,

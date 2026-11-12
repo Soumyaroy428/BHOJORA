@@ -19,7 +19,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
-    "typecheck": "npm run typecheck --workspaces",
+    "typecheck": "npm run build --workspace=@bhojora/shared && npm run typecheck --workspaces",
     "build": "npm run build --workspaces",
     "test": "npm test --workspace=server",
     "security:secrets": "node server/tests/secret-scan.js",
