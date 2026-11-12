@@ -269,6 +269,16 @@ export const INITIAL_DATABASE_INDEXES: readonly DatabaseIndexSpec[] = [
   },
   {
     collection: COLLECTION_NAMES.orders,
+    key: { orderId: 1 },
+    options: { name: 'idx_orders_id_unique', unique: true },
+  },
+  {
+    collection: COLLECTION_NAMES.orders,
+    key: { quoteId: 1 },
+    options: { name: 'idx_orders_quote_unique', unique: true },
+  },
+  {
+    collection: COLLECTION_NAMES.orders,
     key: { customerId: 1, createdAt: -1 },
     options: { name: 'idx_orders_customer_created_desc' },
   },
@@ -276,6 +286,36 @@ export const INITIAL_DATABASE_INDEXES: readonly DatabaseIndexSpec[] = [
     collection: COLLECTION_NAMES.orders,
     key: { outletId: 1, status: 1, createdAt: -1 },
     options: { name: 'idx_orders_outlet_status_created_desc' },
+  },
+  {
+    collection: COLLECTION_NAMES.orderItems,
+    key: { orderItemId: 1 },
+    options: { name: 'idx_order_items_id_unique', unique: true },
+  },
+  {
+    collection: COLLECTION_NAMES.orderItems,
+    key: { orderId: 1 },
+    options: { name: 'idx_order_items_order_id' },
+  },
+  {
+    collection: COLLECTION_NAMES.orderEvents,
+    key: { eventId: 1 },
+    options: { name: 'idx_order_events_id_unique', unique: true },
+  },
+  {
+    collection: COLLECTION_NAMES.orderEvents,
+    key: { orderId: 1, occurredAt: 1 },
+    options: { name: 'idx_order_events_order_occurred' },
+  },
+  {
+    collection: COLLECTION_NAMES.outboxEvents,
+    key: { outboxEventId: 1 },
+    options: { name: 'idx_outbox_events_id_unique', unique: true },
+  },
+  {
+    collection: COLLECTION_NAMES.outboxEvents,
+    key: { status: 1, occurredAt: 1 },
+    options: { name: 'idx_outbox_events_status_occurred' },
   },
   {
     collection: COLLECTION_NAMES.payments,

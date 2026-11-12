@@ -5,6 +5,7 @@ export * from './catalog';
 export * from './customer';
 export * from './discovery';
 export * from './events';
+export * from './orders';
 export * from './outlet';
 export * from './payments';
 export * from './rbac';

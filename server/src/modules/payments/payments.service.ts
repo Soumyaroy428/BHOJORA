@@ -229,6 +229,8 @@ export interface PaymentServiceOptions {
   rbacStore?: RbacStore;
   webhookSecret: string;
   webhookReplayWindowSeconds?: number;
+  onPaymentCaptured?: (payment: PaymentAttemptDto) => Promise<void> | void;
+  canPayConsumedQuote?: (customerId: string, quoteId: string) => Promise<boolean> | boolean;
   logger: Logger;
   clock?: Clock;
 }
@@ -242,6 +244,8 @@ export class PaymentService {
   private readonly replayWindowSeconds: number;
   private readonly logger: Logger;
   private readonly clock: Clock;
+  private onPaymentCaptured?: (payment: PaymentAttemptDto) => Promise<void> | void;
+  private canPayConsumedQuote?: (customerId: string, quoteId: string) => Promise<boolean> | boolean;
 
   constructor(options: PaymentServiceOptions) {
     this.paymentStore = options.paymentStore;
@@ -251,8 +255,38 @@ export class PaymentService {
     this.webhookSecret = options.webhookSecret;
     this.replayWindowSeconds =
       options.webhookReplayWindowSeconds ?? DEFAULT_WEBHOOK_REPLAY_WINDOW_SECONDS;
+    this.onPaymentCaptured = options.onPaymentCaptured;
+    this.canPayConsumedQuote = options.canPayConsumedQuote;
     this.logger = options.logger;
     this.clock = options.clock ?? SYSTEM_CLOCK;
+  }
+
+  setOnPaymentCapturedListener(
+    listener: ((payment: PaymentAttemptDto) => Promise<void> | void) | undefined,
+  ): void {
+    this.onPaymentCaptured = listener;
+  }
+
+  setCanPayConsumedQuote(
+    checker: ((customerId: string, quoteId: string) => Promise<boolean> | boolean) | undefined,
+  ): void {
+    this.canPayConsumedQuote = checker;
+  }
+
+  private async notifyPaymentCaptured(record: PaymentRecord): Promise<PaymentAttemptDto> {
+    const dto = this.toPaymentDto(record);
+    if (record.status === 'CAPTURED' && this.onPaymentCaptured) {
+      try {
+        await this.onPaymentCaptured(dto);
+      } catch (error) {
+        this.logger.warn('payments.capture_listener.failed', {
+          paymentId: record.paymentId,
+          quoteId: record.quoteId,
+          message: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    }
+    return dto;
   }
 
   getGatewayAdapter(): SandboxPaymentGatewayAdapter {
@@ -362,7 +396,15 @@ export class PaymentService {
       }
     }
 
-    const verified = await this.pricingService.verifyQuoteForCheckout(customerId, parsed.quoteId);
+    const allowConsumed = this.canPayConsumedQuote
+      ? await this.canPayConsumedQuote(customerId, parsed.quoteId)
+      : false;
+    const verified = await this.pricingService.verifyQuoteForCheckout(
+      customerId,
+      parsed.quoteId,
+      undefined,
+      { allowConsumed },
+    );
     const { quote } = verified;
 
     const priorQuoteAttempts = await this.paymentStore.listPaymentsByQuoteId(quote.quoteId);
@@ -594,9 +636,10 @@ export class PaymentService {
         payloadSummary: `Server-verified sandbox capture for ${payment.providerPaymentId}`,
         occurredAt: now,
       });
+      const paymentDto = await this.notifyPaymentCaptured(updated);
       const events = await this.paymentStore.listEventsForPayment(payment.paymentId);
       return {
-        payment: this.toPaymentDto(updated),
+        payment: paymentDto,
         events: events.map((e) => this.toEventDto(e)),
       };
     }
@@ -621,9 +664,10 @@ export class PaymentService {
         payloadSummary: poll.failureReason ?? 'Sandbox payment declined',
         occurredAt: now,
       });
+      const paymentDto = await this.notifyPaymentCaptured(updated);
       const events = await this.paymentStore.listEventsForPayment(payment.paymentId);
       return {
-        payment: this.toPaymentDto(updated),
+        payment: paymentDto,
         events: events.map((e) => this.toEventDto(e)),
       };
     }
@@ -876,6 +920,10 @@ export class PaymentService {
       });
     }
 
+    if (updated.status === 'CAPTURED') {
+      await this.notifyPaymentCaptured(updated);
+    }
+
     return {
       accepted: true,
       deduplicated: false,
@@ -996,9 +1044,13 @@ export class PaymentService {
         });
       }
 
+      const paymentDto =
+        resolvedStatus === 'CAPTURED'
+          ? await this.notifyPaymentCaptured(updated)
+          : this.toPaymentDto(updated);
       const events = await this.paymentStore.listEventsForPayment(payment.paymentId);
       return {
-        payment: this.toPaymentDto(updated),
+        payment: paymentDto,
         reconciliation: this.toReconciliationDto(recRecord),
         events: events.map((e) => this.toEventDto(e)),
       };

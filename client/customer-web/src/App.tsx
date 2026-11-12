@@ -4,19 +4,27 @@ import type {
   CartDto,
   CartVariantSelectionDto,
   CheckoutQuoteDto,
+  CreateOrderResultDto,
   CuratedDiscoveryCategoryDef,
   DiscoveryDishMatchDto,
   DiscoveryOutletResultDto,
   DiscoverySearchResponseDto,
   DiscoverySortOption,
   MenuItemDto,
+  OrderCancelReason,
+  OrderDto,
+  OrderEventDto,
+  OrderListResponseDto,
+  OrderTrackingDto,
   PaginationMeta,
+  PaymentAttemptDto,
   PublicCouponSummaryDto,
 } from '@bhojora/shared';
 import { formatInrFromPaise } from '@bhojora/shared';
 import { AuthDialog } from './components/AuthDialog';
 import { BengaliBanner } from './components/BengaliBanner';
 import { CartCheckoutDialog } from './components/CartCheckoutDialog';
+import { CustomerOrdersDialog } from './components/CustomerOrdersDialog';
 import { Footer } from './components/Footer';
 import { Header } from './components/Header';
 import { HeroSection } from './components/HeroSection';
@@ -37,6 +45,16 @@ import {
   recalculatePreviewCartTotals,
   writeStoredPreviewCart,
 } from './lib/cartHelpers';
+import {
+  advancePreviewOrderBundle,
+  buildPreviewOrderBundle,
+  buildPreviewTracking,
+  cancelPreviewOrderBundle,
+  createClientIdempotencyKey,
+  readStoredPreviewOrders,
+  writeStoredPreviewOrders,
+  type PreviewOrderBundle,
+} from './lib/orderHelpers';
 import type {
   AuthSessionState,
   KitchenOutlet,
@@ -170,6 +188,19 @@ export function App() {
   const [tipPaise, setTipPaise] = useState(0);
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
+  const [ordersModalOpen, setOrdersModalOpen] = useState(false);
+  const [previewOrderBundles, setPreviewOrderBundles] = useState<PreviewOrderBundle[]>(() =>
+    readStoredPreviewOrders(),
+  );
+  const [liveOrders, setLiveOrders] = useState<OrderDto[]>([]);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [liveTracking, setLiveTracking] = useState<OrderTrackingDto | null>(null);
+  const [placingOrder, setPlacingOrder] = useState(false);
+  const [orderError, setOrderError] = useState<string | null>(null);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [cancellingOrder, setCancellingOrder] = useState(false);
+  const [ordersStatusMessage, setOrdersStatusMessage] = useState<string | null>(null);
+  const [ordersErrorMessage, setOrdersErrorMessage] = useState<string | null>(null);
 
   const configuredApiBase = useMemo(() => {
     const windowBase =
@@ -517,6 +548,64 @@ export function App() {
   }, [cart, isLiveCartMode]);
 
   useEffect(() => {
+    if (!isLiveCartMode) {
+      writeStoredPreviewOrders(previewOrderBundles);
+    }
+  }, [previewOrderBundles, isLiveCartMode]);
+
+  const loadOrderTracking = useCallback(
+    async (orderId: string) => {
+      if (!isLiveCartMode || !authSession?.tokens.accessToken) {
+        return;
+      }
+      try {
+        const tracking = await apiRequest<OrderTrackingDto>(
+          `/orders/${encodeURIComponent(orderId)}/tracking`,
+          { token: authSession.tokens.accessToken },
+        );
+        setLiveTracking(tracking);
+        setOrdersErrorMessage(null);
+      } catch (err) {
+        setOrdersErrorMessage(
+          err instanceof Error ? err.message : 'Unable to refresh order tracking.',
+        );
+      }
+    },
+    [isLiveCartMode, authSession?.tokens.accessToken],
+  );
+
+  const loadOrdersList = useCallback(
+    async (preferredOrderId?: string) => {
+      if (!isLiveCartMode || !authSession?.tokens.accessToken) {
+        return;
+      }
+      setOrdersLoading(true);
+      try {
+        const res = await apiRequest<OrderListResponseDto>('/orders', {
+          token: authSession.tokens.accessToken,
+        });
+        setLiveOrders(res.orders);
+        const targetId =
+          preferredOrderId ??
+          (selectedOrderId && res.orders.some((o) => o.orderId === selectedOrderId)
+            ? selectedOrderId
+            : (res.orders[0]?.orderId ?? null));
+        setSelectedOrderId(targetId);
+        if (targetId) {
+          await loadOrderTracking(targetId);
+        } else {
+          setLiveTracking(null);
+        }
+      } catch (err) {
+        setOrdersErrorMessage(err instanceof Error ? err.message : 'Unable to load orders.');
+      } finally {
+        setOrdersLoading(false);
+      }
+    },
+    [isLiveCartMode, authSession?.tokens.accessToken, selectedOrderId, loadOrderTracking],
+  );
+
+  useEffect(() => {
     const token = authSession?.tokens.accessToken;
     if (!HAS_CONFIGURED_API || !token) {
       return;
@@ -526,6 +615,13 @@ export function App() {
       .then((res) => {
         if (!cancelled && res.cart) {
           setCart(res.cart);
+        }
+      })
+      .catch(() => {});
+    void apiRequest<OrderListResponseDto>('/orders', { token })
+      .then((res) => {
+        if (!cancelled && Array.isArray(res.orders)) {
+          setLiveOrders(res.orders);
         }
       })
       .catch(() => {});
@@ -817,6 +913,220 @@ export function App() {
     [computeQuoteForState],
   );
 
+  const displayedOrders = useMemo(
+    () => (isLiveCartMode ? liveOrders : previewOrderBundles.map((b) => b.order)),
+    [isLiveCartMode, liveOrders, previewOrderBundles],
+  );
+
+  const activeOrderCount = useMemo(
+    () =>
+      displayedOrders.filter((o) => o.status !== 'DELIVERED' && o.status !== 'CANCELLED').length,
+    [displayedOrders],
+  );
+
+  const activePreviewBundle = useMemo(() => {
+    if (isLiveCartMode || previewOrderBundles.length === 0) {
+      return null;
+    }
+    return (
+      previewOrderBundles.find((b) => b.order.orderId === selectedOrderId) ??
+      previewOrderBundles[0]!
+    );
+  }, [isLiveCartMode, previewOrderBundles, selectedOrderId]);
+
+  const activeTrackingDto: OrderTrackingDto | null = useMemo(() => {
+    if (isLiveCartMode) {
+      return liveTracking;
+    }
+    return activePreviewBundle
+      ? buildPreviewTracking(activePreviewBundle.order, activePreviewBundle.events)
+      : null;
+  }, [isLiveCartMode, liveTracking, activePreviewBundle]);
+
+  const activeOrderEvents: readonly OrderEventDto[] = useMemo(() => {
+    if (isLiveCartMode) {
+      return liveTracking?.events ?? [];
+    }
+    return activePreviewBundle?.events ?? [];
+  }, [isLiveCartMode, liveTracking, activePreviewBundle]);
+
+  const handleOpenOrdersModal = useCallback(() => {
+    setOrdersStatusMessage(null);
+    setOrdersErrorMessage(null);
+    setOrdersModalOpen(true);
+    if (isLiveCartMode) {
+      void loadOrdersList();
+    } else if (!selectedOrderId && previewOrderBundles.length > 0) {
+      setSelectedOrderId(previewOrderBundles[0]!.order.orderId);
+    }
+  }, [isLiveCartMode, loadOrdersList, selectedOrderId, previewOrderBundles]);
+
+  const handlePlaceOrder = useCallback(
+    async (specialInstructions: string) => {
+      if (!quote || cart.items.length === 0) {
+        return;
+      }
+      setPlacingOrder(true);
+      setOrderError(null);
+      try {
+        if (isLiveCartMode && authSession?.tokens.accessToken) {
+          const paymentRes = await apiRequest<{ payment: PaymentAttemptDto }>('/payments/create', {
+            method: 'POST',
+            token: authSession.tokens.accessToken,
+            headers: {
+              'Idempotency-Key': createClientIdempotencyKey('pay'),
+            },
+            body: {
+              quoteId: quote.quoteId,
+              provider: 'SANDBOX_RAZORPAY',
+              method: 'UPI',
+              upiHandleHint: 'bhojora@okaxis',
+              sandboxScenario: 'AUTO_CAPTURE',
+            },
+          });
+
+          const verifiedRes = await apiRequest<{ payment: PaymentAttemptDto }>('/payments/verify', {
+            method: 'POST',
+            token: authSession.tokens.accessToken,
+            body: { paymentId: paymentRes.payment.paymentId },
+          });
+
+          const orderRes = await apiRequest<CreateOrderResultDto>('/orders', {
+            method: 'POST',
+            token: authSession.tokens.accessToken,
+            headers: {
+              'Idempotency-Key': createClientIdempotencyKey('ord'),
+            },
+            body: {
+              quoteId: quote.quoteId,
+              paymentId: verifiedRes.payment.paymentId,
+              ...(specialInstructions.trim()
+                ? { specialInstructions: specialInstructions.trim() }
+                : {}),
+            },
+          });
+
+          setCart(createEmptyCart());
+          setQuote(null);
+          setAppliedCouponCode('');
+          setCouponInput('');
+          setTipPaise(0);
+          setCartModalOpen(false);
+          setSelectedOrderId(orderRes.order.orderId);
+          setOrdersStatusMessage(
+            `Order ${orderRes.order.orderNumber} placed and confirmed (${orderRes.order.formattedTotalPayableInr}).`,
+          );
+          setOrdersModalOpen(true);
+          await loadOrdersList(orderRes.order.orderId);
+          return;
+        }
+
+        const bundle = buildPreviewOrderBundle({ cart, quote, specialInstructions });
+        setPreviewOrderBundles((prev) => [bundle, ...prev]);
+        setCart(createEmptyCart());
+        setQuote(null);
+        setAppliedCouponCode('');
+        setCouponInput('');
+        setTipPaise(0);
+        setCartModalOpen(false);
+        setSelectedOrderId(bundle.order.orderId);
+        setOrdersErrorMessage(null);
+        setOrdersStatusMessage(
+          `Order ${bundle.order.orderNumber} placed & confirmed (${bundle.order.formattedTotalPayableInr}).`,
+        );
+        setOrdersModalOpen(true);
+      } catch (err) {
+        setOrderError(err instanceof Error ? err.message : 'Unable to place order.');
+      } finally {
+        setPlacingOrder(false);
+      }
+    },
+    [quote, cart, isLiveCartMode, authSession?.tokens.accessToken, loadOrdersList],
+  );
+
+  const handleSelectOrder = useCallback(
+    (orderId: string) => {
+      setSelectedOrderId(orderId);
+      setOrdersStatusMessage(null);
+      setOrdersErrorMessage(null);
+      if (isLiveCartMode) {
+        void loadOrderTracking(orderId);
+      }
+    },
+    [isLiveCartMode, loadOrderTracking],
+  );
+
+  const handleCancelOrder = useCallback(
+    async (orderId: string, reasonCode: OrderCancelReason, note: string) => {
+      setCancellingOrder(true);
+      setOrdersErrorMessage(null);
+      setOrdersStatusMessage(null);
+      try {
+        if (isLiveCartMode && authSession?.tokens.accessToken) {
+          const res = await apiRequest<{ order: OrderDto; events: OrderEventDto[] }>(
+            `/orders/${encodeURIComponent(orderId)}/cancel`,
+            {
+              method: 'POST',
+              token: authSession.tokens.accessToken,
+              body: {
+                reasonCode,
+                ...(note.trim() ? { note: note.trim() } : {}),
+              },
+            },
+          );
+          setLiveOrders((prev) => prev.map((o) => (o.orderId === orderId ? res.order : o)));
+          setOrdersStatusMessage(
+            `Order ${res.order.orderNumber} cancelled (${res.order.cancellation?.refundStatus ?? 'QUEUED_FULL_REFUND'}).`,
+          );
+          await loadOrderTracking(orderId);
+          return;
+        }
+
+        const target = previewOrderBundles.find((b) => b.order.orderId === orderId);
+        if (!target) {
+          return;
+        }
+        const outcome = cancelPreviewOrderBundle(target, reasonCode, note);
+        if (!outcome.ok) {
+          setOrdersErrorMessage(outcome.message);
+          return;
+        }
+        setPreviewOrderBundles((prev) =>
+          prev.map((b) => (b.order.orderId === orderId ? outcome.bundle : b)),
+        );
+        setOrdersStatusMessage(
+          `Order ${outcome.bundle.order.orderNumber} cancelled (${outcome.bundle.order.cancellation?.refundStatus ?? 'NOT_REQUIRED'}).`,
+        );
+      } catch (err) {
+        setOrdersErrorMessage(err instanceof Error ? err.message : 'Unable to cancel order.');
+      } finally {
+        setCancellingOrder(false);
+      }
+    },
+    [isLiveCartMode, authSession?.tokens.accessToken, loadOrderTracking, previewOrderBundles],
+  );
+
+  const handleSimulatePreviewNextStep = useCallback((orderId: string) => {
+    setOrdersErrorMessage(null);
+    setPreviewOrderBundles((prev) =>
+      prev.map((b) => (b.order.orderId === orderId ? advancePreviewOrderBundle(b) : b)),
+    );
+    setOrdersStatusMessage('Simulated kitchen/rider lifecycle stage update.');
+  }, []);
+
+  const handleReorderFromOrder = useCallback(
+    (order: OrderDto) => {
+      const matched =
+        liveResults?.find((k) => k.key === order.outletId) ??
+        VERIFIED_KOLKATA_KITCHENS.find((k) => k.key === order.outletId);
+      setOrdersModalOpen(false);
+      if (matched) {
+        setSelectedMenuKitchen(matched);
+      }
+    },
+    [liveResults],
+  );
+
   return (
     <>
       <a href="#main-content" className="skip-link visually-hidden">
@@ -827,9 +1137,11 @@ export function App() {
         headerZoneLabel={headerZoneLabel}
         signedInFirstName={signedInFirstName}
         cartItemCount={cart.itemCount}
+        activeOrderCount={activeOrderCount}
         onOpenPilotInfo={() => setPilotInfoOpen(true)}
         onOpenAuthModal={() => setAuthModalOpen(true)}
         onOpenCartModal={handleOpenCartModal}
+        onOpenOrdersModal={handleOpenOrdersModal}
       />
 
       <main id="main-content" tabIndex={-1}>
@@ -944,6 +1256,8 @@ export function App() {
         tipPaise={tipPaise}
         quoteLoading={quoteLoading}
         quoteError={quoteError}
+        placingOrder={placingOrder}
+        orderError={orderError}
         isLiveServerMode={isLiveCartMode}
         onSelectLocation={handleSelectQuoteLocation}
         onChangeCouponInput={setCouponInput}
@@ -954,11 +1268,37 @@ export function App() {
         onGenerateQuote={(acceptPriceChanges) =>
           void computeQuoteForState(Boolean(acceptPriceChanges))
         }
+        onPlaceOrder={(notes) => void handlePlaceOrder(notes)}
         onOpenAuthModal={() => {
           setCartModalOpen(false);
           setAuthModalOpen(true);
         }}
         onClose={() => setCartModalOpen(false)}
+      />
+
+      <CustomerOrdersDialog
+        open={ordersModalOpen}
+        orders={displayedOrders}
+        selectedOrderId={selectedOrderId}
+        tracking={activeTrackingDto}
+        events={activeOrderEvents}
+        isLiveServerMode={isLiveCartMode}
+        loadingOrders={ordersLoading}
+        cancellingOrder={cancellingOrder}
+        statusMessage={ordersStatusMessage}
+        errorMessage={ordersErrorMessage}
+        onSelectOrder={handleSelectOrder}
+        onRefreshTracking={(orderId) => void loadOrderTracking(orderId)}
+        onCancelOrder={(orderId, reasonCode, note) =>
+          void handleCancelOrder(orderId, reasonCode, note)
+        }
+        onSimulatePreviewNextStep={handleSimulatePreviewNextStep}
+        onReorderItems={handleReorderFromOrder}
+        onOpenAuthModal={() => {
+          setOrdersModalOpen(false);
+          setAuthModalOpen(true);
+        }}
+        onClose={() => setOrdersModalOpen(false)}
       />
       <Footer />
     </>

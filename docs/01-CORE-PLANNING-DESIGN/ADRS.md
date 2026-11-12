@@ -366,3 +366,22 @@ Checkpoint 15 establishes the sandbox payment layer (`/payments/create`, `/payme
 ### Consequences
 - **Positive:** Eliminates PCI raw-card exposure, double-capture on webhook retries, and stale-state corruption from out-of-order gateway events.
 - **Negative:** Live Razorpay/Cashfree SDK credentials remain intentionally stubbed behind `SandboxPaymentGatewayAdapter` until production merchant onboarding in a later milestone.
+
+---
+
+## ADR-020: Idempotent Order Creation, Optimistic CAS State Machine & Append-Only Event Ledger
+
+### Status: ACCEPTED (Locked Baseline — Checkpoint 16)
+
+### Context
+Checkpoint 16 implements the customer and restaurant order lifecycle (`/orders*`, `/restaurant/orders*`), `customer-web` order history & live tracking views, cancellation rules, and payment-capture confirmation. Concurrent submits, double-clicks, simultaneous cancellation vs kitchen-acceptance races, and out-of-order state jumps must never produce duplicate orders or corrupt terminal order state.
+
+### Decision
+1. **Idempotent Order Creation & Quote Uniqueness Lock (`server/src/modules/orders/`):** Require `Idempotency-Key` + SHA-256 request hashing on `POST /api/v1/orders` (`200` cached replay for identical retries, `409 IDEMPOTENCY_CONFLICT` for payload mismatches), enforce unique `quoteId` in `orders` (`idx_orders_quote_unique` + critical-section conflict guard) so concurrent submissions using different `Idempotency-Key` values create at most one order, validate signed 600s quotes, check outlet suspension (`403 CRITICAL_VIOLATION_SUSPENDED`), consume quote + coupon redemption, and clear the customer cart.
+2. **Directed State Machine & Optimistic Version CAS Concurrency Lock (`ADR-006`):** Permit transitions strictly along `AWAITING_PAYMENT -> CONFIRMED -> PREPARING -> READY_FOR_PICKUP -> OUT_FOR_DELIVERY -> DELIVERED` (with `CANCELLED` permitted only from non-terminal states). Every transition and cancellation executes atomically via `(orderId, expectedStatuses, expectedVersion)` CAS updates incrementing `version`, returning deterministic `409 CONFLICT` on invalid transitions, terminal mutations, or lost concurrent races.
+3. **Role-Scoped Cancellation Eligibility & Refund Attribution:** Permit customer self-cancellation strictly in `AWAITING_PAYMENT` (`refundStatus: NOT_REQUIRED`) or `CONFIRMED` (`refundStatus: QUEUED_FULL_REFUND`); reject customer cancellation with `409 CONFLICT` once kitchen preparation (`PREPARING+`) begins while still permitting authorized outlet staff (`CONFIRMED`/`PREPARING`) or MFA-verified ops/support intervention.
+4. **Append-Only Ledger & Outbox Events:** Persist immutable `order_items`, append-only `order_events`, and append-only `outbox_events` (`ORDER_CONFIRMED`, `ORDER_READY_FOR_PICKUP`, `ORDER_DELIVERED`, `ORDER_CANCELLED`), automatically confirming `AWAITING_PAYMENT` orders when `PaymentService` verifies or receives a signed `payment.captured` webhook.
+
+### Consequences
+- **Positive:** Prevents duplicate orders under concurrent retries, eliminates cancel-vs-kitchen race corruption, and preserves complete financial and lifecycle auditability.
+- **Negative:** Outbox events remain persisted in `PENDING` state inside `outbox_events` until the asynchronous worker/notification dispatcher consumes them in later checkpoints.

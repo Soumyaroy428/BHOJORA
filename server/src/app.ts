@@ -49,6 +49,10 @@ import { createPaymentsRouter } from './modules/payments/payments.routes';
 import { PaymentService } from './modules/payments/payments.service';
 import { InMemoryPaymentStore, MongoosePaymentStore } from './modules/payments/payments.store';
 import type { PaymentStore } from './modules/payments/payments.types';
+import { createOrdersRouter } from './modules/orders/orders.routes';
+import { OrderService } from './modules/orders/orders.service';
+import { InMemoryOrderStore, MongooseOrderStore } from './modules/orders/orders.store';
+import type { OrderStore } from './modules/orders/orders.types';
 
 export interface CreateAppOptions {
   config: AppConfig;
@@ -76,6 +80,8 @@ export interface CreateAppOptions {
   paymentStore?: PaymentStore;
   paymentService?: PaymentService;
   paymentGatewayAdapter?: SandboxPaymentGatewayAdapter;
+  orderStore?: OrderStore;
+  orderService?: OrderService;
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -214,6 +220,32 @@ export function createApp(options: CreateAppOptions): Express {
       logger,
       ...(options.clock ? { clock: options.clock } : {}),
     });
+  const orderStore =
+    options.orderStore ??
+    (isInMemoryMode ? new InMemoryOrderStore() : new MongooseOrderStore(mongoose.connection));
+  const orderService =
+    options.orderService ??
+    new OrderService({
+      orderStore,
+      pricingService,
+      cartService,
+      restaurantStore,
+      paymentStore,
+      rbacStore,
+      logger,
+      ...(options.clock ? { clock: options.clock } : {}),
+    });
+  paymentService.setOnPaymentCapturedListener(async (payment) => {
+    await orderService.confirmOrderFromPayment(payment);
+  });
+  paymentService.setCanPayConsumedQuote(async (customerId, quoteId) => {
+    const existingOrder = await orderStore.getOrderByQuoteId(quoteId);
+    return (
+      existingOrder !== null &&
+      existingOrder.customerId === customerId &&
+      existingOrder.status === 'AWAITING_PAYMENT'
+    );
+  });
   const identityRouter = createIdentityRouter(identityService, config);
   const rbacRouter = createRbacRouter({
     identityService,
@@ -268,6 +300,12 @@ export function createApp(options: CreateAppOptions): Express {
     rbacStore,
     config,
   });
+  const ordersRouter = createOrdersRouter({
+    identityService,
+    orderService,
+    rbacStore,
+    config,
+  });
 
   app.use('/api/v1', healthRouter);
   app.use('/api/v1', identityRouter);
@@ -280,6 +318,7 @@ export function createApp(options: CreateAppOptions): Express {
   app.use('/api/v1', cartRouter);
   app.use('/api/v1', pricingRouter);
   app.use('/api/v1', paymentsRouter);
+  app.use('/api/v1', ordersRouter);
   app.use(healthRouter);
 
   app.use(notFoundHandler);

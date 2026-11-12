@@ -6,6 +6,7 @@ export async function apiRequest<T>(
     method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
     body?: Record<string, unknown>;
     token?: string;
+    headers?: Record<string, string>;
   } = {},
 ): Promise<T> {
   const viteBase = import.meta.env.VITE_API_BASE?.trim().replace(/\/+$/, '');
@@ -18,6 +19,7 @@ export async function apiRequest<T>(
     typeof window.BHOJORA_API_BASE === 'string' ? window.BHOJORA_API_BASE : resolvedViteApi;
   const headers: Record<string, string> = {
     'X-Requested-With': 'fetch',
+    ...(options.headers ?? {}),
   };
   if (options.body) {
     headers['Content-Type'] = 'application/json';

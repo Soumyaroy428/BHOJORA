@@ -21,6 +21,8 @@ interface CartCheckoutDialogProps {
   tipPaise: number;
   quoteLoading: boolean;
   quoteError: string | null;
+  placingOrder: boolean;
+  orderError: string | null;
   isLiveServerMode: boolean;
   onSelectLocation: (locId: Exclude<KolkataZoneId, 'all'>) => void;
   onChangeCouponInput: (code: string) => void;
@@ -29,6 +31,7 @@ interface CartCheckoutDialogProps {
   onUpdateItemQty: (cartItemId: string, nextQty: number) => void;
   onClearCart: () => void;
   onGenerateQuote: (acceptPriceChanges?: boolean) => void;
+  onPlaceOrder: (specialInstructions: string) => void;
   onOpenAuthModal: () => void;
   onClose: () => void;
 }
@@ -49,6 +52,8 @@ export function CartCheckoutDialog({
   tipPaise,
   quoteLoading,
   quoteError,
+  placingOrder,
+  orderError,
   isLiveServerMode,
   onSelectLocation,
   onChangeCouponInput,
@@ -57,6 +62,7 @@ export function CartCheckoutDialog({
   onUpdateItemQty,
   onClearCart,
   onGenerateQuote,
+  onPlaceOrder,
   onOpenAuthModal,
   onClose,
 }: CartCheckoutDialogProps) {
@@ -64,6 +70,7 @@ export function CartCheckoutDialog({
   useDialogLightDismiss(dialogRef);
 
   const [secondsLeft, setSecondsLeft] = useState<number>(quote?.remainingSeconds ?? 0);
+  const [specialInstructions, setSpecialInstructions] = useState('');
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -391,15 +398,53 @@ export function CartCheckoutDialog({
               <p className="quote-signature-note">
                 <code>{quote.quoteId}</code> · {quote.tamperProtectionNotice}
               </p>
+
+              <div className="cart-config-block" style={{ marginTop: '12px' }}>
+                <label htmlFor="orderInstructionsInput" className="cart-config-label">
+                  Cooking or Rider Instructions (Optional)
+                </label>
+                <input
+                  id="orderInstructionsInput"
+                  type="text"
+                  className="cart-coupon-input"
+                  maxLength={240}
+                  placeholder="e.g. Ring bell once, keep mustard sauce separate"
+                  value={specialInstructions}
+                  onChange={(e) => setSpecialInstructions(e.target.value)}
+                />
+              </div>
             </section>
           ) : null}
 
+          {orderError ? (
+            <div className="cart-banner-error" role="alert">
+              {orderError}
+            </div>
+          ) : null}
+
           <div className="cart-footer-actions">
+            {quote && !quoteExpired && !quote.priceDriftDetected ? (
+              <button
+                type="button"
+                id="placeOrderBtn"
+                className="btn btn-primary"
+                disabled={placingOrder || quoteLoading}
+                onClick={() => onPlaceOrder(specialInstructions)}
+              >
+                {placingOrder
+                  ? 'Placing Idempotent Order…'
+                  : `Place Order & Pay (${quote.pricingBreakdown.formattedTotalPayableInr})`}
+              </button>
+            ) : null}
             <button
               type="button"
               id="refreshQuoteBtn"
-              className="btn btn-primary"
-              disabled={quoteLoading}
+              className={
+                quote && !quoteExpired && !quote.priceDriftDetected
+                  ? 'btn btn-outline'
+                  : 'btn btn-primary'
+              }
+              disabled={quoteLoading || placingOrder}
               onClick={() => onGenerateQuote(false)}
             >
               {quoteLoading

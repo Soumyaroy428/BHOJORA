@@ -2,18 +2,22 @@ interface HeaderProps {
   headerZoneLabel: string;
   signedInFirstName: string | null;
   cartItemCount: number;
+  activeOrderCount: number;
   onOpenPilotInfo: () => void;
   onOpenAuthModal: () => void;
   onOpenCartModal: () => void;
+  onOpenOrdersModal: () => void;
 }
 
 export function Header({
   headerZoneLabel,
   signedInFirstName,
   cartItemCount,
+  activeOrderCount,
   onOpenPilotInfo,
   onOpenAuthModal,
   onOpenCartModal,
+  onOpenOrdersModal,
 }: HeaderProps) {
   return (
     <header>
@@ -73,6 +77,16 @@ export function Header({
               <path d="M16 10a4 4 0 0 1-8 0" />
             </svg>
             <span>Cart ({cartItemCount})</span>
+          </button>
+          <button
+            type="button"
+            id="openOrdersModalBtn"
+            className="btn btn-outline"
+            style={{ minHeight: '44px', padding: '8px 14px' }}
+            aria-label={`Open orders, ${activeOrderCount} active`}
+            onClick={onOpenOrdersModal}
+          >
+            {activeOrderCount > 0 ? `Orders (${activeOrderCount})` : 'Orders'}
           </button>
           <button
             type="button"

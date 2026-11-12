@@ -166,7 +166,7 @@ async function createAndVerifyPrivilegedUser({
 
 async function run() {
   // 1. Baseline, shared contract parity, DB indexes, OpenAPI coverage
-  assert.equal(SERVER_BASELINE.checkpoint, '15', 'SERVER_BASELINE.checkpoint must be 15');
+  assert.ok(Number(SERVER_BASELINE.checkpoint) >= 15, 'SERVER_BASELINE.checkpoint must be >= 15');
 
   const shared = await import(
     pathToFileURL(path.join(REPO_ROOT, 'client', 'shared', 'dist', 'contracts', 'payments.js')).href

@@ -39,10 +39,12 @@ import {
 } from './modules/payments/payments.adapter';
 import { PaymentService } from './modules/payments/payments.service';
 import { InMemoryPaymentStore, MongoosePaymentStore } from './modules/payments/payments.store';
+import { evaluateCancellationEligibility, OrderService } from './modules/orders/orders.service';
+import { InMemoryOrderStore, MongooseOrderStore } from './modules/orders/orders.store';
 
 export const SERVER_BASELINE = {
   service: 'bhojora-api',
-  checkpoint: '15',
+  checkpoint: '16',
   runtime: 'node-22-lts',
   currency: 'INR',
   currencyUnit: 'paise',
@@ -90,6 +92,10 @@ export {
   buildCanonicalWebhookSignPayload,
   signSandboxWebhook,
   verifySandboxWebhookSignature,
+  OrderService,
+  MongooseOrderStore,
+  InMemoryOrderStore,
+  evaluateCancellationEligibility,
   SafeLogOtpSenderAdapter,
 };
 
@@ -147,6 +153,7 @@ async function startServer(): Promise<void> {
   const cartStore = new MongooseCartStore(mongoConnection);
   const pricingStore = new MongoosePricingStore(mongoConnection);
   const paymentStore = new MongoosePaymentStore(mongoConnection);
+  const orderStore = new MongooseOrderStore(mongoConnection);
 
   const identityService = new IdentityService({
     config,
@@ -213,6 +220,28 @@ async function startServer(): Promise<void> {
     logger,
   });
 
+  const orderService = new OrderService({
+    orderStore,
+    pricingService,
+    cartService,
+    restaurantStore,
+    paymentStore,
+    rbacStore,
+    logger,
+  });
+
+  paymentService.setOnPaymentCapturedListener(async (payment) => {
+    await orderService.confirmOrderFromPayment(payment);
+  });
+  paymentService.setCanPayConsumedQuote(async (customerId, quoteId) => {
+    const existingOrder = await orderStore.getOrderByQuoteId(quoteId);
+    return (
+      existingOrder !== null &&
+      existingOrder.customerId === customerId &&
+      existingOrder.status === 'AWAITING_PAYMENT'
+    );
+  });
+
   const app = createApp({
     config,
     logger,
@@ -236,6 +265,8 @@ async function startServer(): Promise<void> {
     paymentStore,
     paymentService,
     paymentGatewayAdapter,
+    orderStore,
+    orderService,
   });
 
   const server = http.createServer(app);

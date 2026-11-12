@@ -529,11 +529,12 @@ export class PricingService {
     customerId: string,
     quoteId: string,
     rawBody?: unknown,
+    options?: { allowConsumed?: boolean },
   ): Promise<{ valid: true; quote: CheckoutQuoteDto }> {
     const parsed = verifyQuoteSchema.parse(rawBody);
     const quote = await this.getCheckoutQuote(customerId, quoteId);
 
-    if (quote.status === 'CONSUMED') {
+    if (quote.status === 'CONSUMED' && !options?.allowConsumed) {
       throw new AppError(409, 'CONFLICT', 'Checkout quote has already been consumed by an order');
     }
     if (quote.isExpired || quote.status === 'EXPIRED') {
@@ -587,5 +588,11 @@ export class PricingService {
       userRedemptions: nextUsers,
       updatedAt: now,
     });
+  }
+
+  async markQuoteConsumed(quoteId: string): Promise<CheckoutQuoteDto | null> {
+    const now = this.clock.now();
+    const updated = await this.pricingStore.updateQuoteStatus(quoteId, 'CONSUMED', now);
+    return updated ? this.toQuoteDto(updated, now) : null;
   }
 }
