@@ -57,6 +57,8 @@ publication status.
 -   unique operation + idempotency key
 -   unique `applicationId` and `restaurantId`, `ownerUserId + updatedAt`, and `onboardingStatus + submittedAt` on `restaurants`
 -   unique `outletId` and `2dsphere` location on `restaurant_outlets`
+-   unique `cityCode + zoneCode` and `2dsphere` boundary on `delivery_zones`
+-   unique `outletId` and `restaurantId` on `outlet_hours`
 -   unique `documentId` and `restaurantId + documentType + uploadedAt` on `restaurant_documents`
 
 ## 5. Integrity and retention

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { Logger } from '../../config/logger';
 import { isValidGeoJsonPointCoordinates } from '../../database/conventions';
 import { AppError } from '../../middleware/error-handler';
+import { isLikelySwappedKolkataPoint } from '../outlet/outlet.geo';
 import { KOLKATA_ZONE_IDS, type KolkataZoneId } from '../customer/customer.types';
 import { maskPhone, normalizeIndianPhone } from '../identity/identity.crypto';
 import {
@@ -109,9 +110,12 @@ const createApplicationSchema = z.object({
     zoneId: z.enum(KOLKATA_ZONE_IDS),
     coordinates: z
       .tuple([z.number(), z.number()])
-      .refine((coords) => isValidGeoJsonPointCoordinates(coords), {
-        message: 'Coordinates must be finite [longitude, latitude]',
-      })
+      .refine(
+        (coords) => isValidGeoJsonPointCoordinates(coords) && !isLikelySwappedKolkataPoint(coords),
+        {
+          message: 'Coordinates must be finite [longitude, latitude] (not swapped [lat, lng])',
+        },
+      )
       .optional(),
     cuisines: z.array(z.string().trim().min(2).max(40)).min(1).max(6),
     prepTimeMinutes: z.number().int().min(10).max(90).default(30),
@@ -1199,6 +1203,7 @@ export class RestaurantService {
         location: saved.outletSetup.location,
         cuisines: saved.outletSetup.cuisines,
         prepTimeMinutes: saved.outletSetup.prepTimeMinutes,
+        deliveryRadiusMeters: 5000,
         operatingSlots: saved.outletSetup.operatingSlots,
         status: 'ACTIVE',
         fssaiLicenseNumber: saved.legalEntity.fssaiLicenseNumber,

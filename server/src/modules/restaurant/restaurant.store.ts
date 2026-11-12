@@ -85,6 +85,7 @@ const outletSetupSubSchema = new Schema(
     location: { type: createGeoPointSubSchema(), required: true },
     cuisines: { type: [String], required: true },
     prepTimeMinutes: { type: Number, required: true, min: 10, max: 90 },
+    deliveryRadiusMeters: { type: Number, required: true, min: 500, max: 15000, default: 5000 },
     operatingSlots: { type: [operatingSlotSubSchema], required: true },
   },
   { _id: false },
@@ -166,6 +167,7 @@ const restaurantOutletSchema = applyBaseSchemaConventions(
     location: { type: createGeoPointSubSchema(), required: true },
     cuisines: { type: [String], required: true },
     prepTimeMinutes: { type: Number, required: true, min: 10, max: 90 },
+    deliveryRadiusMeters: { type: Number, required: true, min: 500, max: 15000, default: 5000 },
     operatingSlots: { type: [operatingSlotSubSchema], required: true },
     status: {
       type: String,
@@ -385,6 +387,7 @@ function toOutletRecord(doc: Record<string, unknown>): RestaurantOutletRecord {
     location: toPoint(doc['location']),
     cuisines: Array.isArray(doc['cuisines']) ? doc['cuisines'].map(String) : [],
     prepTimeMinutes: Number(doc['prepTimeMinutes'] ?? 30),
+    deliveryRadiusMeters: Number(doc['deliveryRadiusMeters'] ?? 5000),
     operatingSlots: toSlots(doc['operatingSlots']),
     status: doc['status'] as OutletOperationalStatus,
     fssaiLicenseNumber: String(doc['fssaiLicenseNumber']),

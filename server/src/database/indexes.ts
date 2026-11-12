@@ -168,6 +168,16 @@ export const INITIAL_DATABASE_INDEXES: readonly DatabaseIndexSpec[] = [
     options: { name: 'idx_restaurant_docs_restaurant_type_uploaded' },
   },
   {
+    collection: COLLECTION_NAMES.outletHours,
+    key: { outletId: 1 },
+    options: { name: 'idx_outlet_hours_outlet_unique', unique: true },
+  },
+  {
+    collection: COLLECTION_NAMES.outletHours,
+    key: { restaurantId: 1 },
+    options: { name: 'idx_outlet_hours_restaurant' },
+  },
+  {
     collection: COLLECTION_NAMES.restaurantStaff,
     key: { userId: 1, restaurantId: 1, outletId: 1 },
     options: { name: 'idx_restaurant_staff_user_restaurant_outlet_unique', unique: true },

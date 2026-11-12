@@ -2,5 +2,6 @@ export * from './api-response';
 export * from './auth';
 export * from './customer';
 export * from './events';
+export * from './outlet';
 export * from './rbac';
 export * from './restaurant';

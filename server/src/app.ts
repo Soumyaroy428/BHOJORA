@@ -18,6 +18,10 @@ import { MongooseCustomerStore } from './modules/customer/customer.store';
 import type { CustomerStore } from './modules/customer/customer.types';
 import { createRbacRouter } from './modules/rbac/rbac.routes';
 import { MongooseRbacStore, type RbacStore } from './modules/rbac/rbac.store';
+import { createOutletRouter } from './modules/outlet/outlet.routes';
+import { OutletService } from './modules/outlet/outlet.service';
+import { MongooseOutletStore } from './modules/outlet/outlet.store';
+import type { OutletStore } from './modules/outlet/outlet.types';
 import { createRestaurantRouter } from './modules/restaurant/restaurant.routes';
 import { RestaurantService } from './modules/restaurant/restaurant.service';
 import { MongooseRestaurantStore } from './modules/restaurant/restaurant.store';
@@ -35,6 +39,8 @@ export interface CreateAppOptions {
   customerService?: CustomerService;
   restaurantStore?: RestaurantStore;
   restaurantService?: RestaurantService;
+  outletStore?: OutletStore;
+  outletService?: OutletService;
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -96,6 +102,15 @@ export function createApp(options: CreateAppOptions): Express {
       signingSecret: config.jwtAccessSecret,
       logger,
     });
+  const outletStore = options.outletStore ?? new MongooseOutletStore(mongoose.connection);
+  const outletService =
+    options.outletService ??
+    new OutletService({
+      restaurantStore,
+      outletStore,
+      rbacStore,
+      logger,
+    });
   const identityRouter = createIdentityRouter(identityService, config);
   const rbacRouter = createRbacRouter({
     identityService,
@@ -112,6 +127,13 @@ export function createApp(options: CreateAppOptions): Express {
   const restaurantRouter = createRestaurantRouter({
     identityService,
     restaurantService,
+    outletService,
+    rbacStore,
+    config,
+  });
+  const outletRouter = createOutletRouter({
+    identityService,
+    outletService,
     rbacStore,
     config,
   });
@@ -121,6 +143,7 @@ export function createApp(options: CreateAppOptions): Express {
   app.use('/api/v1', rbacRouter);
   app.use('/api/v1', customerRouter);
   app.use('/api/v1', restaurantRouter);
+  app.use('/api/v1', outletRouter);
   app.use(healthRouter);
 
   app.use(notFoundHandler);

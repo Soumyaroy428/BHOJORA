@@ -184,6 +184,7 @@ export interface RestaurantOutletRecord {
   };
   cuisines: string[];
   prepTimeMinutes: number;
+  deliveryRadiusMeters?: number;
   operatingSlots: OperatingSlotRecord[];
   status: OutletOperationalStatus;
   fssaiLicenseNumber: string;

@@ -201,4 +201,8 @@ export interface PublicRestaurantSummaryDto {
   platformInspectionStatus: PlatformInspectionStatus;
   publishedSafetyScore: number | null;
   fssaiSeparationNotice: string;
+  deliveryRadiusMeters?: number;
+  distanceMeters?: number;
+  isOpenNow?: boolean;
+  serviceable?: boolean;
 }

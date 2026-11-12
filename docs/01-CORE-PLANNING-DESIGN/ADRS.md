@@ -271,3 +271,22 @@ Checkpoint 10 introduces restaurant partner onboarding, legal KYC + settlement p
 ### Consequences
 - **Positive:** Prevents sensitive KYC leakage, eliminates self-review or unverified privilege promotion, and upholds Bhojora's core trust invariant separating FSSAI legal registration from independent field inspection.
 - **Negative:** Approved outlets remain `NOT_INSPECTED` (`publishedSafetyScore: null`) until field inspection workflows run in subsequent checkpoints.
+
+---
+
+## ADR-015: Outlet Map Pins, GeoJSON Serviceability Zones & Asia/Kolkata Operating Hours
+
+### Status: ACCEPTED (Locked Baseline — Checkpoint 11)
+
+### Context
+Checkpoint 11 establishes multi-branch outlet management, GeoJSON `[longitude, latitude]` map-pin validation, Kolkata Polygon delivery zones, and server-authoritative serviceability + `Asia/Kolkata` operating-hours evaluation without duplicating the canonical `restaurant_outlets` collection (`ADR-001`).
+
+### Decision
+1. **Zero-Duplication Outlet & Location Boundary (`server/src/modules/outlet/`):** Own `BhojoraDeliveryZone` (`delivery_zones`) and `BhojoraOutletHours` (`outlet_hours`) while consuming `RestaurantStore` (`restaurant_outlets`, `restaurants`) and `RbacStore` (`restaurant_staff`, `audit_logs`) via dependency injection instead of duplicating `restaurant_outlets`.
+2. **Strict GeoJSON Coordinate & Ring-Order Validation:** Reject non-finite values, `[latitude, longitude]` swaps in Kolkata coordinate ranges, out-of-Kolkata outlet map pins, unclosed Polygon rings, degenerate zero-area polygons, and non-RFC-7946 exterior/interior ring winding orders (`400 VALIDATION_ERROR`).
+3. **Server-Authoritative Serviceability & `Asia/Kolkata` Live Schedule Evaluation:** Never trust client-reported distance, delivery fees, or "open" status. Compute active polygon containment (`isPointInPolygon`), Haversine distance against outlet `deliveryRadiusMeters`, and `Asia/Kolkata` IST operating slots + special closures (`Intl.DateTimeFormat` UTC+05:30) exclusively on the server (`GET /api/v1/serviceability`, `POST /api/v1/serviceability/check`, `GET /api/v1/outlets/:outletId`, `GET /api/v1/restaurants?lng=&lat=&openNow=true`).
+4. **Tenant Isolation & Trust Separation Preserved:** Partner branch creation (`POST /api/v1/restaurant/outlets`), map-pin updates (`PATCH /api/v1/restaurant/outlets/:outletId`), and schedule updates (`PUT /api/v1/restaurant/outlets/:outletId/hours`) require active tenant membership (`403 FORBIDDEN` + `audit_logs` on IDOR), use strict schemas rejecting any client mutation of `platformInspectionStatus` / `publishedSafetyScore`, and initialize new branch outlets strictly as `NOT_INSPECTED` (`publishedSafetyScore: null`). Admin zone governance (`POST/PATCH /api/v1/admin/zones*`) requires MFA-verified `ops:outlet:manage`.
+
+### Consequences
+- **Positive:** Guarantees consistent Kolkata geospatial behavior across MongoDB `2dsphere` queries and circuit-breaker ray-casting fallbacks (`ARCHITECTURE.md` §5.3) with zero client-trust leakage.
+- **Negative:** External polygon zones covering regions outside `[88.1..88.7, 22.3..22.85]` require explicit bounds expansion when onboarding cities beyond the Kolkata pilot.

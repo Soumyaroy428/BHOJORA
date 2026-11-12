@@ -10,6 +10,7 @@ import {
   type UserProfileDto,
 } from '@bhojora/shared';
 import { OnboardingReviewQueue } from './components/OnboardingReviewQueue';
+import { ZoneGovernancePanel } from './components/ZoneGovernancePanel';
 
 interface GovernanceItem {
   id: string;
@@ -47,6 +48,10 @@ function getApiBase(): string {
   const configured = window.BHOJORA_API_BASE?.trim();
   if (configured) {
     return configured.replace(/\/$/, '');
+  }
+  const viteApiBase = import.meta.env.VITE_API_BASE?.trim();
+  if (viteApiBase) {
+    return viteApiBase.replace(/\/$/, '');
   }
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     return 'http://127.0.0.1:4000';
@@ -315,6 +320,13 @@ export function App() {
         </section>
 
         <OnboardingReviewQueue
+          apiBase={getApiBase()}
+          accessToken={accessToken}
+          mfaVerified={Boolean(rbacContext?.mfaVerified)}
+          onStatusUpdate={setStatusMessage}
+        />
+
+        <ZoneGovernancePanel
           apiBase={getApiBase()}
           accessToken={accessToken}
           mfaVerified={Boolean(rbacContext?.mfaVerified)}

@@ -296,10 +296,82 @@
     },
     "/restaurants": {
       "get": {
-        "summary": "Geospatial restaurant discovery with Kolkata zone & Trust Score filters",
+        "summary": "Geospatial restaurant discovery with Kolkata zone, Haversine distance & IST openNow filters",
         "security": [],
         "tags": ["Discovery"],
+        "parameters": [
+          { "name": "zoneId", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "lng", "in": "query", "required": false, "schema": { "type": "number" } },
+          { "name": "lat", "in": "query", "required": false, "schema": { "type": "number" } },
+          { "name": "openNow", "in": "query", "required": false, "schema": { "type": "boolean" } }
+        ],
         "responses": { "200": { "description": "Paginated serviceable restaurant list" } }
+      }
+    },
+    "/zones": {
+      "get": {
+        "summary": "List Kolkata GeoJSON Polygon serviceability corridors and fee policies",
+        "security": [],
+        "tags": ["Discovery"],
+        "responses": { "200": { "description": "Delivery zone list" } }
+      }
+    },
+    "/serviceability": {
+      "get": {
+        "summary": "Server-computed point-in-polygon and Haversine radius check for [lng, lat]",
+        "security": [],
+        "tags": ["Discovery"],
+        "parameters": [
+          { "name": "lng", "in": "query", "required": true, "schema": { "type": "number" } },
+          { "name": "lat", "in": "query", "required": true, "schema": { "type": "number" } },
+          { "name": "outletId", "in": "query", "required": false, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Authoritative serviceability and IST open status" } }
+      }
+    },
+    "/serviceability/check": {
+      "post": {
+        "summary": "Server-computed serviceability evaluation from GeoJSON Point payload",
+        "security": [],
+        "tags": ["Discovery"],
+        "responses": { "200": { "description": "Authoritative serviceability result" } }
+      }
+    },
+    "/outlets/{outletId}": {
+      "get": {
+        "summary": "Public-safe outlet detail with map pin, radius, Asia/Kolkata live status & FSSAI notice",
+        "security": [],
+        "tags": ["Discovery"],
+        "parameters": [{ "name": "outletId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Public outlet operational detail" } }
+      }
+    },
+    "/restaurant/outlets": {
+      "get": {
+        "summary": "List tenant-owned partner outlets with live Asia/Kolkata status",
+        "tags": ["Partner Operations"],
+        "responses": { "200": { "description": "Tenant outlet list" } }
+      },
+      "post": {
+        "summary": "Create additional branch outlet for an approved restaurant (initializes NOT_INSPECTED)",
+        "tags": ["Partner Operations"],
+        "responses": { "201": { "description": "Branch outlet created" } }
+      }
+    },
+    "/restaurant/outlets/{outletId}": {
+      "patch": {
+        "summary": "Update tenant outlet GeoJSON [lng, lat] pin, radius, or pause status",
+        "tags": ["Partner Operations"],
+        "parameters": [{ "name": "outletId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Updated outlet operations" } }
+      }
+    },
+    "/restaurant/outlets/{outletId}/hours": {
+      "put": {
+        "summary": "Replace weekly Asia/Kolkata operating slots and special holiday closures",
+        "tags": ["Partner Operations"],
+        "parameters": [{ "name": "outletId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Updated operating schedule and IST status" } }
       }
     },
     "/outlets/{id}/menu": {
@@ -475,6 +547,21 @@
         "summary": "Admin inspection governance queue",
         "tags": ["Admin Governance"],
         "responses": { "200": { "description": "Pending and audited inspections" } }
+      }
+    },
+    "/admin/zones": {
+      "post": {
+        "summary": "Upsert Kolkata GeoJSON Polygon serviceability zone (MFA-verified admin)",
+        "tags": ["Admin Governance"],
+        "responses": { "201": { "description": "Delivery zone saved" } }
+      }
+    },
+    "/admin/zones/{zoneCode}": {
+      "patch": {
+        "summary": "Update or toggle active state of a Kolkata delivery zone (MFA-verified admin)",
+        "tags": ["Admin Governance"],
+        "parameters": [{ "name": "zoneCode", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Delivery zone updated" } }
       }
     },
     "/admin/audit-logs": {

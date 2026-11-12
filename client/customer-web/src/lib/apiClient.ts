@@ -8,7 +8,14 @@ export async function apiRequest<T>(
     token?: string;
   } = {},
 ): Promise<T> {
-  const apiBase = typeof window.BHOJORA_API_BASE === 'string' ? window.BHOJORA_API_BASE : '/api/v1';
+  const viteBase = import.meta.env.VITE_API_BASE?.trim().replace(/\/+$/, '');
+  const resolvedViteApi = viteBase
+    ? viteBase.endsWith('/api/v1')
+      ? viteBase
+      : `${viteBase}/api/v1`
+    : '/api/v1';
+  const apiBase =
+    typeof window.BHOJORA_API_BASE === 'string' ? window.BHOJORA_API_BASE : resolvedViteApi;
   const headers: Record<string, string> = {
     'X-Requested-With': 'fetch',
   };

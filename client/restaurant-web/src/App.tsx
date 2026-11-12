@@ -6,6 +6,7 @@ import {
   type RbacContextDto,
   type UserProfileDto,
 } from '@bhojora/shared';
+import { OutletZonesPanel } from './components/OutletZonesPanel';
 import { RestaurantOnboardingPanel } from './components/RestaurantOnboardingPanel';
 
 interface PartnerOutletView {
@@ -57,6 +58,10 @@ function getApiBase(): string {
   if (configured) {
     return configured.replace(/\/$/, '');
   }
+  const viteApiBase = import.meta.env.VITE_API_BASE?.trim();
+  if (viteApiBase) {
+    return viteApiBase.replace(/\/$/, '');
+  }
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     return 'http://127.0.0.1:4000';
   }
@@ -73,6 +78,14 @@ export function App() {
   const [sessionUser, setSessionUser] = useState<UserProfileDto | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [rbacContext, setRbacContext] = useState<RbacContextDto | null>(null);
+
+  const partnerActiveRole = sessionUser?.roles.includes('RESTAURANT_OWNER')
+    ? 'RESTAURANT_OWNER'
+    : sessionUser?.roles.includes('RESTAURANT_MANAGER')
+      ? 'RESTAURANT_MANAGER'
+      : sessionUser?.roles.includes('KITCHEN_STAFF')
+        ? 'KITCHEN_STAFF'
+        : (rbacContext?.activeRole ?? 'RESTAURANT_OWNER');
 
   const selectedOutlet =
     SAMPLE_OUTLETS.find((outlet) => outlet.outletId === selectedOutletId) ?? SAMPLE_OUTLETS[0]!;
@@ -305,6 +318,13 @@ export function App() {
         <RestaurantOnboardingPanel
           apiBase={getApiBase()}
           accessToken={accessToken}
+          onStatusUpdate={setStatusMessage}
+        />
+
+        <OutletZonesPanel
+          apiBase={getApiBase()}
+          accessToken={accessToken}
+          activeRole={partnerActiveRole}
           onStatusUpdate={setStatusMessage}
         />
       </main>

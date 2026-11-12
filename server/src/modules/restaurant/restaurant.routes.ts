@@ -9,6 +9,8 @@ import {
 } from '../../middleware/rbac';
 import { KOLKATA_ZONE_IDS, type KolkataZoneId } from '../customer/customer.types';
 import type { IdentityService } from '../identity/identity.service';
+import { parseOptionalCoordinatesQuery } from '../outlet/outlet.routes';
+import type { OutletService } from '../outlet/outlet.service';
 import type { Permission } from '../rbac/rbac.policy';
 import type { RbacStore } from '../rbac/rbac.store';
 import type { RestaurantService } from './restaurant.service';
@@ -32,10 +34,11 @@ function wrapAsync(
 export function createRestaurantRouter(params: {
   identityService: IdentityService;
   restaurantService: RestaurantService;
+  outletService?: OutletService;
   rbacStore?: RbacStore;
   config: Pick<AppConfig, 'corsAllowedOrigins'>;
 }): Router {
-  const { identityService, restaurantService, rbacStore, config } = params;
+  const { identityService, restaurantService, outletService, rbacStore, config } = params;
   const router = Router();
   const requireAuth = createRequireAuthMiddleware(identityService, config.corsAllowedOrigins);
   const requirePerm = (perm: Permission) => createRequirePermissionMiddleware(perm, rbacStore);
@@ -48,6 +51,19 @@ export function createRestaurantRouter(params: {
         zoneParam && (KOLKATA_ZONE_IDS as readonly string[]).includes(zoneParam)
           ? (zoneParam as KolkataZoneId)
           : undefined;
+      const coordinates = parseOptionalCoordinatesQuery(req.query['lng'], req.query['lat']);
+      const openNow = req.query['openNow'] === 'true';
+
+      if (outletService && (coordinates || openNow)) {
+        const restaurants = await outletService.listPublicRestaurants({
+          zoneId,
+          coordinates,
+          openNow,
+        });
+        sendSuccess(res, 200, { restaurants });
+        return;
+      }
+
       const restaurants = await restaurantService.listPublicRestaurants(zoneId);
       sendSuccess(res, 200, { restaurants });
     }),
