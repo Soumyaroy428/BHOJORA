@@ -184,11 +184,42 @@ async function main() {
 
   try {
     // 0. Seed Users
-    const customer = await registerCustomer(baseUrl, 'customer1@bhojora.test', '9876543210', 'Soumya Roy');
-    const customer2 = await registerCustomer(baseUrl, 'customer2@bhojora.test', '9876543211', 'Ananya Sen');
-    const agent = await createRoleUser(baseUrl, identityStore, 'agent@bhojora.test', '9876543220', 'Support Agent Rahul', 'SUPPORT_AGENT');
-    const opsAdmin = await createRoleUser(baseUrl, identityStore, 'ops@bhojora.test', '9876543230', 'Ops Admin Priya', 'OPS_ADMIN');
-    const trustAdmin = await createRoleUser(baseUrl, identityStore, 'trust@bhojora.test', '9876543240', 'Trust Lead Vikram', 'TRUST_ADMIN');
+    const customer = await registerCustomer(
+      baseUrl,
+      'customer1@bhojora.test',
+      '9876543210',
+      'Soumya Roy',
+    );
+    const customer2 = await registerCustomer(
+      baseUrl,
+      'customer2@bhojora.test',
+      '9876543211',
+      'Ananya Sen',
+    );
+    const agent = await createRoleUser(
+      baseUrl,
+      identityStore,
+      'agent@bhojora.test',
+      '9876543220',
+      'Support Agent Rahul',
+      'SUPPORT_AGENT',
+    );
+    const opsAdmin = await createRoleUser(
+      baseUrl,
+      identityStore,
+      'ops@bhojora.test',
+      '9876543230',
+      'Ops Admin Priya',
+      'OPS_ADMIN',
+    );
+    const trustAdmin = await createRoleUser(
+      baseUrl,
+      identityStore,
+      'trust@bhojora.test',
+      '9876543240',
+      'Trust Lead Vikram',
+      'TRUST_ADMIN',
+    );
 
     // Seed a delivered order for customer 1
     const orderRecord = {
@@ -281,7 +312,9 @@ async function main() {
     const expectedSlaDate = new Date(simulatedNow.getTime() + 60 * 60 * 1000).toISOString();
     assert.equal(ticket1.slaTargetUtc, expectedSlaDate);
     assert.equal(ticket1.isSlaBreached, false, 'Ticket should not be breached at creation time');
-    console.log(`✓ SLA target verified: 60 mins -> ${ticket1.slaTargetUtc} (isSlaBreached: false).`);
+    console.log(
+      `✓ SLA target verified: 60 mins -> ${ticket1.slaTargetUtc} (isSlaBreached: false).`,
+    );
 
     // -------------------------------------------------------------
     // TEST 3: SLA breach detection when clock advances
@@ -293,7 +326,11 @@ async function main() {
       token: agent.token,
     });
     assert.equal(breachCheck.status, 200);
-    assert.equal(breachCheck.body.data.ticket.isSlaBreached, true, 'Ticket must be marked as SLA breached after 61 mins');
+    assert.equal(
+      breachCheck.body.data.ticket.isSlaBreached,
+      true,
+      'Ticket must be marked as SLA breached after 61 mins',
+    );
     console.log('✓ Ticket correctly flagged as SLA breached after clock advanced beyond target.');
 
     // -------------------------------------------------------------
@@ -369,7 +406,10 @@ async function main() {
       },
     });
     assert.equal(noteRes.status, 201);
-    assert.equal(noteRes.body.data.ticket.messages.some((m) => m.isInternalNote), true);
+    assert.equal(
+      noteRes.body.data.ticket.messages.some((m) => m.isInternalNote),
+      true,
+    );
 
     // Staff applies canned response to customer
     const msgRes = await apiJson(baseUrl, `/api/v1/support/tickets/${ticket1.ticketId}/messages`, {
@@ -393,25 +433,36 @@ async function main() {
       custMessages.every((m) => !m.isInternalNote),
       'Customer must NEVER receive internal staff notes in messages array',
     );
-    console.log('✓ Internal notes privacy boundary verified: staff notes excluded from customer view.');
+    console.log(
+      '✓ Internal notes privacy boundary verified: staff notes excluded from customer view.',
+    );
 
     // -------------------------------------------------------------
     // TEST 8: Ticket resolution
     // -------------------------------------------------------------
     console.log('\n--- TEST 8: Ticket Resolution & Audit Logging ---');
-    const resolveRes = await apiJson(baseUrl, `/api/v1/support/tickets/${ticket1.ticketId}/resolve`, {
-      method: 'POST',
-      token: opsAdmin.token,
-      body: {
-        resolutionNotes: 'Issued ₹50 courtesy wallet credit for missing raita and notified kitchen dispatcher.',
+    const resolveRes = await apiJson(
+      baseUrl,
+      `/api/v1/support/tickets/${ticket1.ticketId}/resolve`,
+      {
+        method: 'POST',
+        token: opsAdmin.token,
+        body: {
+          resolutionNotes:
+            'Issued ₹50 courtesy wallet credit for missing raita and notified kitchen dispatcher.',
+        },
       },
-    });
+    );
     assert.equal(resolveRes.status, 200);
     const resolvedTicket = resolveRes.body.data.ticket;
     assert.equal(resolvedTicket.status, 'RESOLVED');
     assert.ok(resolvedTicket.resolution);
     assert.equal(resolvedTicket.resolution.resolvedByUserId, opsAdmin.userId);
-    assert.equal(resolvedTicket.isSlaBreached, false, 'Resolved tickets must not show active SLA breach');
+    assert.equal(
+      resolvedTicket.isSlaBreached,
+      false,
+      'Resolved tickets must not show active SLA breach',
+    );
     const resHistory = resolvedTicket.caseHistory.find((h) => h.action === 'RESOLVED');
     assert.ok(resHistory);
     console.log('✓ Ticket marked as RESOLVED with resolution notes and audit entry.');
@@ -424,24 +475,34 @@ async function main() {
     const unauthView = await apiJson(baseUrl, `/api/v1/support/tickets/${ticket1.ticketId}`, {
       token: customer2.token,
     });
-    assert.equal(unauthView.status, 403, 'Customer cannot view another user\'s support ticket');
+    assert.equal(unauthView.status, 403, "Customer cannot view another user's support ticket");
 
     // Customer attempts to assign ticket -> 403 Forbidden
-    const unauthAssign = await apiJson(baseUrl, `/api/v1/support/tickets/${ticket1.ticketId}/assign`, {
-      method: 'POST',
-      token: customer.token,
-      body: { agentId: 'agt_99', agentName: 'Fake' },
-    });
+    const unauthAssign = await apiJson(
+      baseUrl,
+      `/api/v1/support/tickets/${ticket1.ticketId}/assign`,
+      {
+        method: 'POST',
+        token: customer.token,
+        body: { agentId: 'agt_99', agentName: 'Fake' },
+      },
+    );
     assert.equal(unauthAssign.status, 403, 'Customer cannot assign tickets');
 
     // Customer attempts to resolve ticket -> 403 Forbidden
-    const unauthResolve = await apiJson(baseUrl, `/api/v1/support/tickets/${ticket1.ticketId}/resolve`, {
-      method: 'POST',
-      token: customer.token,
-      body: { resolutionNotes: 'Customer trying to resolve' },
-    });
+    const unauthResolve = await apiJson(
+      baseUrl,
+      `/api/v1/support/tickets/${ticket1.ticketId}/resolve`,
+      {
+        method: 'POST',
+        token: customer.token,
+        body: { resolutionNotes: 'Customer trying to resolve' },
+      },
+    );
     assert.equal(unauthResolve.status, 403, 'Customer cannot resolve support tickets');
-    console.log('✓ Role-scoped access verified: unauthorized customer actions strictly blocked with 403.');
+    console.log(
+      '✓ Role-scoped access verified: unauthorized customer actions strictly blocked with 403.',
+    );
 
     // -------------------------------------------------------------
     // TEST 10: Automatic P1/P2 Safety Support Ticket generation
@@ -467,13 +528,21 @@ async function main() {
     });
     assert.equal(safetyQueueRes.status, 200);
     const safetyTickets = safetyQueueRes.body.data.tickets;
-    const autoSafetyTicket = safetyTickets.find((t) => t.safetyComplaintId === complaint.complaintId);
+    const autoSafetyTicket = safetyTickets.find(
+      (t) => t.safetyComplaintId === complaint.complaintId,
+    );
     assert.ok(autoSafetyTicket, 'Auto-generated safety support ticket must exist in queue');
     assert.equal(autoSafetyTicket.priority, 'P1_CRITICAL');
     assert.equal(autoSafetyTicket.escalationTier, 'TRUST_SAFETY_ADMIN');
     assert.equal(autoSafetyTicket.isSafetyPriority, true);
-    assert.equal(autoSafetyTicket.slaMinutes, 15, 'Critical safety allegation SLA must be 15 minutes');
-    console.log(`✓ Safety complaint ${complaint.complaintId} automatically spawned P1_CRITICAL ticket ${autoSafetyTicket.ticketId} with 15m SLA target.`);
+    assert.equal(
+      autoSafetyTicket.slaMinutes,
+      15,
+      'Critical safety allegation SLA must be 15 minutes',
+    );
+    console.log(
+      `✓ Safety complaint ${complaint.complaintId} automatically spawned P1_CRITICAL ticket ${autoSafetyTicket.ticketId} with 15m SLA target.`,
+    );
 
     console.log('\n======================================================');
     console.log('ALL 10 CHECKPOINT 26 VERIFICATION CHECKS PASSED (10/10)');

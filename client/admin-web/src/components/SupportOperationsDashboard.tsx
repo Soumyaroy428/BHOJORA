@@ -250,7 +250,8 @@ export function SupportOperationsDashboard({ apiBase, accessToken, onStatusUpdat
         <div>
           <h2>Support Operations &amp; Escalation (Checkpoint 26)</h2>
           <p className="meta" style={{ margin: 0 }}>
-            Ticket queues · SLA breach monitoring · Multi-tier escalation · Canned responses · Immutable case history
+            Ticket queues · SLA breach monitoring · Multi-tier escalation · Canned responses ·
+            Immutable case history
           </p>
         </div>
         <button
@@ -282,11 +283,16 @@ export function SupportOperationsDashboard({ apiBase, accessToken, onStatusUpdat
             {totalOpen}
           </div>
         </div>
-        <div style={{ background: '#fef3e2', padding: '0.85rem', borderRadius: '8px', border: '1px solid #f9d8a6' }}>
+        <div
+          style={{
+            background: '#fef3e2',
+            padding: '0.85rem',
+            borderRadius: '8px',
+            border: '1px solid #f9d8a6',
+          }}
+        >
           <div style={{ fontSize: '0.8rem', color: '#8a4b08' }}>Priority Safety Allegations</div>
-          <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#c05621' }}>
-            {safetyCount}
-          </div>
+          <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#c05621' }}>{safetyCount}</div>
         </div>
         <div
           style={{
@@ -296,10 +302,18 @@ export function SupportOperationsDashboard({ apiBase, accessToken, onStatusUpdat
             border: breachedCount > 0 ? '1px solid #fca5a5' : 'none',
           }}
         >
-          <div style={{ fontSize: '0.8rem', color: breachedCount > 0 ? '#991b1b' : 'var(--ink-600)' }}>
+          <div
+            style={{ fontSize: '0.8rem', color: breachedCount > 0 ? '#991b1b' : 'var(--ink-600)' }}
+          >
             SLA Breached
           </div>
-          <div style={{ fontSize: '1.4rem', fontWeight: 700, color: breachedCount > 0 ? '#b91c1c' : 'var(--ink-950)' }}>
+          <div
+            style={{
+              fontSize: '1.4rem',
+              fontWeight: 700,
+              color: breachedCount > 0 ? '#b91c1c' : 'var(--ink-950)',
+            }}
+          >
             {breachedCount}
           </div>
         </div>
@@ -308,7 +322,13 @@ export function SupportOperationsDashboard({ apiBase, accessToken, onStatusUpdat
       {/* Filters Bar */}
       <div
         className="filter-row"
-        style={{ marginTop: '1.25rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}
+        style={{
+          marginTop: '1.25rem',
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '0.5rem',
+          alignItems: 'center',
+        }}
       >
         <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Status:</span>
         {(['ALL', 'OPEN', 'ASSIGNED', 'IN_PROGRESS', 'ESCALATED', 'RESOLVED'] as const).map((s) => (
@@ -323,7 +343,9 @@ export function SupportOperationsDashboard({ apiBase, accessToken, onStatusUpdat
           </button>
         ))}
 
-        <span style={{ fontSize: '0.85rem', fontWeight: 600, marginLeft: '0.5rem' }}>Priority:</span>
+        <span style={{ fontSize: '0.85rem', fontWeight: 600, marginLeft: '0.5rem' }}>
+          Priority:
+        </span>
         {(['ALL', 'P1_CRITICAL', 'P2_HIGH', 'P3_MEDIUM', 'P4_LOW'] as const).map((p) => (
           <button
             key={p}
@@ -336,7 +358,16 @@ export function SupportOperationsDashboard({ apiBase, accessToken, onStatusUpdat
           </button>
         ))}
 
-        <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', marginLeft: 'auto', fontSize: '0.85rem', cursor: 'pointer' }}>
+        <label
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            marginLeft: 'auto',
+            fontSize: '0.85rem',
+            cursor: 'pointer',
+          }}
+        >
           <input
             type="checkbox"
             checked={safetyOnly}
@@ -358,7 +389,15 @@ export function SupportOperationsDashboard({ apiBase, accessToken, onStatusUpdat
         {/* Ticket List */}
         <div>
           {filteredTickets.length === 0 ? (
-            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--ink-600)', background: 'var(--bg-canvas)', borderRadius: '8px' }}>
+            <div
+              style={{
+                padding: '2rem',
+                textAlign: 'center',
+                color: 'var(--ink-600)',
+                background: 'var(--bg-canvas)',
+                borderRadius: '8px',
+              }}
+            >
               No support tickets found matching active criteria.
             </div>
           ) : (
@@ -385,9 +424,25 @@ export function SupportOperationsDashboard({ apiBase, accessToken, onStatusUpdat
                     onClick={() => setSelectedTicket(t)}
                   >
                     <div>
-                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.25rem' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          gap: '0.5rem',
+                          alignItems: 'center',
+                          marginBottom: '0.25rem',
+                        }}
+                      >
                         {t.isSafetyPriority && (
-                          <span style={{ fontSize: '0.75rem', padding: '0.1rem 0.4rem', background: '#fef3e2', color: '#c05621', borderRadius: '4px', fontWeight: 700 }}>
+                          <span
+                            style={{
+                              fontSize: '0.75rem',
+                              padding: '0.1rem 0.4rem',
+                              background: '#fef3e2',
+                              color: '#c05621',
+                              borderRadius: '4px',
+                              fontWeight: 700,
+                            }}
+                          >
                             SAFETY ALLEGATION
                           </span>
                         )}
@@ -407,7 +462,16 @@ export function SupportOperationsDashboard({ apiBase, accessToken, onStatusUpdat
                           SLA: {t.slaMinutes}m
                         </span>
                         {t.isSlaBreached && (
-                          <span style={{ fontSize: '0.7rem', padding: '0.1rem 0.4rem', background: '#fee2e2', color: '#b91c1c', borderRadius: '4px', fontWeight: 800 }}>
+                          <span
+                            style={{
+                              fontSize: '0.7rem',
+                              padding: '0.1rem 0.4rem',
+                              background: '#fee2e2',
+                              color: '#b91c1c',
+                              borderRadius: '4px',
+                              fontWeight: 800,
+                            }}
+                          >
                             SLA BREACHED
                           </span>
                         )}
@@ -416,12 +480,17 @@ export function SupportOperationsDashboard({ apiBase, accessToken, onStatusUpdat
                       <div className="brand-sub" style={{ marginTop: '0.2rem' }}>
                         ID: {t.ticketId} · Requester: {t.requester.name} ({t.requester.role})
                       </div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--ink-600)', marginTop: '0.2rem' }}>
-                        Assigned: {t.assignedTo ? t.assignedTo.agentName : 'Unassigned'} · Tier: {t.escalationTier}
+                      <div
+                        style={{ fontSize: '0.8rem', color: 'var(--ink-600)', marginTop: '0.2rem' }}
+                      >
+                        Assigned: {t.assignedTo ? t.assignedTo.agentName : 'Unassigned'} · Tier:{' '}
+                        {t.escalationTier}
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <span className={`pill ${t.status === 'RESOLVED' ? '' : t.status === 'ESCALATED' ? 'pill-warn' : ''}`}>
+                      <span
+                        className={`pill ${t.status === 'RESOLVED' ? '' : t.status === 'ESCALATED' ? 'pill-warn' : ''}`}
+                      >
                         {t.status}
                       </span>
                     </div>
@@ -442,11 +511,14 @@ export function SupportOperationsDashboard({ apiBase, accessToken, onStatusUpdat
               border: '1px solid var(--border)',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}
+            >
               <div>
                 <h3 style={{ margin: 0 }}>{selectedTicket.subject}</h3>
                 <div style={{ fontSize: '0.85rem', color: 'var(--ink-600)', marginTop: '0.25rem' }}>
-                  Ticket: <code>{selectedTicket.ticketId}</code> · Created: {new Date(selectedTicket.createdAt).toLocaleString()}
+                  Ticket: <code>{selectedTicket.ticketId}</code> · Created:{' '}
+                  {new Date(selectedTicket.createdAt).toLocaleString()}
                 </div>
               </div>
               <button
@@ -474,7 +546,9 @@ export function SupportOperationsDashboard({ apiBase, accessToken, onStatusUpdat
               >
                 <strong>🚨 STATUTORY FOOD SAFETY ALLEGATION INVESTIGATION:</strong>
                 <div>
-                  Customer allegation recorded for independent trust &amp; safety verification. Invariant: Allegations do not alter certified inspection scores until formally adjudicated.
+                  Customer allegation recorded for independent trust &amp; safety verification.
+                  Invariant: Allegations do not alter certified inspection scores until formally
+                  adjudicated.
                 </div>
               </div>
             )}
@@ -484,8 +558,12 @@ export function SupportOperationsDashboard({ apiBase, accessToken, onStatusUpdat
               <span className="role-chip">Category: {selectedTicket.category}</span>
               <span className="role-chip">Tier: {selectedTicket.escalationTier}</span>
               <span className="role-chip">SLA: {selectedTicket.slaMinutes} mins</span>
-              {selectedTicket.orderId && <span className="role-chip">Order: {selectedTicket.orderId}</span>}
-              {selectedTicket.outletId && <span className="role-chip">Outlet: {selectedTicket.outletId}</span>}
+              {selectedTicket.orderId && (
+                <span className="role-chip">Order: {selectedTicket.orderId}</span>
+              )}
+              {selectedTicket.outletId && (
+                <span className="role-chip">Outlet: {selectedTicket.outletId}</span>
+              )}
             </div>
 
             {/* Resolution View if already resolved */}
@@ -514,7 +592,14 @@ export function SupportOperationsDashboard({ apiBase, accessToken, onStatusUpdat
             {selectedTicket.status !== 'RESOLVED' && (
               <div style={{ marginTop: '1.25rem', display: 'grid', gap: '1rem' }}>
                 {/* 1. Assignment */}
-                <div style={{ background: 'var(--bg-card)', padding: '0.85rem', borderRadius: '6px', border: '1px solid var(--border)' }}>
+                <div
+                  style={{
+                    background: 'var(--bg-card)',
+                    padding: '0.85rem',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border)',
+                  }}
+                >
                   <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: '0.5rem' }}>
                     👤 Agent Assignment
                   </div>
@@ -546,7 +631,14 @@ export function SupportOperationsDashboard({ apiBase, accessToken, onStatusUpdat
                 </div>
 
                 {/* 2. Escalation */}
-                <div style={{ background: 'var(--bg-card)', padding: '0.85rem', borderRadius: '6px', border: '1px solid var(--border)' }}>
+                <div
+                  style={{
+                    background: 'var(--bg-card)',
+                    padding: '0.85rem',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border)',
+                  }}
+                >
                   <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: '0.5rem' }}>
                     ⚡ Escalate Ticket
                   </div>
@@ -581,7 +673,14 @@ export function SupportOperationsDashboard({ apiBase, accessToken, onStatusUpdat
                 </div>
 
                 {/* 3. Resolution */}
-                <div style={{ background: 'var(--bg-card)', padding: '0.85rem', borderRadius: '6px', border: '1px solid var(--border)' }}>
+                <div
+                  style={{
+                    background: 'var(--bg-card)',
+                    padding: '0.85rem',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border)',
+                  }}
+                >
                   <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: '0.5rem' }}>
                     ✅ Final Resolution
                   </div>
@@ -590,7 +689,12 @@ export function SupportOperationsDashboard({ apiBase, accessToken, onStatusUpdat
                     placeholder="Document resolution findings and customer corrective action..."
                     value={resolutionNotes}
                     onChange={(e) => setResolutionNotes(e.target.value)}
-                    style={{ width: '100%', padding: '0.4rem', fontSize: '0.85rem', boxSizing: 'border-box' }}
+                    style={{
+                      width: '100%',
+                      padding: '0.4rem',
+                      fontSize: '0.85rem',
+                      boxSizing: 'border-box',
+                    }}
                   />
                   <button
                     type="button"
@@ -632,7 +736,9 @@ export function SupportOperationsDashboard({ apiBase, accessToken, onStatusUpdat
               <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>
                 💬 Conversation &amp; Internal Notes
               </div>
-              <div style={{ display: 'grid', gap: '0.6rem', maxHeight: '240px', overflowY: 'auto' }}>
+              <div
+                style={{ display: 'grid', gap: '0.6rem', maxHeight: '240px', overflowY: 'auto' }}
+              >
                 {selectedTicket.messages.map((m) => (
                   <div
                     key={m.messageId}
@@ -643,7 +749,14 @@ export function SupportOperationsDashboard({ apiBase, accessToken, onStatusUpdat
                       border: m.isInternalNote ? '1px solid #e879f9' : '1px solid var(--border)',
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--ink-600)' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        fontSize: '0.75rem',
+                        color: 'var(--ink-600)',
+                      }}
+                    >
                       <span>
                         <strong>{m.senderName}</strong> ({m.senderRole})
                         {m.isInternalNote && (
@@ -654,7 +767,9 @@ export function SupportOperationsDashboard({ apiBase, accessToken, onStatusUpdat
                       </span>
                       <span>{new Date(m.createdAt).toLocaleTimeString()}</span>
                     </div>
-                    <p style={{ margin: '0.35rem 0 0', fontSize: '0.85rem', whiteSpace: 'pre-wrap' }}>
+                    <p
+                      style={{ margin: '0.35rem 0 0', fontSize: '0.85rem', whiteSpace: 'pre-wrap' }}
+                    >
                       {m.content}
                     </p>
                   </div>
@@ -669,10 +784,30 @@ export function SupportOperationsDashboard({ apiBase, accessToken, onStatusUpdat
                     placeholder="Type your response or internal note..."
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
-                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.85rem', boxSizing: 'border-box' }}
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      fontSize: '0.85rem',
+                      boxSizing: 'border-box',
+                    }}
                   />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.4rem' }}>
-                    <label style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginTop: '0.4rem',
+                    }}
+                  >
+                    <label
+                      style={{
+                        fontSize: '0.8rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.3rem',
+                        cursor: 'pointer',
+                      }}
+                    >
                       <input
                         type="checkbox"
                         checked={isInternalNote}
@@ -695,11 +830,26 @@ export function SupportOperationsDashboard({ apiBase, accessToken, onStatusUpdat
             </div>
 
             {/* Immutable Case History Audit Trail */}
-            <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
+            <div
+              style={{
+                marginTop: '1.5rem',
+                borderTop: '1px solid var(--border)',
+                paddingTop: '1rem',
+              }}
+            >
               <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>
                 📜 Immutable Case History (Audit Trail)
               </div>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '0.4rem', fontSize: '0.78rem' }}>
+              <ul
+                style={{
+                  listStyle: 'none',
+                  padding: 0,
+                  margin: 0,
+                  display: 'grid',
+                  gap: '0.4rem',
+                  fontSize: '0.78rem',
+                }}
+              >
                 {selectedTicket.caseHistory.map((h) => (
                   <li
                     key={h.eventId}
@@ -710,13 +860,18 @@ export function SupportOperationsDashboard({ apiBase, accessToken, onStatusUpdat
                       borderLeft: '3px solid var(--trust-green)',
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ink-600)' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        color: 'var(--ink-600)',
+                      }}
+                    >
                       <strong>{h.action}</strong>
                       <span>{new Date(h.timestamp).toLocaleString()}</span>
                     </div>
                     <div style={{ marginTop: '0.15rem' }}>
-                      By {h.actorName} ({h.actorRole})
-                      {h.note && ` — ${h.note}`}
+                      By {h.actorName} ({h.actorRole}){h.note && ` — ${h.note}`}
                     </div>
                   </li>
                 ))}

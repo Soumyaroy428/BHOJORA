@@ -257,12 +257,7 @@ export const SUPPORT_TICKET_CATEGORIES = [
   'PARTNER_DISPUTE',
 ] as const;
 
-export const SUPPORT_TICKET_PRIORITIES = [
-  'P1_CRITICAL',
-  'P2_HIGH',
-  'P3_MEDIUM',
-  'P4_LOW',
-] as const;
+export const SUPPORT_TICKET_PRIORITIES = ['P1_CRITICAL', 'P2_HIGH', 'P3_MEDIUM', 'P4_LOW'] as const;
 
 export const SUPPORT_TICKET_STATUSES = [
   'OPEN',
@@ -380,4 +375,3 @@ export const resolveSupportTicketSchema = z.object({
     .min(5, 'Resolution notes must be at least 5 characters')
     .max(2000),
 });
-

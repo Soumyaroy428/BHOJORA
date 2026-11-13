@@ -256,10 +256,7 @@ export function createSupportRouter(params: CreateSupportRouterParams): Router {
         requesterId: req.query['requesterId'] as string | undefined,
         outletId: req.query['outletId'] as string | undefined,
       };
-      const tickets = await supportService.listTickets(
-        { userId: auth.userId, role },
-        filter,
-      );
+      const tickets = await supportService.listTickets({ userId: auth.userId, role }, filter);
       sendSuccess(res, 200, { tickets, totalCount: tickets.length });
     }),
   );
@@ -288,9 +285,7 @@ export function createSupportRouter(params: CreateSupportRouterParams): Router {
       const role = getPrimaryRole(auth.roles);
       const rawBody = req.body as Record<string, unknown> | undefined;
       const callerName =
-        typeof rawBody?.['actorName'] === 'string'
-          ? rawBody['actorName']
-          : 'Support Operator';
+        typeof rawBody?.['actorName'] === 'string' ? rawBody['actorName'] : 'Support Operator';
       const ticket = await supportService.assignTicket(
         { userId: auth.userId, role, name: callerName },
         req.params['ticketId'] as string,
@@ -309,9 +304,7 @@ export function createSupportRouter(params: CreateSupportRouterParams): Router {
       const role = getPrimaryRole(auth.roles);
       const rawBody = req.body as Record<string, unknown> | undefined;
       const callerName =
-        typeof rawBody?.['actorName'] === 'string'
-          ? rawBody['actorName']
-          : 'Support Operator';
+        typeof rawBody?.['actorName'] === 'string' ? rawBody['actorName'] : 'Support Operator';
       const ticket = await supportService.escalateTicket(
         { userId: auth.userId, role, name: callerName },
         req.params['ticketId'] as string,

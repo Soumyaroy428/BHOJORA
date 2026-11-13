@@ -770,9 +770,7 @@ export class SupportService {
     return CANNED_RESPONSE_TEMPLATES;
   }
 
-  async createSafetySupportTicket(
-    complaint: FoodSafetyComplaintRecord,
-  ): Promise<SupportTicketDto> {
+  async createSafetySupportTicket(complaint: FoodSafetyComplaintRecord): Promise<SupportTicketDto> {
     const now = this.clock.now();
     const priority: SupportTicketPriority =
       complaint.severity === 'CRITICAL' ? 'P1_CRITICAL' : 'P2_HIGH';
@@ -932,7 +930,11 @@ export class SupportService {
     }
     const isAgent = this.isSupportOrAdmin(caller.role);
     if (!isAgent && ticket.requester.id !== caller.userId) {
-      throw new SupportHttpError(403, 'You do not have permission to view this ticket', 'FORBIDDEN');
+      throw new SupportHttpError(
+        403,
+        'You do not have permission to view this ticket',
+        'FORBIDDEN',
+      );
     }
     return this.toTicketDto(ticket, { stripInternalNotes: !isAgent });
   }

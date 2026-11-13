@@ -51,7 +51,9 @@ export const PRIORITY_SLA_MINUTES: Readonly<Record<SupportTicketPriority, number
   P4_LOW: 1440,
 };
 
-export const CATEGORY_DEFAULT_PRIORITY: Readonly<Record<SupportTicketCategory, SupportTicketPriority>> = {
+export const CATEGORY_DEFAULT_PRIORITY: Readonly<
+  Record<SupportTicketCategory, SupportTicketPriority>
+> = {
   FOOD_SAFETY: 'P1_CRITICAL',
   MISSING_ITEMS: 'P2_HIGH',
   WRONG_ORDER: 'P2_HIGH',
