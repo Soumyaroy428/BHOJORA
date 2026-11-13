@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     region: oregon
-    buildCommand: npm run build --workspace=@bhojora/shared && npm run build --workspace=@bhojora/server
+    buildCommand: npm ci && npm run build --workspace=@bhojora/shared && npm run build --workspace=@bhojora/server
     startCommand: node server/dist/index.js
     healthCheckPath: /healthz
     envVars:
