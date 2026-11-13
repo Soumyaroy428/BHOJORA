@@ -1,15 +1,22 @@
 import crypto from 'node:crypto';
 import { z } from 'zod';
 import type {
+  CompleteDeliveryResponseDto,
+  DeliveryIncidentDto,
   DeliveryJobInboxResponseDto,
   DeliveryJobOfferDto,
+  DeliveryLocationEventDto,
   DeliveryPartnerDto,
   DeliveryPartnerStatus,
+  LiveTrackingRiderDto,
+  OrderLiveTrackingResponseDto,
 } from '@bhojora/shared';
 import { AppError } from '../../middleware/error-handler';
 import { KOLKATA_ZONE_IDS } from '../customer/customer.types';
 import type { Clock, IdentityStore, UserRole } from '../identity/identity.types';
 import { maskPhone, normalizeIndianPhone } from '../identity/identity.crypto';
+import type { OrderRecord, OrderStore } from '../orders/orders.types';
+import { ORDER_STATUS_LABELS_MAP } from '../orders/orders.types';
 import { assertValidGeoJsonPoint } from '../outlet/outlet.geo';
 import { assertMfaSatisfiedForRole } from '../rbac/rbac.policy';
 import type { RbacStore } from '../rbac/rbac.store';
@@ -17,16 +24,22 @@ import type { DeliveryStore } from './delivery.store';
 import {
   calculateRiderPayoutPaise,
   DELIVERY_DOCUMENT_TYPES_RUNTIME,
+  DELIVERY_INCIDENT_TYPES_RUNTIME,
   DELIVERY_SHIFT_STATUSES_RUNTIME,
   hmacDigest,
   maskBankAccount,
   maskDocumentNumber,
   maskRegistrationNumber,
+  MAX_OTP_ATTEMPTS,
   OFFER_COUNTDOWN_SECONDS,
+  toDeliveryIncidentDto,
   toDeliveryJobOfferDto,
+  toDeliveryLocationEventDto,
   toDeliveryPartnerDto,
   VEHICLE_TYPES_RUNTIME,
   type DeliveryDocumentRecord,
+  type DeliveryIncidentRecord,
+  type DeliveryLocationEventRecord,
   type DeliveryOfferLocationRecord,
   type DeliveryOfferRecord,
   type DeliveryPartnerRecord,
@@ -107,10 +120,32 @@ const declineJobSchema = z.object({
   reason: z.string().trim().max(240).optional(),
 });
 
+const locationPingSchema = z.object({
+  coordinates: z.tuple([z.number(), z.number()]),
+  speedKmph: z.number().nonnegative().optional(),
+  headingDegrees: z.number().min(0).max(360).optional(),
+});
+
+const completeDeliverySchema = z.object({
+  deliveryOtp: z
+    .string()
+    .trim()
+    .regex(/^\d{4}$/, 'Delivery OTP must be exactly 4 digits'),
+  proofImageUrl: z.string().trim().url().optional(),
+  notes: z.string().trim().max(500).optional(),
+});
+
+const reportIncidentSchema = z.object({
+  incidentType: z.enum(DELIVERY_INCIDENT_TYPES_RUNTIME),
+  description: z.string().trim().min(5, 'Description must be at least 5 characters').max(1000),
+  coordinates: z.tuple([z.number(), z.number()]).optional(),
+});
+
 export interface DeliveryServiceOptions {
   deliveryStore: DeliveryStore;
   identityStore: IdentityStore;
   rbacStore: RbacStore;
+  orderStore?: OrderStore;
   signingSecret: string;
   clock?: Clock;
 }
@@ -119,6 +154,7 @@ export class DeliveryService {
   private readonly deliveryStore: DeliveryStore;
   private readonly identityStore: IdentityStore;
   private readonly rbacStore: RbacStore;
+  private readonly orderStore?: OrderStore;
   private readonly signingSecret: string;
   private readonly clock?: Clock;
 
@@ -126,6 +162,7 @@ export class DeliveryService {
     this.deliveryStore = options.deliveryStore;
     this.identityStore = options.identityStore;
     this.rbacStore = options.rbacStore;
+    this.orderStore = options.orderStore;
     this.signingSecret = options.signingSecret;
     this.clock = options.clock;
   }
@@ -1082,5 +1119,469 @@ export class DeliveryService {
     }
     const assignment = await this.deliveryStore.getActiveAssignmentForPartner(partner.partnerId);
     return assignment ? toDeliveryJobOfferDto(assignment) : null;
+  }
+
+  // --- Checkpoint 20: Tracking, Execution & Proof Methods ---
+
+  async recordLocationPing(
+    actorUserId: string,
+    assignmentId: string,
+    rawBody: unknown,
+    _requestId?: string,
+  ): Promise<DeliveryLocationEventDto> {
+    const partner = await this.deliveryStore.getPartnerByUserId(actorUserId);
+    if (!partner) {
+      throw new AppError(404, 'NOT_FOUND', 'Delivery partner profile not found');
+    }
+
+    const assignment = await this.deliveryStore.getOfferById(assignmentId);
+    if (!assignment) {
+      throw new AppError(404, 'NOT_FOUND', `Delivery assignment ${assignmentId} not found`);
+    }
+
+    // Privacy boundary: Streaming allowed ONLY during active disclosed delivery
+    if (
+      assignment.partnerId !== partner.partnerId ||
+      partner.shiftStatus !== 'ON_DELIVERY' ||
+      assignment.status !== 'ACCEPTED' ||
+      assignment.executionStep === 'COMPLETED'
+    ) {
+      throw new AppError(
+        403,
+        'FORBIDDEN',
+        'Location streaming is only permitted during an active disclosed delivery',
+      );
+    }
+
+    const input = locationPingSchema.parse(rawBody);
+    assertValidGeoJsonPoint(input.coordinates);
+
+    const [lng, lat] = input.coordinates;
+    if (lng < 88.0 || lng > 88.6 || lat < 22.3 || lat > 22.8) {
+      throw new AppError(
+        400,
+        'VALIDATION_ERROR',
+        `Coordinates [${lng}, ${lat}] are outside Kolkata service boundaries`,
+      );
+    }
+
+    const now = this.now();
+    const eventId = `dloc_${crypto.randomUUID().slice(0, 12)}`;
+    const eventRecord: DeliveryLocationEventRecord = {
+      eventId,
+      assignmentId,
+      orderId: assignment.orderId,
+      partnerId: partner.partnerId,
+      coordinates: [lng, lat],
+      speedKmph: input.speedKmph ?? null,
+      headingDegrees: input.headingDegrees ?? null,
+      recordedAt: now,
+    };
+
+    const saved = await this.deliveryStore.recordLocationEvent(eventRecord);
+    await this.deliveryStore.updatePartner(partner.partnerId, {
+      lastCoordinates: [lng, lat],
+      lastLocationAt: now,
+      updatedAt: now,
+    });
+
+    return toDeliveryLocationEventDto(saved);
+  }
+
+  async advanceExecutionStep(
+    actorUserId: string,
+    assignmentId: string,
+    targetStep: 'ARRIVED_AT_PICKUP' | 'CONFIRMED_PICKUP' | 'ARRIVED_AT_DROP',
+    requestId?: string,
+  ): Promise<DeliveryJobOfferDto> {
+    const partner = await this.deliveryStore.getPartnerByUserId(actorUserId);
+    if (!partner) {
+      throw new AppError(404, 'NOT_FOUND', 'Delivery partner profile not found');
+    }
+
+    const assignment = await this.deliveryStore.getOfferById(assignmentId);
+    if (!assignment) {
+      throw new AppError(404, 'NOT_FOUND', `Delivery assignment ${assignmentId} not found`);
+    }
+
+    if (assignment.partnerId !== partner.partnerId || assignment.status !== 'ACCEPTED') {
+      throw new AppError(
+        403,
+        'FORBIDDEN',
+        'You are not the active assigned partner for this delivery',
+      );
+    }
+
+    const currentStep = assignment.executionStep ?? 'ACCEPTED';
+    const now = this.now();
+    const patch: Partial<DeliveryOfferRecord> = { executionStep: targetStep, updatedAt: now };
+
+    if (targetStep === 'ARRIVED_AT_PICKUP') {
+      if (currentStep !== 'ACCEPTED') {
+        throw new AppError(
+          409,
+          'CONFLICT',
+          `Cannot advance to ARRIVED_AT_PICKUP from current step ${currentStep}`,
+        );
+      }
+      patch.arrivedAtPickupAt = now;
+    } else if (targetStep === 'CONFIRMED_PICKUP') {
+      if (currentStep !== 'ARRIVED_AT_PICKUP') {
+        throw new AppError(
+          409,
+          'CONFLICT',
+          'Cannot advance to CONFIRMED_PICKUP before marking ARRIVED_AT_PICKUP',
+        );
+      }
+      patch.pickupConfirmedAt = now;
+
+      // Transition order status to OUT_FOR_DELIVERY
+      if (this.orderStore) {
+        const order = await this.orderStore.getOrderById(assignment.orderId);
+        if (
+          order &&
+          (order.status === 'READY_FOR_PICKUP' ||
+            order.status === 'PREPARING' ||
+            order.status === 'CONFIRMED')
+        ) {
+          await this.orderStore.transitionOrderAtomically({
+            orderId: order.orderId,
+            expectedStatuses: [order.status],
+            expectedVersion: order.version,
+            patch: {
+              status: 'OUT_FOR_DELIVERY',
+              outForDeliveryAt: now,
+              updatedAt: now,
+            },
+            event: {
+              eventId: `oevt_${crypto.randomUUID()}`,
+              orderId: order.orderId,
+              eventType: 'ORDER_OUT_FOR_DELIVERY',
+              fromStatus: order.status,
+              toStatus: 'OUT_FOR_DELIVERY',
+              actorId: partner.partnerId,
+              actorRole: 'DELIVERY_PARTNER',
+              note: `Food picked up from restaurant by partner ${partner.fullName}`,
+              occurredAt: now,
+            },
+          });
+        }
+      }
+    } else if (targetStep === 'ARRIVED_AT_DROP') {
+      if (currentStep !== 'CONFIRMED_PICKUP') {
+        throw new AppError(409, 'CONFLICT', 'Cannot mark ARRIVED_AT_DROP before CONFIRMED_PICKUP');
+      }
+      patch.arrivedAtDropAt = now;
+    }
+
+    const updated = await this.deliveryStore.updateOffer(assignmentId, patch);
+    if (!updated) {
+      throw new AppError(
+        500,
+        'INTERNAL_SERVER_ERROR',
+        'Failed to update assignment execution step',
+      );
+    }
+
+    await this.rbacStore.appendAuditLog({
+      actorId: partner.partnerId,
+      actorRole: 'DELIVERY_PARTNER',
+      action: `delivery.step.${targetStep.toLowerCase()}`,
+      resourceType: 'delivery_assignment',
+      resourceId: assignmentId,
+      outcome: 'ALLOWED',
+      reason: `Partner transitioned execution step to ${targetStep}`,
+      requestId: requestId ?? null,
+      now,
+    });
+
+    return toDeliveryJobOfferDto(updated);
+  }
+
+  async completeDelivery(
+    actorUserId: string,
+    assignmentId: string,
+    rawBody: unknown,
+    requestId?: string,
+  ): Promise<CompleteDeliveryResponseDto> {
+    const partner = await this.deliveryStore.getPartnerByUserId(actorUserId);
+    if (!partner) {
+      throw new AppError(404, 'NOT_FOUND', 'Delivery partner profile not found');
+    }
+
+    const assignment = await this.deliveryStore.getOfferById(assignmentId);
+    if (!assignment) {
+      throw new AppError(404, 'NOT_FOUND', `Delivery assignment ${assignmentId} not found`);
+    }
+
+    if (assignment.partnerId !== partner.partnerId || assignment.status !== 'ACCEPTED') {
+      throw new AppError(
+        403,
+        'FORBIDDEN',
+        'You are not the active assigned partner for this delivery',
+      );
+    }
+
+    const input = completeDeliverySchema.parse(rawBody);
+    const now = this.now();
+
+    // Check failed attempt lockout
+    const failedAttempts = assignment.failedOtpAttempts ?? 0;
+    if (failedAttempts >= MAX_OTP_ATTEMPTS) {
+      throw new AppError(
+        429,
+        'RATE_LIMITED',
+        `Maximum delivery OTP attempts exceeded (${MAX_OTP_ATTEMPTS}/${MAX_OTP_ATTEMPTS}). Handover locked for safety. Contact support.`,
+      );
+    }
+
+    // Validate OTP against order
+    let expectedOtp: string | null = null;
+    let order: OrderRecord | null = null;
+    if (this.orderStore) {
+      order = await this.orderStore.getOrderById(assignment.orderId);
+      if (order) {
+        expectedOtp = order.deliveryOtp;
+      }
+    }
+
+    if (expectedOtp && input.deliveryOtp !== expectedOtp) {
+      const newFailed = failedAttempts + 1;
+      await this.deliveryStore.updateOffer(assignmentId, {
+        failedOtpAttempts: newFailed,
+        updatedAt: now,
+      });
+
+      await this.rbacStore.appendAuditLog({
+        actorId: partner.partnerId,
+        actorRole: 'DELIVERY_PARTNER',
+        action: 'delivery.otp_verification_failed',
+        resourceType: 'delivery_assignment',
+        resourceId: assignmentId,
+        outcome: 'DENIED',
+        reason: `Invalid OTP attempt ${newFailed}/${MAX_OTP_ATTEMPTS}`,
+        requestId: requestId ?? null,
+        now,
+      });
+
+      if (newFailed >= MAX_OTP_ATTEMPTS) {
+        throw new AppError(
+          429,
+          'RATE_LIMITED',
+          `Maximum delivery OTP attempts exceeded (${MAX_OTP_ATTEMPTS}/${MAX_OTP_ATTEMPTS}). Handover locked for safety. Contact support.`,
+        );
+      }
+
+      throw new AppError(
+        400,
+        'VALIDATION_ERROR',
+        `Invalid delivery OTP. Please verify 4-digit code provided by customer (${newFailed}/${MAX_OTP_ATTEMPTS} attempts used).`,
+      );
+    }
+
+    // OTP Validated! Complete delivery
+    if (order && this.orderStore) {
+      await this.orderStore.transitionOrderAtomically({
+        orderId: order.orderId,
+        expectedStatuses: [order.status],
+        expectedVersion: order.version,
+        patch: {
+          status: 'DELIVERED',
+          deliveredAt: now,
+          updatedAt: now,
+        },
+        event: {
+          eventId: `oevt_${crypto.randomUUID()}`,
+          orderId: order.orderId,
+          eventType: 'ORDER_DELIVERED',
+          fromStatus: order.status,
+          toStatus: 'DELIVERED',
+          actorId: partner.partnerId,
+          actorRole: 'DELIVERY_PARTNER',
+          note: `Delivered with verified OTP by partner ${partner.fullName}`,
+          occurredAt: now,
+        },
+      });
+    }
+
+    // Update assignment to COMPLETED
+    const updatedAssignment = await this.deliveryStore.updateOffer(assignmentId, {
+      status: 'COMPLETED',
+      executionStep: 'COMPLETED',
+      completedAt: now,
+      updatedAt: now,
+    });
+
+    // Update partner: shiftStatus back to ONLINE, totalDeliveries incremented
+    await this.deliveryStore.updatePartner(partner.partnerId, {
+      shiftStatus: 'ONLINE',
+      totalDeliveries: partner.totalDeliveries + 1,
+      updatedAt: now,
+    });
+
+    await this.rbacStore.appendAuditLog({
+      actorId: partner.partnerId,
+      actorRole: 'DELIVERY_PARTNER',
+      action: 'delivery.completed',
+      resourceType: 'delivery_assignment',
+      resourceId: assignmentId,
+      outcome: 'ALLOWED',
+      reason: `Delivery ${assignmentId} completed successfully with verified OTP`,
+      requestId: requestId ?? null,
+      now,
+    });
+
+    return {
+      assignment: toDeliveryJobOfferDto(updatedAssignment ?? assignment),
+      orderStatus: 'DELIVERED',
+      deliveredAt: now.toISOString(),
+      payoutCreditedPaise: assignment.guaranteedPayoutPaise,
+    };
+  }
+
+  async reportIncident(
+    actorUserId: string,
+    assignmentId: string,
+    rawBody: unknown,
+    requestId?: string,
+  ): Promise<DeliveryIncidentDto> {
+    const partner = await this.deliveryStore.getPartnerByUserId(actorUserId);
+    if (!partner) {
+      throw new AppError(404, 'NOT_FOUND', 'Delivery partner profile not found');
+    }
+
+    const assignment = await this.deliveryStore.getOfferById(assignmentId);
+    if (!assignment) {
+      throw new AppError(404, 'NOT_FOUND', `Delivery assignment ${assignmentId} not found`);
+    }
+
+    if (
+      assignment.partnerId !== partner.partnerId &&
+      assignment.offeredToPartnerId !== partner.partnerId
+    ) {
+      throw new AppError(
+        403,
+        'FORBIDDEN',
+        'You are not authorized to report an incident for this assignment',
+      );
+    }
+
+    const input = reportIncidentSchema.parse(rawBody);
+    const now = this.now();
+    const incidentId = `dinc_${crypto.randomUUID().slice(0, 12)}`;
+
+    const incidentRecord: DeliveryIncidentRecord = {
+      incidentId,
+      assignmentId,
+      orderId: assignment.orderId,
+      partnerId: partner.partnerId,
+      incidentType: input.incidentType,
+      description: input.description,
+      coordinates: input.coordinates ? [input.coordinates[0], input.coordinates[1]] : null,
+      status: 'REPORTED',
+      reportedAt: now,
+      resolvedAt: null,
+      resolvedByUserId: null,
+    };
+
+    const saved = await this.deliveryStore.createIncident(incidentRecord);
+
+    await this.rbacStore.appendAuditLog({
+      actorId: partner.partnerId,
+      actorRole: 'DELIVERY_PARTNER',
+      action: 'delivery.incident_reported',
+      resourceType: 'delivery_incident',
+      resourceId: incidentId,
+      outcome: 'ALLOWED',
+      reason: `Incident reported: ${input.incidentType} - ${input.description}`,
+      requestId: requestId ?? null,
+      now,
+    });
+
+    return toDeliveryIncidentDto(saved);
+  }
+
+  async getIncidentsForAssignment(
+    actorUserId: string,
+    assignmentId: string,
+  ): Promise<DeliveryIncidentDto[]> {
+    const incidents = await this.deliveryStore.getIncidents(assignmentId);
+    return incidents.map(toDeliveryIncidentDto);
+  }
+
+  async getOrderLiveTracking(
+    orderId: string,
+    actorUserId: string,
+    actorRole: UserRole,
+  ): Promise<OrderLiveTrackingResponseDto> {
+    if (!this.orderStore) {
+      throw new AppError(500, 'INTERNAL_SERVER_ERROR', 'Order store not configured');
+    }
+
+    const order = await this.orderStore.getOrderById(orderId);
+    if (!order) {
+      throw new AppError(404, 'NOT_FOUND', `Order "${orderId}" not found`);
+    }
+
+    const isCustomer = order.customerId === actorUserId;
+    const isOps = actorRole === 'OPS_ADMIN' || actorRole === 'SUPER_ADMIN';
+
+    const assignment = await this.deliveryStore.getActiveAssignmentForOrder(orderId);
+    const isAssignedPartner = assignment?.partnerId && assignment.partnerId === actorUserId;
+
+    if (!isCustomer && !isOps && !isAssignedPartner) {
+      throw new AppError(
+        403,
+        'FORBIDDEN',
+        'You do not have permission to view live tracking for this order',
+      );
+    }
+
+    let riderDto: LiveTrackingRiderDto | null = null;
+    const isActivelyDelivering =
+      order.status === 'READY_FOR_PICKUP' ||
+      order.status === 'OUT_FOR_DELIVERY' ||
+      (assignment !== null && assignment.status === 'ACCEPTED');
+
+    if (assignment?.partnerId && isActivelyDelivering) {
+      const partner = await this.deliveryStore.getPartnerById(assignment.partnerId);
+      if (partner) {
+        riderDto = {
+          partnerId: partner.partnerId,
+          fullName: partner.fullName,
+          phoneMasked: partner.phoneMasked,
+          vehicleModel: partner.vehicle.model,
+          vehicleType: partner.vehicle.vehicleType,
+          currentCoordinates: partner.lastCoordinates ?? null,
+          lastLocationAt: partner.lastLocationAt ? partner.lastLocationAt.toISOString() : null,
+        };
+      }
+    }
+
+    const statusLabel = ORDER_STATUS_LABELS_MAP[order.status] ?? order.status;
+    const isCustomerOrOps = isCustomer || isOps;
+
+    return {
+      orderId: order.orderId,
+      orderNumber: order.orderNumber,
+      status: order.status,
+      statusLabel,
+      deliveryOtp: isCustomerOrOps ? order.deliveryOtp : null,
+      pickupLocation: {
+        name: assignment?.pickupLocation.name ?? order.outletName,
+        addressLine: assignment?.pickupLocation.addressLine ?? 'Outlet address',
+        landmark: assignment?.pickupLocation.landmark ?? null,
+        coordinates: assignment?.pickupLocation.coordinates ?? [88.3639, 22.5726],
+      },
+      dropLocation: {
+        name: assignment?.dropLocation.name ?? order.addressSnapshot.label,
+        addressLine: assignment?.dropLocation.addressLine ?? order.addressSnapshot.streetAddress,
+        landmark: assignment?.dropLocation.landmark ?? null,
+        coordinates: assignment?.dropLocation.coordinates ?? order.addressSnapshot.coordinates,
+      },
+      rider: riderDto,
+      estimatedMinutesRemaining: Math.max(5, order.estimatedDeliveryMinutes ?? 25),
+      updatedAt: this.now().toISOString(),
+    };
   }
 }

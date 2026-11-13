@@ -5,9 +5,13 @@ import { KOLKATA_ZONE_IDS, type KolkataZoneId } from '../customer/customer.types
 import {
   DELIVERY_ASSIGNMENT_STATUSES_RUNTIME,
   DELIVERY_DOCUMENT_TYPES_RUNTIME,
+  DELIVERY_EXECUTION_STEPS_RUNTIME,
+  DELIVERY_INCIDENT_TYPES_RUNTIME,
   DELIVERY_PARTNER_STATUSES_RUNTIME,
   DELIVERY_SHIFT_STATUSES_RUNTIME,
   VEHICLE_TYPES_RUNTIME,
+  type DeliveryIncidentRecord,
+  type DeliveryLocationEventRecord,
   type DeliveryOfferRecord,
   type DeliveryPartnerRecord,
 } from './delivery.types';
@@ -53,11 +57,20 @@ export interface DeliveryStore {
     offerId: string,
     patch: Partial<DeliveryOfferRecord>,
   ): Promise<DeliveryOfferRecord | null>;
+
+  // Checkpoint 20 live tracking & incident additions:
+  recordLocationEvent(event: DeliveryLocationEventRecord): Promise<DeliveryLocationEventRecord>;
+  getLatestLocationEvent(assignmentId: string): Promise<DeliveryLocationEventRecord | null>;
+  getLocationEvents(assignmentId: string): Promise<DeliveryLocationEventRecord[]>;
+  createIncident(incident: DeliveryIncidentRecord): Promise<DeliveryIncidentRecord>;
+  getIncidents(assignmentId: string): Promise<DeliveryIncidentRecord[]>;
 }
 
 export class InMemoryDeliveryStore implements DeliveryStore {
   private readonly partners = new Map<string, DeliveryPartnerRecord>();
   private readonly offers = new Map<string, DeliveryOfferRecord>();
+  private readonly locationEvents: DeliveryLocationEventRecord[] = [];
+  private readonly incidents: DeliveryIncidentRecord[] = [];
 
   private clonePartner(p: DeliveryPartnerRecord): DeliveryPartnerRecord {
     return JSON.parse(JSON.stringify(p), (key, value) => {
@@ -85,7 +98,11 @@ export class InMemoryDeliveryStore implements DeliveryStore {
         key === 'offeredAt' ||
         key === 'expiresAt' ||
         key === 'acceptedAt' ||
-        key === 'declinedAt'
+        key === 'declinedAt' ||
+        key === 'arrivedAtPickupAt' ||
+        key === 'pickupConfirmedAt' ||
+        key === 'arrivedAtDropAt' ||
+        key === 'completedAt'
       ) {
         return value ? new Date(value) : null;
       }
@@ -266,6 +283,8 @@ export class InMemoryDeliveryStore implements DeliveryStore {
     offer.status = 'ACCEPTED';
     offer.partnerId = options.partnerId;
     offer.acceptedAt = options.now;
+    offer.executionStep = 'ACCEPTED';
+    offer.failedOtpAttempts = 0;
     offer.version += 1;
     offer.updatedAt = options.now;
     return { success: true, updatedOffer: this.cloneOffer(offer) };
@@ -285,6 +304,58 @@ export class InMemoryDeliveryStore implements DeliveryStore {
     };
     this.offers.set(offerId, updated);
     return this.cloneOffer(updated);
+  }
+
+  async recordLocationEvent(
+    event: DeliveryLocationEventRecord,
+  ): Promise<DeliveryLocationEventRecord> {
+    const clone: DeliveryLocationEventRecord = {
+      ...event,
+      coordinates: [event.coordinates[0], event.coordinates[1]],
+      recordedAt: new Date(event.recordedAt),
+    };
+    this.locationEvents.push(clone);
+    return { ...clone, coordinates: [clone.coordinates[0], clone.coordinates[1]] };
+  }
+
+  async getLatestLocationEvent(assignmentId: string): Promise<DeliveryLocationEventRecord | null> {
+    const matching = this.locationEvents
+      .filter((e) => e.assignmentId === assignmentId)
+      .sort((a, b) => b.recordedAt.getTime() - a.recordedAt.getTime());
+    const item = matching[0];
+    if (!item) return null;
+    return { ...item, coordinates: [item.coordinates[0], item.coordinates[1]] };
+  }
+
+  async getLocationEvents(assignmentId: string): Promise<DeliveryLocationEventRecord[]> {
+    return this.locationEvents
+      .filter((e) => e.assignmentId === assignmentId)
+      .sort((a, b) => a.recordedAt.getTime() - b.recordedAt.getTime())
+      .map((item) => ({ ...item, coordinates: [item.coordinates[0], item.coordinates[1]] }));
+  }
+
+  async createIncident(incident: DeliveryIncidentRecord): Promise<DeliveryIncidentRecord> {
+    const clone: DeliveryIncidentRecord = {
+      ...incident,
+      coordinates: incident.coordinates ? [incident.coordinates[0], incident.coordinates[1]] : null,
+      reportedAt: new Date(incident.reportedAt),
+      resolvedAt: incident.resolvedAt ? new Date(incident.resolvedAt) : null,
+    };
+    this.incidents.push(clone);
+    return {
+      ...clone,
+      coordinates: clone.coordinates ? [clone.coordinates[0], clone.coordinates[1]] : null,
+    };
+  }
+
+  async getIncidents(assignmentId: string): Promise<DeliveryIncidentRecord[]> {
+    return this.incidents
+      .filter((i) => i.assignmentId === assignmentId)
+      .sort((a, b) => b.reportedAt.getTime() - a.reportedAt.getTime())
+      .map((item) => ({
+        ...item,
+        coordinates: item.coordinates ? [item.coordinates[0], item.coordinates[1]] : null,
+      }));
   }
 }
 
@@ -422,6 +493,17 @@ const deliveryOfferSchema = new Schema<DeliveryOfferRecord>(
     declinedAt: { type: Date, required: false, default: null },
     declineReason: { type: String, required: false, default: null, maxlength: 240 },
     reassignedFromOfferId: { type: String, required: false, default: null },
+    executionStep: {
+      type: String,
+      enum: DELIVERY_EXECUTION_STEPS_RUNTIME,
+      required: false,
+      default: 'ACCEPTED',
+    },
+    arrivedAtPickupAt: { type: Date, required: false, default: null },
+    pickupConfirmedAt: { type: Date, required: false, default: null },
+    arrivedAtDropAt: { type: Date, required: false, default: null },
+    completedAt: { type: Date, required: false, default: null },
+    failedOtpAttempts: { type: Number, required: false, default: 0 },
     version: { type: Number, required: true, default: 1 },
   },
   {
@@ -435,9 +517,65 @@ deliveryOfferSchema.index({ orderId: 1, status: 1 });
 deliveryOfferSchema.index({ offeredToPartnerId: 1, status: 1, expiresAt: 1 });
 deliveryOfferSchema.index({ partnerId: 1, status: 1 });
 
+const deliveryLocationEventSchema = new Schema<DeliveryLocationEventRecord>(
+  {
+    eventId: { type: String, required: true, unique: true, index: true },
+    assignmentId: { type: String, required: true, index: true },
+    orderId: { type: String, required: true, index: true },
+    partnerId: { type: String, required: true, index: true },
+    coordinates: { type: [Number], required: true },
+    speedKmph: { type: Number, required: false, default: null },
+    headingDegrees: { type: Number, required: false, default: null },
+    recordedAt: { type: Date, required: true, default: Date.now, index: true },
+  },
+  {
+    collection: COLLECTION_NAMES.deliveryLocationEvents,
+  },
+);
+
+applyBaseSchemaConventions(deliveryLocationEventSchema);
+deliveryLocationEventSchema.index({ assignmentId: 1, recordedAt: -1 });
+deliveryLocationEventSchema.index({ orderId: 1, recordedAt: -1 });
+
+const deliveryIncidentSchema = new Schema<DeliveryIncidentRecord>(
+  {
+    incidentId: { type: String, required: true, unique: true, index: true },
+    assignmentId: { type: String, required: true, index: true },
+    orderId: { type: String, required: true, index: true },
+    partnerId: { type: String, required: true, index: true },
+    incidentType: {
+      type: String,
+      enum: DELIVERY_INCIDENT_TYPES_RUNTIME,
+      required: true,
+      index: true,
+    },
+    description: { type: String, required: true, trim: true, maxlength: 1000 },
+    coordinates: { type: [Number], required: false, default: null },
+    status: {
+      type: String,
+      enum: ['REPORTED', 'UNDER_REVIEW', 'RESOLVED'],
+      required: true,
+      default: 'REPORTED',
+      index: true,
+    },
+    reportedAt: { type: Date, required: true, default: Date.now },
+    resolvedAt: { type: Date, required: false, default: null },
+    resolvedByUserId: { type: String, required: false, default: null },
+  },
+  {
+    collection: COLLECTION_NAMES.deliveryIncidents,
+  },
+);
+
+applyBaseSchemaConventions(deliveryIncidentSchema);
+deliveryIncidentSchema.index({ assignmentId: 1, reportedAt: -1 });
+deliveryIncidentSchema.index({ orderId: 1, reportedAt: -1 });
+
 export class MongooseDeliveryStore implements DeliveryStore {
   private readonly model: Model<DeliveryPartnerRecord>;
   private readonly offerModel: Model<DeliveryOfferRecord>;
+  private readonly locationEventModel: Model<DeliveryLocationEventRecord>;
+  private readonly incidentModel: Model<DeliveryIncidentRecord>;
 
   constructor(connection: Connection) {
     this.model =
@@ -446,6 +584,15 @@ export class MongooseDeliveryStore implements DeliveryStore {
     this.offerModel =
       (connection.models.BhojoraDeliveryAssignment as Model<DeliveryOfferRecord>) ||
       connection.model<DeliveryOfferRecord>('BhojoraDeliveryAssignment', deliveryOfferSchema);
+    this.locationEventModel =
+      (connection.models.BhojoraDeliveryLocationEvent as Model<DeliveryLocationEventRecord>) ||
+      connection.model<DeliveryLocationEventRecord>(
+        'BhojoraDeliveryLocationEvent',
+        deliveryLocationEventSchema,
+      );
+    this.incidentModel =
+      (connection.models.BhojoraDeliveryIncident as Model<DeliveryIncidentRecord>) ||
+      connection.model<DeliveryIncidentRecord>('BhojoraDeliveryIncident', deliveryIncidentSchema);
   }
 
   async createPartner(record: DeliveryPartnerRecord): Promise<DeliveryPartnerRecord> {
@@ -631,6 +778,8 @@ export class MongooseDeliveryStore implements DeliveryStore {
             status: 'ACCEPTED',
             partnerId: options.partnerId,
             acceptedAt: options.now,
+            executionStep: 'ACCEPTED',
+            failedOtpAttempts: 0,
             updatedAt: options.now,
           },
           $inc: { version: 1 },
@@ -663,5 +812,42 @@ export class MongooseDeliveryStore implements DeliveryStore {
       .lean<DeliveryOfferRecord>()
       .exec();
     return updated ?? null;
+  }
+
+  async recordLocationEvent(
+    event: DeliveryLocationEventRecord,
+  ): Promise<DeliveryLocationEventRecord> {
+    const created = await this.locationEventModel.create(event);
+    return created.toObject();
+  }
+
+  async getLatestLocationEvent(assignmentId: string): Promise<DeliveryLocationEventRecord | null> {
+    const doc = await this.locationEventModel
+      .findOne({ assignmentId })
+      .sort({ recordedAt: -1 })
+      .lean<DeliveryLocationEventRecord>()
+      .exec();
+    return doc ?? null;
+  }
+
+  async getLocationEvents(assignmentId: string): Promise<DeliveryLocationEventRecord[]> {
+    return this.locationEventModel
+      .find({ assignmentId })
+      .sort({ recordedAt: 1 })
+      .lean<DeliveryLocationEventRecord[]>()
+      .exec();
+  }
+
+  async createIncident(incident: DeliveryIncidentRecord): Promise<DeliveryIncidentRecord> {
+    const created = await this.incidentModel.create(incident);
+    return created.toObject();
+  }
+
+  async getIncidents(assignmentId: string): Promise<DeliveryIncidentRecord[]> {
+    return this.incidentModel
+      .find({ assignmentId })
+      .sort({ reportedAt: -1 })
+      .lean<DeliveryIncidentRecord[]>()
+      .exec();
   }
 }

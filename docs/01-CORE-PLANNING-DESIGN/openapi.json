@@ -1219,6 +1219,60 @@
         "tags": ["Delivery Dispatch"],
         "responses": { "201": { "description": "Offer dispatched to candidate partner" }, "409": { "description": "Order already assigned" } }
       }
+    },
+    "/delivery/assignments/{assignmentId}/location": {
+      "post": {
+        "summary": "Stream live GPS breadcrumb during disclosed active delivery",
+        "tags": ["Delivery Tracking"],
+        "responses": { "201": { "description": "Location ping accepted" }, "403": { "description": "Location streaming only allowed during active delivery" } }
+      }
+    },
+    "/delivery/assignments/{assignmentId}/arrive-pickup": {
+      "post": {
+        "summary": "Mark rider arrival at restaurant pickup location",
+        "tags": ["Delivery Tracking"],
+        "responses": { "200": { "description": "Arrived at pickup recorded" }, "409": { "description": "Invalid step transition" } }
+      }
+    },
+    "/delivery/assignments/{assignmentId}/confirm-pickup": {
+      "post": {
+        "summary": "Confirm order picked up and transition order to OUT_FOR_DELIVERY",
+        "tags": ["Delivery Tracking"],
+        "responses": { "200": { "description": "Pickup confirmed and order out for delivery" }, "409": { "description": "Invalid step transition" } }
+      }
+    },
+    "/delivery/assignments/{assignmentId}/arrive-drop": {
+      "post": {
+        "summary": "Mark rider arrival at customer drop location",
+        "tags": ["Delivery Tracking"],
+        "responses": { "200": { "description": "Arrived at drop location recorded" }, "409": { "description": "Invalid step transition" } }
+      }
+    },
+    "/delivery/assignments/{assignmentId}/complete": {
+      "post": {
+        "summary": "Verify 4-digit handover OTP and complete delivery with payout credit",
+        "tags": ["Delivery Tracking"],
+        "responses": { "200": { "description": "Delivery completed and order marked DELIVERED" }, "400": { "description": "Invalid delivery OTP" }, "429": { "description": "Max OTP attempts exceeded - lockout" } }
+      }
+    },
+    "/delivery/assignments/{assignmentId}/incidents": {
+      "post": {
+        "summary": "Report operational exception or delivery incident to dispatch",
+        "tags": ["Delivery Tracking"],
+        "responses": { "201": { "description": "Incident logged" } }
+      },
+      "get": {
+        "summary": "List incidents logged for delivery assignment",
+        "tags": ["Delivery Tracking"],
+        "responses": { "200": { "description": "Incident records returned" } }
+      }
+    },
+    "/delivery/orders/{orderId}/live-tracking": {
+      "get": {
+        "summary": "Get customer live tracking, pickup/drop coordinates, delivery OTP, and active rider location",
+        "tags": ["Delivery Tracking"],
+        "responses": { "200": { "description": "Live order tracking returned" }, "403": { "description": "Unauthorized access to order" } }
+      }
     }
   }
 }

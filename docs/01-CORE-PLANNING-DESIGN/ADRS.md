@@ -447,3 +447,39 @@ Checkpoint 19 implements the automated dispatch service, eligible partner select
 - **Positive:** Unbreakable concurrency safety, zero duplicate rider assignments, fair dispatch rotation, guaranteed payout transparency, and instant automated reassignment.
 - **Negative:** Real-time push updates currently poll via HTTP inbox API until WebSocket push streams are wired up in Checkpoint 20.
 
+
+## ADR-024: Live Delivery Tracking, Trip Execution State Machine, Privacy Boundaries & Handover Proof
+
+### Status: ACCEPTED (Locked Baseline — Checkpoint 20)
+
+### Context
+Checkpoint 20 implements active delivery tracking, GPS streaming, trip execution state transitions, customer live map data, delivery handover proof (4-digit OTP), exception and incident reporting, and strict privacy boundary controls. Continuous GPS tracking introduces sensitive privacy implications for delivery partners: riders must never have their real-time location exposed outside of an active, disclosed delivery mission. Furthermore, order completion requires non-repudiable physical proof (4-digit customer handover PIN) guarded against spoofing and brute-force guessing attacks.
+
+### Decision
+1. **Dedicated Collections & Audit History:** Own `delivery_location_events` (`BhojoraDeliveryLocationEvent`) and `delivery_incidents` (`BhojoraDeliveryIncident`) in `server/src/modules/delivery/` per ADR-001 modular monolith boundaries. Store timestamped breadcrumbs, velocity, heading, and exception reports with immutable audit logs.
+2. **Strict Privacy Boundary Enforcement:** Location updates (`POST /delivery/assignments/:assignmentId/location`) are strictly permitted ONLY when:
+   - The delivery partner is currently in `shiftStatus === 'ON_DELIVERY'`.
+   - The targeted assignment is in `status === 'ACCEPTED'` and assigned to the calling partner.
+   - The assignment has not been completed or cancelled (`executionStep !== 'COMPLETED'`).
+   Any location submission outside these conditions is rejected immediately with `403 FORBIDDEN` (`Location streaming is only permitted during an active disclosed delivery`).
+3. **Kolkata Geographic Geofence:** Location coordinates are strictly bounded to Kolkata municipal and metropolitan boundaries (`[88.0..88.6, 22.3..22.8]`). Pings outside this range are rejected with `400 VALIDATION_ERROR`.
+4. **Trip Execution State Sequencing:** Delivery assignments advance through strict linear steps:
+   - `ACCEPTED`: Rider en route to restaurant.
+   - `ARRIVED_AT_PICKUP`: Rider arrives at restaurant/cloud kitchen.
+   - `CONFIRMED_PICKUP`: Rider confirms food is in hand; atomically transitions the Order status from `READY_FOR_PICKUP` to `OUT_FOR_DELIVERY`.
+   - `ARRIVED_AT_DROP`: Rider reaches customer doorstep.
+   - Out-of-sequence jumps (e.g. attempting to jump to drop before pickup) are rejected with `409 CONFLICT`.
+5. **Customer 4-Digit Handover OTP & Anti-Spoof Lockout:**
+   - Order completion requires validating a 4-digit numeric handover PIN (`deliveryOtp`) generated at order creation.
+   - The PIN is strictly visible to the customer and authorized platform ops, but masked from the rider until verbally disclosed at the door.
+   - Invalid OTP attempts increment `failedOtpAttempts` on the assignment (`400 VALIDATION_ERROR`).
+   - Reaching `MAX_OTP_ATTEMPTS` (5 failed attempts) triggers an immediate anti-spoof lockout (`429 RATE_LIMITED`), requiring ops dispatch intervention to protect against brute-force attacks.
+   - Successful OTP validation transitions Order status to `DELIVERED`, updates assignment to `COMPLETED`, transitions partner back to `ONLINE`, increments `totalDeliveries`, and credits guaranteed payout.
+6. **Exception & Incident Reporting (`delivery_incidents`):** Riders can log real-time operational exceptions (`CUSTOMER_UNREACHABLE`, `ADDRESS_INCORRECT`, `RESTAURANT_DELAY`, `VEHICLE_BREAKDOWN`, `ACCIDENT`, `ORDER_SPILLAGE`) with descriptions, coordinates, and audit trails.
+7. **Customer Live Tracking (`GET /delivery/orders/:orderId/live-tracking`):** Surfaces order status, pickup and drop coordinates, customer-facing delivery OTP, and live rider location. Once the order reaches `DELIVERED` or `CANCELLED`, rider coordinates are stopped to prevent post-delivery tracking.
+
+### Consequences
+- **Positive:** Uncompromised rider privacy, tamper-proof OTP handover proof, anti-spoof brute-force lockout, real-time customer tracking visibility, and structured exception reporting.
+- **Negative:** Full turn-by-turn map rendering in web client relies on Leaflet/MapLibre tiles; GPS battery optimization on mobile clients relies on background geolocation APIs.
+
+

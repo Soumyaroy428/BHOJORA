@@ -235,5 +235,124 @@ export function createDeliveryRouter(params: CreateDeliveryRouterParams): Router
     }),
   );
 
+  // --- Checkpoint 20: Tracking, execution & incident routes ---
+
+  router.post(
+    '/delivery/assignments/:assignmentId/location',
+    requireAuth,
+    wrapAsync(async (req, res) => {
+      const ctx = resolveRbacRequestContext(req, res);
+      const event = await deliveryService.recordLocationPing(
+        ctx.userId,
+        paramString(req.params['assignmentId']),
+        req.body,
+        getRequestIdFromResponse(res),
+      );
+      sendSuccess(res, 201, { event });
+    }),
+  );
+
+  router.post(
+    '/delivery/assignments/:assignmentId/arrive-pickup',
+    requireAuth,
+    wrapAsync(async (req, res) => {
+      const ctx = resolveRbacRequestContext(req, res);
+      const assignment = await deliveryService.advanceExecutionStep(
+        ctx.userId,
+        paramString(req.params['assignmentId']),
+        'ARRIVED_AT_PICKUP',
+        getRequestIdFromResponse(res),
+      );
+      sendSuccess(res, 200, { assignment });
+    }),
+  );
+
+  router.post(
+    '/delivery/assignments/:assignmentId/confirm-pickup',
+    requireAuth,
+    wrapAsync(async (req, res) => {
+      const ctx = resolveRbacRequestContext(req, res);
+      const assignment = await deliveryService.advanceExecutionStep(
+        ctx.userId,
+        paramString(req.params['assignmentId']),
+        'CONFIRMED_PICKUP',
+        getRequestIdFromResponse(res),
+      );
+      sendSuccess(res, 200, { assignment });
+    }),
+  );
+
+  router.post(
+    '/delivery/assignments/:assignmentId/arrive-drop',
+    requireAuth,
+    wrapAsync(async (req, res) => {
+      const ctx = resolveRbacRequestContext(req, res);
+      const assignment = await deliveryService.advanceExecutionStep(
+        ctx.userId,
+        paramString(req.params['assignmentId']),
+        'ARRIVED_AT_DROP',
+        getRequestIdFromResponse(res),
+      );
+      sendSuccess(res, 200, { assignment });
+    }),
+  );
+
+  router.post(
+    '/delivery/assignments/:assignmentId/complete',
+    requireAuth,
+    wrapAsync(async (req, res) => {
+      const ctx = resolveRbacRequestContext(req, res);
+      const result = await deliveryService.completeDelivery(
+        ctx.userId,
+        paramString(req.params['assignmentId']),
+        req.body,
+        getRequestIdFromResponse(res),
+      );
+      sendSuccess(res, 200, result);
+    }),
+  );
+
+  router.post(
+    '/delivery/assignments/:assignmentId/incidents',
+    requireAuth,
+    wrapAsync(async (req, res) => {
+      const ctx = resolveRbacRequestContext(req, res);
+      const incident = await deliveryService.reportIncident(
+        ctx.userId,
+        paramString(req.params['assignmentId']),
+        req.body,
+        getRequestIdFromResponse(res),
+      );
+      sendSuccess(res, 201, { incident });
+    }),
+  );
+
+  router.get(
+    '/delivery/assignments/:assignmentId/incidents',
+    requireAuth,
+    wrapAsync(async (req, res) => {
+      const ctx = resolveRbacRequestContext(req, res);
+      const incidents = await deliveryService.getIncidentsForAssignment(
+        ctx.userId,
+        paramString(req.params['assignmentId']),
+      );
+      sendSuccess(res, 200, { incidents });
+    }),
+  );
+
+  router.get(
+    '/delivery/orders/:orderId/live-tracking',
+    requireAuth,
+    wrapAsync(async (req, res) => {
+      const ctx = resolveRbacRequestContext(req, res);
+      const tracking = await deliveryService.getOrderLiveTracking(
+        paramString(req.params['orderId']),
+        ctx.userId,
+        ctx.activeRole,
+      );
+      sendSuccess(res, 200, { tracking });
+    }),
+  );
+
   return router;
 }

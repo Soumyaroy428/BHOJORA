@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import type {
   DeliveryDocumentType,
+  DeliveryExecutionStep,
+  DeliveryIncidentType,
   DeliveryJobOfferDto,
   DeliveryPartnerDto,
   DeliveryShiftStatus,
@@ -58,10 +60,18 @@ export function App() {
   const [shiftStatus, setShiftStatus] = useState<DeliveryShiftStatus>('OFFLINE');
   const [shiftError, setShiftError] = useState<string | null>(null);
 
-  // Checkpoint 19: Job Inbox & Dispatch State
+  // Checkpoint 19 & 20: Job Inbox, Dispatch & Trip Execution State
   const [activeOffer, setActiveOffer] = useState<DeliveryJobOfferDto | null>(null);
   const [activeAssignment, setActiveAssignment] = useState<DeliveryJobOfferDto | null>(null);
   const [offerCountdown, setOfferCountdown] = useState<number>(45);
+  const [tripStep, setTripStep] = useState<DeliveryExecutionStep>('ACCEPTED');
+  const [otpInput, setOtpInput] = useState('');
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [showIncidentModal, setShowIncidentModal] = useState(false);
+  const [selectedIncidentType, setSelectedIncidentType] =
+    useState<DeliveryIncidentType>('CUSTOMER_UNREACHABLE');
+  const [incidentDescription, setIncidentDescription] = useState('');
+  const [incidentReported, setIncidentReported] = useState<string | null>(null);
 
   useEffect(() => {
     if (!activeOffer) return;
@@ -118,16 +128,44 @@ export function App() {
     setActiveAssignment(accepted);
     setActiveOffer(null);
     setShiftStatus('ON_DELIVERY');
+    setTripStep('ACCEPTED');
+    setOtpInput('');
+    setOtpError(null);
+    setIncidentReported(null);
   };
 
   const handleDeclineOffer = () => {
     setActiveOffer(null);
   };
 
+  const handleAdvanceStep = (nextStep: DeliveryExecutionStep) => {
+    setTripStep(nextStep);
+  };
+
+  const handleVerifyOtpAndComplete = () => {
+    if (otpInput.trim().length !== 4) {
+      setOtpError('Delivery OTP must be exactly 4 digits');
+      return;
+    }
+    setOtpError(null);
+    setTripStep('COMPLETED');
+    handleCompleteActiveDelivery();
+  };
+
+  const handleReportIncident = () => {
+    if (!incidentDescription.trim()) return;
+    setIncidentReported(`Incident ${selectedIncidentType} logged with dispatch.`);
+    setShowIncidentModal(false);
+    setIncidentDescription('');
+  };
+
   const handleCompleteActiveDelivery = () => {
     if (!activeAssignment) return;
     setActiveAssignment(null);
     setShiftStatus('ONLINE');
+    setTripStep('ACCEPTED');
+    setOtpInput('');
+    setOtpError(null);
     if (profile) {
       setProfile({
         ...profile,
@@ -415,7 +453,7 @@ export function App() {
               </div>
             )}
 
-            {/* Active Delivery Trip Card */}
+            {/* Active Delivery Trip Card (Checkpoint 20: Execution, Live GPS & Handover Proof) */}
             {activeAssignment && (
               <div
                 data-testid="active-delivery-trip-card"
@@ -424,12 +462,33 @@ export function App() {
               >
                 <div className="section-title">
                   <span style={{ color: 'var(--status-online)' }}>
-                    🚴 ACTIVE TRIP: EN ROUTE TO PICKUP
+                    🚴 ACTIVE TRIP: {tripStep.replace(/_/g, ' ')}
                   </span>
                   <span className="payout-badge" style={{ fontSize: '0.9rem', padding: '4px 8px' }}>
                     ₹{(activeAssignment.guaranteedPayoutPaise / 100).toFixed(2)}
                   </span>
                 </div>
+
+                <div
+                  style={{
+                    backgroundColor: 'rgba(34, 197, 94, 0.08)',
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    fontSize: '0.78rem',
+                    color: 'var(--status-online)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    marginBottom: '10px',
+                  }}
+                >
+                  <span>🛰️</span>
+                  <span>
+                    <strong>GPS Disclosed Active:</strong> Streaming coordinates only while on this
+                    delivery.
+                  </span>
+                </div>
+
                 <div
                   style={{
                     display: 'flex',
@@ -440,23 +499,207 @@ export function App() {
                 >
                   <div>
                     <strong>Pickup:</strong> {activeAssignment.pickupLocation.name}
+                    <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+                      {activeAssignment.pickupLocation.addressLine}
+                    </div>
                   </div>
                   <div>
-                    <strong>Drop:</strong> {activeAssignment.dropLocation.name} (
-                    {activeAssignment.dropLocation.addressLine})
+                    <strong>Drop:</strong> {activeAssignment.dropLocation.name}
+                    <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+                      {activeAssignment.dropLocation.addressLine}
+                    </div>
                   </div>
                   <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                     Order ID: <code>{activeAssignment.orderId}</code>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  className="btn-accept"
-                  style={{ width: '100%', marginTop: '12px' }}
-                  onClick={handleCompleteActiveDelivery}
+
+                {incidentReported && (
+                  <div
+                    style={{
+                      margin: '10px 0',
+                      padding: '8px 10px',
+                      backgroundColor: 'rgba(234, 179, 8, 0.12)',
+                      borderRadius: '6px',
+                      fontSize: '0.82rem',
+                      color: 'var(--text-primary)',
+                    }}
+                  >
+                    ⚠️ {incidentReported}
+                  </div>
+                )}
+
+                {/* Execution Step Controls */}
+                <div
+                  style={{
+                    marginTop: '14px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                  }}
                 >
-                  ✓ Complete Delivery
-                </button>
+                  {tripStep === 'ACCEPTED' && (
+                    <button
+                      data-testid="btn-step-arrive-pickup"
+                      type="button"
+                      className="btn-primary"
+                      style={{ width: '100%' }}
+                      onClick={() => handleAdvanceStep('ARRIVED_AT_PICKUP')}
+                    >
+                      📍 Arrived at Restaurant / Pickup
+                    </button>
+                  )}
+
+                  {tripStep === 'ARRIVED_AT_PICKUP' && (
+                    <button
+                      data-testid="btn-step-confirm-pickup"
+                      type="button"
+                      className="btn-primary"
+                      style={{ width: '100%', backgroundColor: '#2563eb' }}
+                      onClick={() => handleAdvanceStep('CONFIRMED_PICKUP')}
+                    >
+                      📦 Confirm Food Picked Up → Out for Delivery
+                    </button>
+                  )}
+
+                  {tripStep === 'CONFIRMED_PICKUP' && (
+                    <button
+                      data-testid="btn-step-arrive-drop"
+                      type="button"
+                      className="btn-primary"
+                      style={{ width: '100%', backgroundColor: '#7c3aed' }}
+                      onClick={() => handleAdvanceStep('ARRIVED_AT_DROP')}
+                    >
+                      🏠 Arrived at Customer Location
+                    </button>
+                  )}
+
+                  {tripStep === 'ARRIVED_AT_DROP' && (
+                    <div
+                      style={{
+                        padding: '12px',
+                        border: '1px solid var(--border-subtle)',
+                        borderRadius: '8px',
+                        backgroundColor: 'var(--surface-sunken)',
+                      }}
+                    >
+                      <label
+                        className="form-label"
+                        style={{ fontSize: '0.82rem', fontWeight: 600, marginBottom: '6px' }}
+                      >
+                        Enter 4-Digit Handover OTP from Customer:
+                      </label>
+                      <input
+                        data-testid="input-delivery-otp"
+                        type="text"
+                        maxLength={4}
+                        placeholder="••••"
+                        value={otpInput}
+                        onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ''))}
+                        style={{
+                          width: '100%',
+                          padding: '10px',
+                          fontSize: '1.25rem',
+                          textAlign: 'center',
+                          letterSpacing: '8px',
+                          borderRadius: '6px',
+                          border: otpError ? '2px solid #ef4444' : '1px solid var(--border-subtle)',
+                          backgroundColor: 'var(--surface-default)',
+                          color: 'var(--text-primary)',
+                          marginBottom: '8px',
+                        }}
+                      />
+                      {otpError && (
+                        <div style={{ color: '#ef4444', fontSize: '0.78rem', marginBottom: '8px' }}>
+                          {otpError}
+                        </div>
+                      )}
+                      <button
+                        data-testid="btn-verify-otp-complete"
+                        type="button"
+                        className="btn-accept"
+                        style={{ width: '100%' }}
+                        onClick={handleVerifyOtpAndComplete}
+                      >
+                        ✓ Verify OTP & Complete Handover
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Incident / Exception Trigger */}
+                  {!showIncidentModal ? (
+                    <button
+                      data-testid="btn-trigger-incident"
+                      type="button"
+                      className="btn-secondary"
+                      style={{
+                        width: '100%',
+                        fontSize: '0.8rem',
+                        padding: '8px',
+                        marginTop: '4px',
+                      }}
+                      onClick={() => setShowIncidentModal(true)}
+                    >
+                      ⚠️ Report Delivery Issue / Exception
+                    </button>
+                  ) : (
+                    <div
+                      style={{
+                        marginTop: '8px',
+                        padding: '10px',
+                        borderRadius: '6px',
+                        border: '1px dashed #f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.05)',
+                      }}
+                    >
+                      <div style={{ fontSize: '0.82rem', fontWeight: 600, marginBottom: '6px' }}>
+                        Report Incident to Dispatch:
+                      </div>
+                      <select
+                        className="form-input"
+                        value={selectedIncidentType}
+                        onChange={(e) =>
+                          setSelectedIncidentType(e.target.value as DeliveryIncidentType)
+                        }
+                        style={{ marginBottom: '6px' }}
+                      >
+                        <option value="CUSTOMER_UNREACHABLE">Customer Unreachable</option>
+                        <option value="ADDRESS_INCORRECT">Address Incorrect / Inaccessible</option>
+                        <option value="RESTAURANT_DELAY">Restaurant Order Delay</option>
+                        <option value="VEHICLE_BREAKDOWN">Vehicle Breakdown</option>
+                        <option value="ACCIDENT">Road Incident / Accident</option>
+                        <option value="ORDER_SPILLAGE">Package Damaged / Spilled</option>
+                      </select>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="Brief description of the problem"
+                        value={incidentDescription}
+                        onChange={(e) => setIncidentDescription(e.target.value)}
+                        style={{ marginBottom: '8px' }}
+                      />
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          type="button"
+                          className="btn-secondary"
+                          style={{ flex: 1, fontSize: '0.78rem' }}
+                          onClick={() => setShowIncidentModal(false)}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          data-testid="btn-submit-incident"
+                          type="button"
+                          className="btn-primary"
+                          style={{ flex: 2, fontSize: '0.78rem', backgroundColor: '#d97706' }}
+                          onClick={handleReportIncident}
+                        >
+                          Submit Report
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 

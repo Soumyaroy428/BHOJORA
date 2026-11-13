@@ -250,6 +250,7 @@ export function createApp(options: CreateAppOptions): Express {
       deliveryStore,
       identityStore,
       rbacStore,
+      orderStore,
       signingSecret: config.jwtAccessSecret,
       ...(options.clock ? { clock: options.clock } : {}),
     });

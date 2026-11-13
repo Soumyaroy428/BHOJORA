@@ -164,6 +164,8 @@ export interface DeliveryJobOfferDto {
   declinedAt?: string | null;
   declineReason?: string | null;
   reassignedFromOfferId?: string | null;
+  executionStep?: DeliveryExecutionStep;
+  failedOtpAttempts?: number;
 }
 
 export interface DeliveryJobInboxResponseDto {
@@ -183,4 +185,94 @@ export interface TriggerDispatchOfferRequestDto {
   estimatedDistanceKm: number;
   estimatedDurationMinutes: number;
   deliveryFeePaise: number;
+}
+
+export const DELIVERY_EXECUTION_STEPS = [
+  'ACCEPTED',
+  'ARRIVED_AT_PICKUP',
+  'CONFIRMED_PICKUP',
+  'ARRIVED_AT_DROP',
+  'COMPLETED',
+] as const;
+export type DeliveryExecutionStep = (typeof DELIVERY_EXECUTION_STEPS)[number];
+
+export interface LocationPingRequestDto {
+  coordinates: [number, number];
+  speedKmph?: number;
+  headingDegrees?: number;
+}
+
+export interface DeliveryLocationEventDto {
+  eventId: string;
+  assignmentId: string;
+  orderId: string;
+  partnerId: string;
+  coordinates: [number, number];
+  speedKmph: number | null;
+  headingDegrees: number | null;
+  recordedAt: string;
+}
+
+export interface CompleteDeliveryRequestDto {
+  deliveryOtp: string;
+  proofImageUrl?: string;
+  notes?: string;
+}
+
+export interface CompleteDeliveryResponseDto {
+  assignment: DeliveryJobOfferDto;
+  orderStatus: string;
+  deliveredAt: string;
+  payoutCreditedPaise: number;
+}
+
+export const DELIVERY_INCIDENT_TYPES = [
+  'VEHICLE_BREAKDOWN',
+  'ACCIDENT',
+  'CUSTOMER_UNREACHABLE',
+  'ADDRESS_INCORRECT',
+  'ORDER_SPILLAGE',
+  'RESTAURANT_DELAY',
+] as const;
+export type DeliveryIncidentType = (typeof DELIVERY_INCIDENT_TYPES)[number];
+
+export interface ReportDeliveryIncidentRequestDto {
+  incidentType: DeliveryIncidentType;
+  description: string;
+  coordinates?: [number, number];
+}
+
+export interface DeliveryIncidentDto {
+  incidentId: string;
+  assignmentId: string;
+  orderId: string;
+  partnerId: string;
+  incidentType: DeliveryIncidentType;
+  description: string;
+  coordinates: [number, number] | null;
+  status: 'REPORTED' | 'UNDER_REVIEW' | 'RESOLVED';
+  reportedAt: string;
+}
+
+export interface LiveTrackingRiderDto {
+  partnerId: string;
+  fullName: string;
+  phoneMasked: string;
+  vehicleModel: string;
+  vehicleType: string;
+  currentCoordinates: [number, number] | null;
+  lastLocationAt: string | null;
+}
+
+export interface OrderLiveTrackingResponseDto {
+  orderId: string;
+  orderNumber: string;
+  status: string;
+  statusLabel: string;
+  deliveryOtp: string | null;
+  pickupLocation: DeliveryOfferLocationDto;
+  dropLocation: DeliveryOfferLocationDto;
+  rider: LiveTrackingRiderDto | null;
+  estimatedMinutesRemaining: number;
+  updatedAt: string;
 }

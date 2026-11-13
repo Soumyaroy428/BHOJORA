@@ -2,7 +2,11 @@ import crypto from 'node:crypto';
 import type {
   DeliveryAssignmentStatus,
   DeliveryDocumentType,
+  DeliveryExecutionStep,
+  DeliveryIncidentDto,
+  DeliveryIncidentType,
   DeliveryJobOfferDto,
+  DeliveryLocationEventDto,
   DeliveryPartnerDto,
   DeliveryPartnerStatus,
   DeliveryShiftStatus,
@@ -31,9 +35,27 @@ export const DELIVERY_ASSIGNMENT_STATUSES_RUNTIME = [
   'COMPLETED',
 ] as const;
 
+export const DELIVERY_EXECUTION_STEPS_RUNTIME = [
+  'ACCEPTED',
+  'ARRIVED_AT_PICKUP',
+  'CONFIRMED_PICKUP',
+  'ARRIVED_AT_DROP',
+  'COMPLETED',
+] as const satisfies readonly DeliveryExecutionStep[];
+
+export const DELIVERY_INCIDENT_TYPES_RUNTIME = [
+  'VEHICLE_BREAKDOWN',
+  'ACCIDENT',
+  'CUSTOMER_UNREACHABLE',
+  'ADDRESS_INCORRECT',
+  'ORDER_SPILLAGE',
+  'RESTAURANT_DELAY',
+] as const satisfies readonly DeliveryIncidentType[];
+
 export const OFFER_COUNTDOWN_SECONDS = 45;
 export const BASE_RIDER_PAYOUT_PAISE = 3500; // ₹35.00 base guaranteed payout
 export const PER_KM_RIDER_PAYOUT_PAISE = 1500; // ₹15.00 per km
+export const MAX_OTP_ATTEMPTS = 5;
 
 export function calculateRiderPayoutPaise(distanceKm: number, deliveryFeePaise?: number): number {
   const distanceBased =
@@ -67,9 +89,69 @@ export interface DeliveryOfferRecord {
   declinedAt: Date | null;
   declineReason: string | null;
   reassignedFromOfferId: string | null;
+  executionStep?: DeliveryExecutionStep;
+  arrivedAtPickupAt?: Date | null;
+  pickupConfirmedAt?: Date | null;
+  arrivedAtDropAt?: Date | null;
+  completedAt?: Date | null;
+  failedOtpAttempts?: number;
   version: number;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface DeliveryLocationEventRecord {
+  eventId: string;
+  assignmentId: string;
+  orderId: string;
+  partnerId: string;
+  coordinates: [number, number];
+  speedKmph: number | null;
+  headingDegrees: number | null;
+  recordedAt: Date;
+}
+
+export interface DeliveryIncidentRecord {
+  incidentId: string;
+  assignmentId: string;
+  orderId: string;
+  partnerId: string;
+  incidentType: DeliveryIncidentType;
+  description: string;
+  coordinates: [number, number] | null;
+  status: 'REPORTED' | 'UNDER_REVIEW' | 'RESOLVED';
+  reportedAt: Date;
+  resolvedAt: Date | null;
+  resolvedByUserId: string | null;
+}
+
+export function toDeliveryLocationEventDto(
+  record: DeliveryLocationEventRecord,
+): DeliveryLocationEventDto {
+  return {
+    eventId: record.eventId,
+    assignmentId: record.assignmentId,
+    orderId: record.orderId,
+    partnerId: record.partnerId,
+    coordinates: [record.coordinates[0], record.coordinates[1]],
+    speedKmph: record.speedKmph,
+    headingDegrees: record.headingDegrees,
+    recordedAt: record.recordedAt.toISOString(),
+  };
+}
+
+export function toDeliveryIncidentDto(record: DeliveryIncidentRecord): DeliveryIncidentDto {
+  return {
+    incidentId: record.incidentId,
+    assignmentId: record.assignmentId,
+    orderId: record.orderId,
+    partnerId: record.partnerId,
+    incidentType: record.incidentType,
+    description: record.description,
+    coordinates: record.coordinates ? [record.coordinates[0], record.coordinates[1]] : null,
+    status: record.status,
+    reportedAt: record.reportedAt.toISOString(),
+  };
 }
 
 export function toDeliveryJobOfferDto(record: DeliveryOfferRecord): DeliveryJobOfferDto {
@@ -100,6 +182,8 @@ export function toDeliveryJobOfferDto(record: DeliveryOfferRecord): DeliveryJobO
     declinedAt: record.declinedAt ? record.declinedAt.toISOString() : null,
     declineReason: record.declineReason,
     reassignedFromOfferId: record.reassignedFromOfferId,
+    executionStep: record.executionStep,
+    failedOtpAttempts: record.failedOtpAttempts,
   };
 }
 
