@@ -12,6 +12,18 @@ import type {
   PublicReviewDto,
   RestaurantSanitizedComplaintDto,
   SafetyComplaintSeverity,
+  SupportTicketPriority,
+  SupportTicketStatus,
+  SupportEscalationTier,
+  SupportTicketRequesterDto,
+  SupportResponseTemplateDto,
+  SupportTicketDto,
+  CreateSupportTicketRequest,
+  AssignSupportTicketRequest,
+  EscalateSupportTicketRequest,
+  AddTicketMessageRequest,
+  ResolveSupportTicketRequest,
+  SupportTicketListFilter,
 } from './support.types';
 import {
   ABUSE_FLAG_KEYWORDS,
@@ -24,8 +36,21 @@ import {
   resolveSafetyComplaintSchema,
   SEVERITY_DEADLINE_HOURS,
   STATUTORY_ALLEGATION_DISCLAIMER,
+  PRIORITY_SLA_MINUTES,
+  CATEGORY_DEFAULT_PRIORITY,
+  CANNED_RESPONSE_TEMPLATES,
+  createSupportTicketSchema,
+  assignSupportTicketSchema,
+  escalateSupportTicketSchema,
+  addTicketMessageSchema,
+  resolveSupportTicketSchema,
 } from './support.types';
-import type { FoodSafetyComplaintRecord, OrderReviewRecord, SupportStore } from './support.store';
+import type {
+  FoodSafetyComplaintRecord,
+  OrderReviewRecord,
+  SupportTicketRecord,
+  SupportStore,
+} from './support.store';
 
 export class SupportHttpError extends AppError {
   constructor(statusCode: number, message: string, _code?: string) {
@@ -416,8 +441,14 @@ export class SupportService {
 
     const saved = await this.supportStore.createComplaint(record);
 
-    // 6. Escalation triggers for critical/high allegations
+    // 6. Escalation triggers for critical/high allegations:
+    // Auto-create prioritized P1/P2 support ticket for Trust & Safety Investigation
     if (severity === 'CRITICAL' || severity === 'HIGH') {
+      try {
+        await this.createSafetySupportTicket(saved);
+      } catch {
+        // Non-blocking fallback
+      }
       if (this.onSafetyComplaintEscalated) {
         try {
           await this.onSafetyComplaintEscalated(saved);
@@ -680,5 +711,455 @@ export class SupportService {
       createdAt: c.createdAt,
       updatedAt: c.updatedAt,
     };
+  }
+
+  // ==========================================
+  // 3. SUPPORT OPERATIONS & ESCALATION (CP26)
+  // ==========================================
+
+  private isSupportOrAdmin(role: string): boolean {
+    return (
+      role === 'SUPPORT_AGENT' ||
+      role === 'OPS_ADMIN' ||
+      role === 'TRUST_ADMIN' ||
+      role === 'SUPER_ADMIN'
+    );
+  }
+
+  private isSlaBreached(targetUtc: string, status: SupportTicketStatus): boolean {
+    if (status === 'RESOLVED' || status === 'CLOSED') {
+      return false;
+    }
+    return this.clock.now() > new Date(targetUtc);
+  }
+
+  private toTicketDto(
+    t: SupportTicketRecord,
+    options?: { stripInternalNotes?: boolean },
+  ): SupportTicketDto {
+    const isBreached = this.isSlaBreached(t.slaTargetUtc, t.status);
+    const messages = options?.stripInternalNotes
+      ? t.messages.filter((m) => !m.isInternalNote)
+      : t.messages;
+    return {
+      ticketId: t.ticketId,
+      category: t.category,
+      priority: t.priority,
+      status: t.status,
+      subject: t.subject,
+      description: t.description,
+      requester: t.requester,
+      orderId: t.orderId,
+      outletId: t.outletId,
+      safetyComplaintId: t.safetyComplaintId,
+      isSafetyPriority: t.isSafetyPriority,
+      slaMinutes: t.slaMinutes,
+      slaTargetUtc: t.slaTargetUtc,
+      isSlaBreached: isBreached,
+      assignedTo: t.assignedTo,
+      escalationTier: t.escalationTier,
+      messages,
+      caseHistory: t.caseHistory,
+      resolution: t.resolution,
+      createdAt: t.createdAt,
+      updatedAt: t.updatedAt,
+    };
+  }
+
+  getResponseTemplates(): readonly SupportResponseTemplateDto[] {
+    return CANNED_RESPONSE_TEMPLATES;
+  }
+
+  async createSafetySupportTicket(
+    complaint: FoodSafetyComplaintRecord,
+  ): Promise<SupportTicketDto> {
+    const now = this.clock.now();
+    const priority: SupportTicketPriority =
+      complaint.severity === 'CRITICAL' ? 'P1_CRITICAL' : 'P2_HIGH';
+    const slaMinutes = PRIORITY_SLA_MINUTES[priority];
+    const slaTargetUtc = new Date(now.getTime() + slaMinutes * 60 * 1000).toISOString();
+    const ticketId = `tkt_safety_${crypto.randomUUID().slice(0, 8)}`;
+
+    const record: SupportTicketRecord = {
+      ticketId,
+      category: 'FOOD_SAFETY',
+      priority,
+      status: 'OPEN',
+      subject: `[URGENT SAFETY AUDIT] ${complaint.category.replace('_', ' ')}: Order ${complaint.orderId}`,
+      description: `Customer allegation recorded for independent trust & safety verification. Category: ${complaint.category}. Severity: ${complaint.severity}. Details: ${complaint.description}`,
+      requester: {
+        id: complaint.customerId,
+        role: 'CUSTOMER',
+        name: complaint.customerDisplayName,
+      },
+      orderId: complaint.orderId,
+      outletId: complaint.outletId,
+      safetyComplaintId: complaint.complaintId,
+      isSafetyPriority: true,
+      slaMinutes,
+      slaTargetUtc,
+      escalationTier: 'TRUST_SAFETY_ADMIN',
+      messages: [
+        {
+          messageId: crypto.randomUUID(),
+          senderId: complaint.customerId,
+          senderRole: 'CUSTOMER',
+          senderName: complaint.customerDisplayName,
+          content: `Food safety allegation filed: ${complaint.description}`,
+          isInternalNote: false,
+          createdAt: now.toISOString(),
+        },
+        {
+          messageId: crypto.randomUUID(),
+          senderId: 'SYSTEM',
+          senderRole: 'SYSTEM',
+          senderName: 'BHOJORA Safety Engine',
+          content: `Statutory Notice: ${STATUTORY_ALLEGATION_DISCLAIMER}. Escalated directly to Trust & Safety investigation tier.`,
+          isInternalNote: true,
+          createdAt: now.toISOString(),
+        },
+      ],
+      caseHistory: [
+        {
+          eventId: crypto.randomUUID(),
+          timestamp: now.toISOString(),
+          actorId: 'SYSTEM',
+          actorRole: 'SYSTEM',
+          actorName: 'BHOJORA Safety Engine',
+          action: 'CREATED',
+          note: `Automated P1/P2 safety support ticket opened for complaint ${complaint.complaintId}`,
+          newStatus: 'OPEN',
+          newTier: 'TRUST_SAFETY_ADMIN',
+        },
+      ],
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+    };
+
+    const saved = await this.supportStore.createTicket(record);
+    return this.toTicketDto(saved);
+  }
+
+  async createTicket(
+    requester: SupportTicketRequesterDto,
+    rawInput: unknown,
+  ): Promise<SupportTicketDto> {
+    const input: CreateSupportTicketRequest = createSupportTicketSchema.parse(rawInput);
+    const now = this.clock.now();
+    const priority = input.priority ?? CATEGORY_DEFAULT_PRIORITY[input.category];
+    const slaMinutes = PRIORITY_SLA_MINUTES[priority];
+    const slaTargetUtc = new Date(now.getTime() + slaMinutes * 60 * 1000).toISOString();
+    const isSafetyPriority =
+      input.category === 'FOOD_SAFETY' ||
+      Boolean(input.safetyComplaintId) ||
+      priority === 'P1_CRITICAL';
+    const escalationTier: SupportEscalationTier =
+      input.category === 'FOOD_SAFETY' ? 'TRUST_SAFETY_ADMIN' : 'TIER_1_AGENT';
+    const ticketId = `tkt_${crypto.randomUUID().slice(0, 8)}`;
+
+    const record: SupportTicketRecord = {
+      ticketId,
+      category: input.category,
+      priority,
+      status: 'OPEN',
+      subject: input.subject,
+      description: input.description,
+      requester,
+      orderId: input.orderId,
+      outletId: input.outletId,
+      safetyComplaintId: input.safetyComplaintId,
+      isSafetyPriority,
+      slaMinutes,
+      slaTargetUtc,
+      escalationTier,
+      messages: [
+        {
+          messageId: crypto.randomUUID(),
+          senderId: requester.id,
+          senderRole: requester.role,
+          senderName: requester.name,
+          content: input.description,
+          isInternalNote: false,
+          createdAt: now.toISOString(),
+        },
+      ],
+      caseHistory: [
+        {
+          eventId: crypto.randomUUID(),
+          timestamp: now.toISOString(),
+          actorId: requester.id,
+          actorRole: requester.role,
+          actorName: requester.name,
+          action: 'CREATED',
+          note: `Support ticket opened with priority ${priority}`,
+          newStatus: 'OPEN',
+          newTier: escalationTier,
+        },
+      ],
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+    };
+
+    const saved = await this.supportStore.createTicket(record);
+    return this.toTicketDto(saved);
+  }
+
+  async listTickets(
+    caller: { userId: string; role: string },
+    filter?: SupportTicketListFilter,
+  ): Promise<SupportTicketDto[]> {
+    const isAgent = this.isSupportOrAdmin(caller.role);
+    const queryFilter: SupportTicketListFilter = { ...filter };
+
+    if (!isAgent) {
+      queryFilter.requesterId = caller.userId;
+    } else if (caller.role === 'TRUST_ADMIN' && queryFilter.category === undefined) {
+      // Trust admins prioritize or view safety tickets by default if no category specified
+      queryFilter.isSafetyPriority = true;
+    }
+
+    const records = await this.supportStore.listTickets(queryFilter);
+    return records.map((t) => this.toTicketDto(t, { stripInternalNotes: !isAgent }));
+  }
+
+  async getTicketById(
+    caller: { userId: string; role: string },
+    ticketId: string,
+  ): Promise<SupportTicketDto> {
+    const ticket = await this.supportStore.getTicketById(ticketId);
+    if (!ticket) {
+      throw new SupportHttpError(404, `Ticket ${ticketId} not found`, 'TICKET_NOT_FOUND');
+    }
+    const isAgent = this.isSupportOrAdmin(caller.role);
+    if (!isAgent && ticket.requester.id !== caller.userId) {
+      throw new SupportHttpError(403, 'You do not have permission to view this ticket', 'FORBIDDEN');
+    }
+    return this.toTicketDto(ticket, { stripInternalNotes: !isAgent });
+  }
+
+  async assignTicket(
+    caller: { userId: string; role: string; name?: string },
+    ticketId: string,
+    rawInput: unknown,
+  ): Promise<SupportTicketDto> {
+    if (!this.isSupportOrAdmin(caller.role)) {
+      throw new SupportHttpError(
+        403,
+        'Only support agents or administrators can assign tickets',
+        'FORBIDDEN',
+      );
+    }
+    const input: AssignSupportTicketRequest = assignSupportTicketSchema.parse(rawInput);
+    const ticket = await this.supportStore.getTicketById(ticketId);
+    if (!ticket) {
+      throw new SupportHttpError(404, `Ticket ${ticketId} not found`, 'TICKET_NOT_FOUND');
+    }
+    const now = this.clock.now();
+    const newStatus = ticket.status === 'OPEN' ? 'ASSIGNED' : ticket.status;
+
+    const event = {
+      eventId: crypto.randomUUID(),
+      timestamp: now.toISOString(),
+      actorId: caller.userId,
+      actorRole: caller.role,
+      actorName: caller.name || 'Support Operator',
+      action: 'ASSIGNED' as const,
+      note: `Assigned to ${input.agentName} (${input.agentId})`,
+      previousStatus: ticket.status,
+      newStatus,
+    };
+
+    const updated = await this.supportStore.updateTicket(ticketId, {
+      assignedTo: {
+        agentId: input.agentId,
+        agentName: input.agentName,
+        assignedAt: now.toISOString(),
+      },
+      status: newStatus,
+      caseHistory: [...ticket.caseHistory, event],
+    });
+
+    if (!updated) {
+      throw new SupportHttpError(500, 'Failed to update ticket assignment');
+    }
+    return this.toTicketDto(updated);
+  }
+
+  async escalateTicket(
+    caller: { userId: string; role: string; name?: string },
+    ticketId: string,
+    rawInput: unknown,
+  ): Promise<SupportTicketDto> {
+    if (!this.isSupportOrAdmin(caller.role)) {
+      throw new SupportHttpError(
+        403,
+        'Only support agents or administrators can escalate tickets',
+        'FORBIDDEN',
+      );
+    }
+    const input: EscalateSupportTicketRequest = escalateSupportTicketSchema.parse(rawInput);
+    const ticket = await this.supportStore.getTicketById(ticketId);
+    if (!ticket) {
+      throw new SupportHttpError(404, `Ticket ${ticketId} not found`, 'TICKET_NOT_FOUND');
+    }
+    const now = this.clock.now();
+    const prevTier = ticket.escalationTier;
+    const prevStatus = ticket.status;
+
+    const event = {
+      eventId: crypto.randomUUID(),
+      timestamp: now.toISOString(),
+      actorId: caller.userId,
+      actorRole: caller.role,
+      actorName: caller.name || 'Support Operator',
+      action: 'ESCALATED' as const,
+      note: `Escalated from ${prevTier} to ${input.targetTier}: ${input.reason}`,
+      previousStatus: prevStatus,
+      newStatus: 'ESCALATED' as const,
+      previousTier: prevTier,
+      newTier: input.targetTier,
+    };
+
+    const updated = await this.supportStore.updateTicket(ticketId, {
+      escalationTier: input.targetTier,
+      status: 'ESCALATED',
+      caseHistory: [...ticket.caseHistory, event],
+    });
+
+    if (!updated) {
+      throw new SupportHttpError(500, 'Failed to escalate ticket');
+    }
+    return this.toTicketDto(updated);
+  }
+
+  async addTicketMessage(
+    caller: { userId: string; role: string; name?: string },
+    ticketId: string,
+    rawInput: unknown,
+  ): Promise<SupportTicketDto> {
+    const input: AddTicketMessageRequest = addTicketMessageSchema.parse(rawInput);
+    const ticket = await this.supportStore.getTicketById(ticketId);
+    if (!ticket) {
+      throw new SupportHttpError(404, `Ticket ${ticketId} not found`, 'TICKET_NOT_FOUND');
+    }
+
+    const isAgent = this.isSupportOrAdmin(caller.role);
+    if (!isAgent && ticket.requester.id !== caller.userId) {
+      throw new SupportHttpError(
+        403,
+        'You can only message on your own support tickets',
+        'FORBIDDEN',
+      );
+    }
+
+    const now = this.clock.now();
+    const isInternal = isAgent && Boolean(input.isInternalNote);
+    let messageContent = input.content;
+
+    if (input.templateId) {
+      const template = CANNED_RESPONSE_TEMPLATES.find((t) => t.templateId === input.templateId);
+      if (template && !messageContent.includes(template.content)) {
+        messageContent = `${messageContent ? `${messageContent}\n\n` : ''}${template.content}`;
+      }
+    }
+
+    const newMessage = {
+      messageId: crypto.randomUUID(),
+      senderId: caller.userId,
+      senderRole: caller.role,
+      senderName: caller.name || (isAgent ? 'Support Specialist' : 'Customer'),
+      content: messageContent,
+      isInternalNote: isInternal,
+      createdAt: now.toISOString(),
+    };
+
+    const eventAction = isInternal
+      ? ('INTERNAL_NOTE_ADDED' as const)
+      : input.templateId
+        ? ('CANNED_RESPONSE_APPLIED' as const)
+        : ('MESSAGE_SENT' as const);
+
+    const event = {
+      eventId: crypto.randomUUID(),
+      timestamp: now.toISOString(),
+      actorId: caller.userId,
+      actorRole: caller.role,
+      actorName: caller.name || (isAgent ? 'Support Specialist' : 'Customer'),
+      action: eventAction,
+      note: isInternal
+        ? 'Internal staff note added'
+        : input.templateId
+          ? `Canned template applied: ${input.templateId}`
+          : 'Customer-facing message added',
+    };
+
+    let newStatus = ticket.status;
+    if (!isAgent && ticket.status === 'WAITING_ON_CUSTOMER') {
+      newStatus = 'IN_PROGRESS';
+    }
+
+    const updated = await this.supportStore.updateTicket(ticketId, {
+      status: newStatus,
+      messages: [...ticket.messages, newMessage],
+      caseHistory: [...ticket.caseHistory, event],
+    });
+
+    if (!updated) {
+      throw new SupportHttpError(500, 'Failed to add message to ticket');
+    }
+    return this.toTicketDto(updated, { stripInternalNotes: !isAgent });
+  }
+
+  async resolveTicket(
+    caller: { userId: string; role: string; name?: string },
+    ticketId: string,
+    rawInput: unknown,
+  ): Promise<SupportTicketDto> {
+    const ticket = await this.supportStore.getTicketById(ticketId);
+    if (!ticket) {
+      throw new SupportHttpError(404, `Ticket ${ticketId} not found`, 'TICKET_NOT_FOUND');
+    }
+
+    const isAgent = this.isSupportOrAdmin(caller.role);
+    if (!isAgent) {
+      throw new SupportHttpError(
+        403,
+        'Only support agents or administrators can resolve tickets',
+        'FORBIDDEN',
+      );
+    }
+
+    const input: ResolveSupportTicketRequest = resolveSupportTicketSchema.parse(rawInput);
+    const now = this.clock.now();
+
+    const resolution = {
+      resolvedByUserId: caller.userId,
+      resolvedByName: caller.name || 'Support Specialist',
+      resolutionNotes: input.resolutionNotes,
+      resolvedAt: now.toISOString(),
+    };
+
+    const event = {
+      eventId: crypto.randomUUID(),
+      timestamp: now.toISOString(),
+      actorId: caller.userId,
+      actorRole: caller.role,
+      actorName: caller.name || 'Support Specialist',
+      action: 'RESOLVED' as const,
+      note: `Ticket resolved: ${input.resolutionNotes}`,
+      previousStatus: ticket.status,
+      newStatus: 'RESOLVED' as const,
+    };
+
+    const updated = await this.supportStore.updateTicket(ticketId, {
+      status: 'RESOLVED',
+      resolution,
+      caseHistory: [...ticket.caseHistory, event],
+    });
+
+    if (!updated) {
+      throw new SupportHttpError(500, 'Failed to resolve ticket');
+    }
+    return this.toTicketDto(updated);
   }
 }

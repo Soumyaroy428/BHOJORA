@@ -10,6 +10,15 @@ import type {
   SafetyComplaintEvidenceDto,
   SafetyComplaintSeverity,
   SafetyComplaintStatus,
+  SupportTicketPriority,
+  SupportTicketStatus,
+  SupportTicketCategory,
+  SupportEscalationTier,
+  SupportTicketRequesterDto,
+  SupportTicketMessageDto,
+  SupportTicketCaseHistoryEventDto,
+  SupportTicketResolutionDto,
+  SupportTicketListFilter,
 } from './support.types';
 
 export interface OrderReviewRecord {
@@ -59,6 +68,33 @@ export interface FoodSafetyComplaintRecord {
   updatedAt: string;
 }
 
+export interface SupportTicketRecord {
+  ticketId: string;
+  category: SupportTicketCategory;
+  priority: SupportTicketPriority;
+  status: SupportTicketStatus;
+  subject: string;
+  description: string;
+  requester: SupportTicketRequesterDto;
+  orderId?: string;
+  outletId?: string;
+  safetyComplaintId?: string;
+  isSafetyPriority: boolean;
+  slaMinutes: number;
+  slaTargetUtc: string;
+  assignedTo?: {
+    agentId: string;
+    agentName: string;
+    assignedAt: string;
+  } | null;
+  escalationTier: SupportEscalationTier;
+  messages: SupportTicketMessageDto[];
+  caseHistory: SupportTicketCaseHistoryEventDto[];
+  resolution?: SupportTicketResolutionDto;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface SupportStore {
   createReview(record: OrderReviewRecord): Promise<OrderReviewRecord>;
   getReviewById(reviewId: string): Promise<OrderReviewRecord | null>;
@@ -82,11 +118,20 @@ export interface SupportStore {
     complaintId: string,
     updates: Partial<FoodSafetyComplaintRecord>,
   ): Promise<FoodSafetyComplaintRecord | null>;
+
+  createTicket(record: SupportTicketRecord): Promise<SupportTicketRecord>;
+  getTicketById(ticketId: string): Promise<SupportTicketRecord | null>;
+  listTickets(filter?: SupportTicketListFilter): Promise<SupportTicketRecord[]>;
+  updateTicket(
+    ticketId: string,
+    updates: Partial<SupportTicketRecord>,
+  ): Promise<SupportTicketRecord | null>;
 }
 
 export class InMemorySupportStore implements SupportStore {
   private reviews = new Map<string, OrderReviewRecord>();
   private complaints = new Map<string, FoodSafetyComplaintRecord>();
+  private tickets = new Map<string, SupportTicketRecord>();
 
   async createReview(record: OrderReviewRecord): Promise<OrderReviewRecord> {
     this.reviews.set(record.reviewId, { ...record });
@@ -196,6 +241,93 @@ export class InMemorySupportStore implements SupportStore {
     this.complaints.set(complaintId, updated);
     return { ...updated };
   }
+
+  async createTicket(record: SupportTicketRecord): Promise<SupportTicketRecord> {
+    this.tickets.set(record.ticketId, {
+      ...record,
+      messages: [...record.messages],
+      caseHistory: [...record.caseHistory],
+    });
+    return { ...record };
+  }
+
+  async getTicketById(ticketId: string): Promise<SupportTicketRecord | null> {
+    const found = this.tickets.get(ticketId);
+    if (!found) return null;
+    return {
+      ...found,
+      messages: [...found.messages],
+      caseHistory: [...found.caseHistory],
+    };
+  }
+
+  async listTickets(filter?: SupportTicketListFilter): Promise<SupportTicketRecord[]> {
+    let list = Array.from(this.tickets.values());
+    if (filter?.status) {
+      list = list.filter((t) => t.status === filter.status);
+    }
+    if (filter?.priority) {
+      list = list.filter((t) => t.priority === filter.priority);
+    }
+    if (filter?.category) {
+      list = list.filter((t) => t.category === filter.category);
+    }
+    if (filter?.isSafetyPriority !== undefined) {
+      list = list.filter((t) => t.isSafetyPriority === filter.isSafetyPriority);
+    }
+    if (filter?.assignedToAgentId) {
+      list = list.filter((t) => t.assignedTo?.agentId === filter.assignedToAgentId);
+    }
+    if (filter?.requesterId) {
+      list = list.filter((t) => t.requester.id === filter.requesterId);
+    }
+    if (filter?.outletId) {
+      list = list.filter((t) => t.outletId === filter.outletId);
+    }
+
+    const priorityWeight: Record<SupportTicketPriority, number> = {
+      P1_CRITICAL: 4,
+      P2_HIGH: 3,
+      P3_MEDIUM: 2,
+      P4_LOW: 1,
+    };
+
+    return list
+      .sort((a, b) => {
+        if (a.isSafetyPriority !== b.isSafetyPriority) {
+          return a.isSafetyPriority ? -1 : 1;
+        }
+        const pDiff = (priorityWeight[b.priority] || 0) - (priorityWeight[a.priority] || 0);
+        if (pDiff !== 0) return pDiff;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      })
+      .map((t) => ({
+        ...t,
+        messages: [...t.messages],
+        caseHistory: [...t.caseHistory],
+      }));
+  }
+
+  async updateTicket(
+    ticketId: string,
+    updates: Partial<SupportTicketRecord>,
+  ): Promise<SupportTicketRecord | null> {
+    const existing = this.tickets.get(ticketId);
+    if (!existing) return null;
+    const updated: SupportTicketRecord = {
+      ...existing,
+      ...updates,
+      messages: updates.messages ? [...updates.messages] : [...existing.messages],
+      caseHistory: updates.caseHistory ? [...updates.caseHistory] : [...existing.caseHistory],
+      updatedAt: new Date().toISOString(),
+    };
+    this.tickets.set(ticketId, updated);
+    return {
+      ...updated,
+      messages: [...updated.messages],
+      caseHistory: [...updated.caseHistory],
+    };
+  }
 }
 
 // Mongoose Schemas & Implementation
@@ -291,9 +423,80 @@ const FoodSafetyComplaintSchema = new Schema<FoodSafetyComplaintRecord>(
 
 FoodSafetyComplaintSchema.index({ outletId: 1, status: 1, createdAt: -1 });
 
+const SupportTicketSchema = new Schema<SupportTicketRecord>(
+  {
+    ticketId: { type: String, required: true, unique: true, index: true },
+    category: { type: String, required: true, index: true },
+    priority: { type: String, required: true, index: true },
+    status: { type: String, required: true, index: true },
+    subject: { type: String, required: true, maxlength: 200 },
+    description: { type: String, required: true, maxlength: 2000 },
+    requester: {
+      id: { type: String, required: true, index: true },
+      role: { type: String, required: true },
+      name: { type: String, required: true },
+      phoneMasked: { type: String },
+      emailMasked: { type: String },
+    },
+    orderId: { type: String, index: true },
+    outletId: { type: String, index: true },
+    safetyComplaintId: { type: String, index: true },
+    isSafetyPriority: { type: Boolean, required: true, default: false, index: true },
+    slaMinutes: { type: Number, required: true },
+    slaTargetUtc: { type: String, required: true, index: true },
+    assignedTo: {
+      agentId: { type: String },
+      agentName: { type: String },
+      assignedAt: { type: String },
+    },
+    escalationTier: { type: String, required: true, index: true },
+    messages: [
+      {
+        messageId: { type: String, required: true },
+        senderId: { type: String, required: true },
+        senderRole: { type: String, required: true },
+        senderName: { type: String, required: true },
+        content: { type: String, required: true },
+        isInternalNote: { type: Boolean, default: false },
+        createdAt: { type: String, required: true },
+      },
+    ],
+    caseHistory: [
+      {
+        eventId: { type: String, required: true },
+        timestamp: { type: String, required: true },
+        actorId: { type: String, required: true },
+        actorRole: { type: String, required: true },
+        actorName: { type: String, required: true },
+        action: { type: String, required: true },
+        note: { type: String },
+        previousStatus: { type: String },
+        newStatus: { type: String },
+        previousTier: { type: String },
+        newTier: { type: String },
+      },
+    ],
+    resolution: {
+      resolvedByUserId: { type: String },
+      resolvedByName: { type: String },
+      resolutionNotes: { type: String },
+      resolvedAt: { type: String },
+    },
+    createdAt: { type: String, required: true },
+    updatedAt: { type: String, required: true },
+  },
+  { collection: 'support_tickets', timestamps: false },
+);
+
+SupportTicketSchema.index({ status: 1, priority: 1, createdAt: -1 });
+SupportTicketSchema.index({ isSafetyPriority: 1, createdAt: -1 });
+SupportTicketSchema.index({ 'requester.id': 1, createdAt: -1 });
+SupportTicketSchema.index({ outletId: 1, createdAt: -1 });
+
 export class MongooseSupportStore implements SupportStore {
   private reviewModel: Model<OrderReviewRecord>;
   private complaintModel: Model<FoodSafetyComplaintRecord>;
+  private ticketModel: Model<SupportTicketRecord>;
 
   constructor(connection: Connection) {
     this.reviewModel =
@@ -302,6 +505,9 @@ export class MongooseSupportStore implements SupportStore {
     this.complaintModel =
       (connection.models['FoodSafetyComplaint'] as Model<FoodSafetyComplaintRecord> | undefined) ??
       connection.model<FoodSafetyComplaintRecord>('FoodSafetyComplaint', FoodSafetyComplaintSchema);
+    this.ticketModel =
+      (connection.models['SupportTicket'] as Model<SupportTicketRecord> | undefined) ??
+      connection.model<SupportTicketRecord>('SupportTicket', SupportTicketSchema);
   }
 
   async createReview(record: OrderReviewRecord): Promise<OrderReviewRecord> {
@@ -414,6 +620,49 @@ export class MongooseSupportStore implements SupportStore {
         { new: true },
       )
       .lean<FoodSafetyComplaintRecord>()
+      .exec();
+    return doc ?? null;
+  }
+
+  async createTicket(record: SupportTicketRecord): Promise<SupportTicketRecord> {
+    const doc = await this.ticketModel.create(record);
+    return doc.toObject<SupportTicketRecord>();
+  }
+
+  async getTicketById(ticketId: string): Promise<SupportTicketRecord | null> {
+    const doc = await this.ticketModel.findOne({ ticketId }).lean<SupportTicketRecord>().exec();
+    return doc ?? null;
+  }
+
+  async listTickets(filter?: SupportTicketListFilter): Promise<SupportTicketRecord[]> {
+    const query: Record<string, unknown> = {};
+    if (filter?.status) query['status'] = filter.status;
+    if (filter?.priority) query['priority'] = filter.priority;
+    if (filter?.category) query['category'] = filter.category;
+    if (filter?.isSafetyPriority !== undefined) query['isSafetyPriority'] = filter.isSafetyPriority;
+    if (filter?.assignedToAgentId) query['assignedTo.agentId'] = filter.assignedToAgentId;
+    if (filter?.requesterId) query['requester.id'] = filter.requesterId;
+    if (filter?.outletId) query['outletId'] = filter.outletId;
+
+    const docs = await this.ticketModel
+      .find(query)
+      .sort({ isSafetyPriority: -1, createdAt: -1 })
+      .lean<SupportTicketRecord[]>()
+      .exec();
+    return docs;
+  }
+
+  async updateTicket(
+    ticketId: string,
+    updates: Partial<SupportTicketRecord>,
+  ): Promise<SupportTicketRecord | null> {
+    const doc = await this.ticketModel
+      .findOneAndUpdate(
+        { ticketId },
+        { ...updates, updatedAt: new Date().toISOString() },
+        { new: true },
+      )
+      .lean<SupportTicketRecord>()
       .exec();
     return doc ?? null;
   }

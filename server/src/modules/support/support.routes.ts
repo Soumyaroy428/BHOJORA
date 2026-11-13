@@ -4,6 +4,11 @@ import { sendSuccess } from '../../contracts/api';
 import { createRequireAuthMiddleware, getAuthContext } from '../../middleware/auth';
 import type { IdentityService } from '../identity/identity.service';
 import type { SupportService } from './support.service';
+import type {
+  SupportTicketCategory,
+  SupportTicketPriority,
+  SupportTicketStatus,
+} from './support.types';
 
 function wrapAsync(
   handler: (req: Request, res: Response) => Promise<void>,
@@ -35,6 +40,19 @@ export function createSupportRouter(params: CreateSupportRouterParams): Router {
       return raw['customerDisplayName'].trim();
     }
     return 'Verified Diner';
+  };
+
+  const getPrimaryRole = (roles: string[]): string => {
+    if (roles.includes('SUPER_ADMIN')) return 'SUPER_ADMIN';
+    if (roles.includes('OPS_ADMIN')) return 'OPS_ADMIN';
+    if (roles.includes('TRUST_ADMIN')) return 'TRUST_ADMIN';
+    if (roles.includes('SUPPORT_AGENT')) return 'SUPPORT_AGENT';
+    if (roles.includes('INSPECTION_REVIEWER')) return 'INSPECTION_REVIEWER';
+    if (roles.includes('INSPECTOR')) return 'INSPECTOR';
+    if (roles.includes('RESTAURANT_OWNER')) return 'RESTAURANT_OWNER';
+    if (roles.includes('RESTAURANT_MANAGER')) return 'RESTAURANT_MANAGER';
+    if (roles.includes('DELIVERY_PARTNER')) return 'DELIVERY_PARTNER';
+    return roles[0] || 'CUSTOMER';
   };
 
   // ==========================================
@@ -184,6 +202,164 @@ export function createSupportRouter(params: CreateSupportRouterParams): Router {
         disclaimer:
           'Customer allegations are unconfirmed until independent investigation is completed. Certified safety scores remain based on independent audit inspections.',
       });
+    }),
+  );
+
+  // ==========================================
+  // SUPPORT TICKETING & OPERATIONS (CP26)
+  // ==========================================
+
+  // 11. Canned response templates
+  router.get(
+    '/support/tickets/templates',
+    requireAuth,
+    wrapAsync(async (_req, res) => {
+      const templates = supportService.getResponseTemplates();
+      sendSuccess(res, 200, { templates });
+    }),
+  );
+
+  // 12. Create support ticket
+  router.post(
+    '/support/tickets',
+    requireAuth,
+    wrapAsync(async (req, res) => {
+      const auth = getAuthContext(res);
+      const displayName = extractDisplayName(req);
+      const role = getPrimaryRole(auth.roles);
+      const requester = {
+        id: auth.userId,
+        role,
+        name: displayName,
+      };
+      const ticket = await supportService.createTicket(requester, req.body);
+      sendSuccess(res, 201, { ticket });
+    }),
+  );
+
+  // 13. List support tickets (with filters)
+  router.get(
+    '/support/tickets',
+    requireAuth,
+    wrapAsync(async (req, res) => {
+      const auth = getAuthContext(res);
+      const role = getPrimaryRole(auth.roles);
+      const filter = {
+        status: req.query['status'] as SupportTicketStatus | undefined,
+        priority: req.query['priority'] as SupportTicketPriority | undefined,
+        category: req.query['category'] as SupportTicketCategory | undefined,
+        isSafetyPriority:
+          req.query['isSafetyPriority'] !== undefined
+            ? req.query['isSafetyPriority'] === 'true'
+            : undefined,
+        assignedToAgentId: req.query['assignedToAgentId'] as string | undefined,
+        requesterId: req.query['requesterId'] as string | undefined,
+        outletId: req.query['outletId'] as string | undefined,
+      };
+      const tickets = await supportService.listTickets(
+        { userId: auth.userId, role },
+        filter,
+      );
+      sendSuccess(res, 200, { tickets, totalCount: tickets.length });
+    }),
+  );
+
+  // 14. Get support ticket by ID
+  router.get(
+    '/support/tickets/:ticketId',
+    requireAuth,
+    wrapAsync(async (req, res) => {
+      const auth = getAuthContext(res);
+      const role = getPrimaryRole(auth.roles);
+      const ticket = await supportService.getTicketById(
+        { userId: auth.userId, role },
+        req.params['ticketId'] as string,
+      );
+      sendSuccess(res, 200, { ticket });
+    }),
+  );
+
+  // 15. Assign support ticket
+  router.post(
+    '/support/tickets/:ticketId/assign',
+    requireAuth,
+    wrapAsync(async (req, res) => {
+      const auth = getAuthContext(res);
+      const role = getPrimaryRole(auth.roles);
+      const rawBody = req.body as Record<string, unknown> | undefined;
+      const callerName =
+        typeof rawBody?.['actorName'] === 'string'
+          ? rawBody['actorName']
+          : 'Support Operator';
+      const ticket = await supportService.assignTicket(
+        { userId: auth.userId, role, name: callerName },
+        req.params['ticketId'] as string,
+        req.body,
+      );
+      sendSuccess(res, 200, { ticket });
+    }),
+  );
+
+  // 16. Escalate support ticket
+  router.post(
+    '/support/tickets/:ticketId/escalate',
+    requireAuth,
+    wrapAsync(async (req, res) => {
+      const auth = getAuthContext(res);
+      const role = getPrimaryRole(auth.roles);
+      const rawBody = req.body as Record<string, unknown> | undefined;
+      const callerName =
+        typeof rawBody?.['actorName'] === 'string'
+          ? rawBody['actorName']
+          : 'Support Operator';
+      const ticket = await supportService.escalateTicket(
+        { userId: auth.userId, role, name: callerName },
+        req.params['ticketId'] as string,
+        req.body,
+      );
+      sendSuccess(res, 200, { ticket });
+    }),
+  );
+
+  // 17. Add ticket message or internal note
+  router.post(
+    '/support/tickets/:ticketId/messages',
+    requireAuth,
+    wrapAsync(async (req, res) => {
+      const auth = getAuthContext(res);
+      const role = getPrimaryRole(auth.roles);
+      const rawBody = req.body as Record<string, unknown> | undefined;
+      const callerName =
+        typeof rawBody?.['senderName'] === 'string'
+          ? rawBody['senderName']
+          : extractDisplayName(req);
+      const ticket = await supportService.addTicketMessage(
+        { userId: auth.userId, role, name: callerName },
+        req.params['ticketId'] as string,
+        req.body,
+      );
+      sendSuccess(res, 201, { ticket });
+    }),
+  );
+
+  // 18. Resolve support ticket
+  router.post(
+    '/support/tickets/:ticketId/resolve',
+    requireAuth,
+    wrapAsync(async (req, res) => {
+      const auth = getAuthContext(res);
+      const role = getPrimaryRole(auth.roles);
+      const rawBody = req.body as Record<string, unknown> | undefined;
+      const callerName =
+        typeof rawBody?.['resolvedByName'] === 'string'
+          ? rawBody['resolvedByName']
+          : 'Support Specialist';
+      const ticket = await supportService.resolveTicket(
+        { userId: auth.userId, role, name: callerName },
+        req.params['ticketId'] as string,
+        req.body,
+      );
+      sendSuccess(res, 200, { ticket });
     }),
   );
 
