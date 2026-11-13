@@ -158,6 +158,24 @@ export function TrustProfileDialog({ kitchen, onClose }: TrustProfileDialogProps
         </div>
       </div>
 
+      {liveProfile?.hasActiveSafetyInvestigation && (
+        <div
+          className="disclaimer-box"
+          style={{
+            marginTop: '12px',
+            marginBottom: '14px',
+            background: 'var(--amber-light, #FFFBEB)',
+            borderColor: 'var(--amber-main, #F59E0B)',
+            color: 'var(--amber-dark, #92400E)',
+          }}
+        >
+          <strong>⚠️ Active Safety Investigation in Progress:</strong> An allegation has been
+          received and is undergoing independent Trust &amp; Safety review. In accordance with
+          platform policy, allegations are distinct from confirmed findings and do not alter
+          certified scores until verified.
+        </div>
+      )}
+
       {liveProfile?.categoryBreakdown && liveProfile.categoryBreakdown.length > 0 ? (
         <>
           <h3 style={{ fontSize: '14px', marginBottom: '12px' }}>

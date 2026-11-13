@@ -26,6 +26,7 @@ export interface SafetyServiceOptions {
   inspectionStore: InspectionStore;
   signingSecret: string;
   clock?: { now(): Date };
+  hasActiveSafetyInvestigationFn?: (outletId: string) => Promise<boolean>;
 }
 
 function generateTrustQrSvgDataUri(qrText: string, status: string, score: number | null): string {
@@ -57,12 +58,14 @@ export class SafetyService {
   private readonly inspectionStore: InspectionStore;
   private readonly signingSecret: string;
   private readonly clock?: { now(): Date };
+  private readonly hasActiveSafetyInvestigationFn?: (outletId: string) => Promise<boolean>;
 
   constructor(options: SafetyServiceOptions) {
     this.restaurantStore = options.restaurantStore;
     this.inspectionStore = options.inspectionStore;
     this.signingSecret = options.signingSecret;
     this.clock = options.clock;
+    this.hasActiveSafetyInvestigationFn = options.hasActiveSafetyInvestigationFn;
   }
 
   private getNow(): Date {
@@ -269,6 +272,10 @@ export class SafetyService {
       validUntil ? new Date(validUntil) : null,
     );
 
+    const hasActiveSafetyInvestigation = this.hasActiveSafetyInvestigationFn
+      ? await this.hasActiveSafetyInvestigationFn(outletId)
+      : false;
+
     return {
       outletId,
       restaurantId: outlet?.restaurantId || latestApproved?.restaurantId || 'rest_unknown',
@@ -292,7 +299,7 @@ export class SafetyService {
       daysRemaining,
       categoryBreakdown,
       publicEvidence,
-      hasActiveSafetyInvestigation: false,
+      hasActiveSafetyInvestigation,
       statutoryDisclaimer: STATUTORY_DISCLAIMER_TEXT,
       qrCode: qr.qrCode,
       verificationUrl: qr.verificationUrl,

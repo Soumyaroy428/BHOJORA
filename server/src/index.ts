@@ -53,6 +53,8 @@ import {
   InMemoryInspectionStore,
   MongooseInspectionStore,
 } from './modules/inspection/inspection.store';
+import { SupportService } from './modules/support/support.service';
+import { InMemorySupportStore, MongooseSupportStore } from './modules/support/support.store';
 import {
   DELIVERY_DOCUMENT_TYPES_RUNTIME,
   DELIVERY_PARTNER_STATUSES_RUNTIME,
@@ -123,6 +125,9 @@ export {
   InspectionService,
   MongooseInspectionStore,
   InMemoryInspectionStore,
+  SupportService,
+  MongooseSupportStore,
+  InMemorySupportStore,
   DELIVERY_DOCUMENT_TYPES_RUNTIME,
   DELIVERY_PARTNER_STATUSES_RUNTIME,
   DELIVERY_SHIFT_STATUSES_RUNTIME,

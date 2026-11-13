@@ -73,6 +73,10 @@ import {
 import type { InspectionStore } from './modules/inspection/inspection.store';
 import { createSafetyRouter } from './modules/safety/safety.routes';
 import { SafetyService } from './modules/safety/safety.service';
+import { createSupportRouter } from './modules/support/support.routes';
+import { SupportService } from './modules/support/support.service';
+import { InMemorySupportStore, MongooseSupportStore } from './modules/support/support.store';
+import type { SupportStore } from './modules/support/support.store';
 
 export interface CreateAppOptions {
   config: AppConfig;
@@ -109,6 +113,8 @@ export interface CreateAppOptions {
   inspectionStore?: InspectionStore;
   inspectionService?: InspectionService;
   safetyService?: SafetyService;
+  supportStore?: SupportStore;
+  supportService?: SupportService;
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -386,12 +392,30 @@ export function createApp(options: CreateAppOptions): Express {
     inspectionService,
     config,
   });
+  const supportStore =
+    options.supportStore ??
+    (isInMemoryMode ? new InMemorySupportStore() : new MongooseSupportStore(mongoose.connection));
+  const supportService =
+    options.supportService ??
+    new SupportService({
+      supportStore,
+      orderStore,
+      restaurantStore,
+      clock: options.clock ?? outletService.getClock(),
+    });
+  const supportRouter = createSupportRouter({
+    identityService,
+    supportService,
+    config,
+  });
   const safetyService =
     options.safetyService ??
     new SafetyService({
       restaurantStore,
       inspectionStore,
       signingSecret: config.jwtAccessSecret,
+      hasActiveSafetyInvestigationFn: (outletId: string) =>
+        supportService.hasActiveSafetyInvestigation(outletId),
       ...(options.clock ? { clock: options.clock } : {}),
     });
   const safetyRouter = createSafetyRouter({ safetyService });
@@ -412,6 +436,7 @@ export function createApp(options: CreateAppOptions): Express {
   app.use('/api/v1', inspectorRouter);
   app.use('/api/v1', inspectionRouter);
   app.use('/api/v1', safetyRouter);
+  app.use('/api/v1', supportRouter);
   app.use(healthRouter);
 
   app.use(notFoundHandler);
