@@ -425,3 +425,25 @@ Checkpoint 18 implements the delivery partner domain, driver profile creation, v
 ### Consequences
 - **Positive:** Guarantees strict DPDP compliance, zero plaintext identity/bank secret storage, unbreakable self-review boundaries, and server-enforced shift availability locking.
 - **Negative:** Full automated biometric and OCR document verification is deferred to enterprise KYC integration; current verification relies on ops visual review and HMAC digests.
+
+
+## ADR-023: Delivery Assignment, Fairness Rules, Concurrency-Safe Acceptance & Automated Reassignment
+
+### Status: ACCEPTED (Locked Baseline — Checkpoint 19)
+
+### Context
+Checkpoint 19 implements the automated dispatch service, eligible partner selection, guaranteed rider payout calculation, job inbox, 45-second offer expiration countdown, concurrency-safe acceptance, and automated reassignment. In a high-concurrency food delivery platform, multiple delivery partners or simultaneous race conditions must never result in duplicate active assignments or double-booking. Furthermore, dispatches must be fair, proximity-aware, and avoid repeatedly offering the same order to riders who have declined.
+
+### Decision
+1. **Dedicated Collection & State Schema (`delivery_assignments`):** Own the `delivery_assignments` collection (`BhojoraDeliveryAssignment` model) in `server/src/modules/delivery/` with schema fields `offerId`, `orderId`, `outletId`, `offeredToPartnerId`, `partnerId`, `status` (`OFFERED`, `ACCEPTED`, `DECLINED`, `TIMEOUT`, `CANCELLED`, `COMPLETED`), `pickupLocation`, `dropLocation`, `estimatedDistanceKm`, `estimatedDurationMinutes`, `guaranteedPayoutPaise`, `offeredAt`, `expiresAt`, `acceptedAt`, `declinedAt`, `declineReason`, `reassignedFromOfferId`, and optimistic locking `version`.
+2. **Fairness & Proximity Candidate Selection (`findEligiblePartners`):** Candidate pool strictly selects delivery partners with `status === 'APPROVED'` and `shiftStatus === 'ONLINE'` (excluding `OFFLINE` and `ON_DELIVERY` riders). To enforce marketplace fairness, eligible partners are sorted by total deliveries ascending (favoring idle partners who have received fewer trips) and proximity to outlet coordinates. Excludes all partners who have already received, declined, or timed out on the current order.
+3. **Transparent Guaranteed Payout Calculation (`calculateRiderPayoutPaise`):** Reroutes payout calculation server-side with a base floor of ₹35.00 (3500 paise) plus ₹15.00/km (1500 paise/km) and a minimum 85% share of delivery fees paid by the customer, ensuring complete earning transparency before job acceptance.
+4. **Concurrency-Safe Atomic Acceptance (`acceptOfferAtomic`):** Simultaneous accept requests are guarded via atomic compare-and-swap checks on `offerId`, `offeredToPartnerId`, `status === 'OFFERED'`, `expiresAt >= now`, and matching document `version`. Exactly one request wins; any concurrent conflicting accept attempt fails with `409 CONFLICT`.
+5. **No Duplicate Active Assignments:** A delivery partner cannot accept a new delivery job while their `shiftStatus` is `ON_DELIVERY` or while they have an uncompleted active assignment (`409 CONFLICT`). Upon acceptance, partner `shiftStatus` immediately transitions to `ON_DELIVERY`, and an immutable `delivery.offer_accepted` audit entry is appended. Orders with an existing active assignment reject duplicate dispatch triggers with `409 CONFLICT`.
+6. **Automated Cascading Reassignment:** Declining an offer (`POST /delivery/jobs/:offerId/decline`) or letting an offer expire past its 45-second TTL immediately transitions the offer to `DECLINED` or `TIMEOUT` and triggers cascading dispatch to the next eligible online candidate with `reassignedFromOfferId` populated.
+7. **Mobile Job Inbox UI (`client/delivery-mobile`):** Delivers an accessible, thumb-friendly delivery offer card with an animated 45-second countdown timer badge, clear restaurant pickup & customer drop landmarks, distance/duration metrics, guaranteed earnings in ₹, and instant Accept/Decline action buttons.
+
+### Consequences
+- **Positive:** Unbreakable concurrency safety, zero duplicate rider assignments, fair dispatch rotation, guaranteed payout transparency, and instant automated reassignment.
+- **Negative:** Real-time push updates currently poll via HTTP inbox API until WebSocket push streams are wired up in Checkpoint 20.
+

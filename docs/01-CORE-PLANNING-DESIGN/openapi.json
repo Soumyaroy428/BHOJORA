@@ -1182,6 +1182,43 @@
         "parameters": [{ "name": "partnerId", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "Application review decision recorded" }, "403": { "description": "SELF_REVIEW_PROHIBITED or MFA required" } }
       }
+    },
+    "/delivery/jobs/inbox": {
+      "get": {
+        "summary": "Get authenticated delivery partner active dispatch offers and current assignment",
+        "tags": ["Delivery Dispatch"],
+        "responses": { "200": { "description": "Active offers and current assignment returned" } }
+      }
+    },
+    "/delivery/jobs/{offerId}/accept": {
+      "post": {
+        "summary": "Concurrency-safe delivery job offer acceptance by offered partner",
+        "tags": ["Delivery Dispatch"],
+        "parameters": [{ "name": "offerId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Job offer accepted and partner shifted to ON_DELIVERY" }, "409": { "description": "Offer expired or concurrent acceptance conflict" } }
+      }
+    },
+    "/delivery/jobs/{offerId}/decline": {
+      "post": {
+        "summary": "Decline delivery offer with reason and trigger immediate reassignment",
+        "tags": ["Delivery Dispatch"],
+        "parameters": [{ "name": "offerId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Offer marked DECLINED and reassigned" }, "409": { "description": "Offer cannot be declined" } }
+      }
+    },
+    "/delivery/assignments/active": {
+      "get": {
+        "summary": "Get current active delivery assignment for authenticated partner",
+        "tags": ["Delivery Dispatch"],
+        "responses": { "200": { "description": "Current active assignment returned" } }
+      }
+    },
+    "/delivery/dispatch/trigger": {
+      "post": {
+        "summary": "Trigger automated dispatch offer to eligible online partners for prepared order",
+        "tags": ["Delivery Dispatch"],
+        "responses": { "201": { "description": "Offer dispatched to candidate partner" }, "409": { "description": "Order already assigned" } }
+      }
     }
   }
 }

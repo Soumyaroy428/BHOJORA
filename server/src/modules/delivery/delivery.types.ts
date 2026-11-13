@@ -1,6 +1,8 @@
 import crypto from 'node:crypto';
 import type {
+  DeliveryAssignmentStatus,
   DeliveryDocumentType,
+  DeliveryJobOfferDto,
   DeliveryPartnerDto,
   DeliveryPartnerStatus,
   DeliveryShiftStatus,
@@ -19,6 +21,87 @@ export const DELIVERY_PARTNER_STATUSES_RUNTIME = [
 ] as const;
 
 export const DELIVERY_SHIFT_STATUSES_RUNTIME = ['OFFLINE', 'ONLINE', 'ON_DELIVERY'] as const;
+
+export const DELIVERY_ASSIGNMENT_STATUSES_RUNTIME = [
+  'OFFERED',
+  'ACCEPTED',
+  'DECLINED',
+  'TIMEOUT',
+  'CANCELLED',
+  'COMPLETED',
+] as const;
+
+export const OFFER_COUNTDOWN_SECONDS = 45;
+export const BASE_RIDER_PAYOUT_PAISE = 3500; // ₹35.00 base guaranteed payout
+export const PER_KM_RIDER_PAYOUT_PAISE = 1500; // ₹15.00 per km
+
+export function calculateRiderPayoutPaise(distanceKm: number, deliveryFeePaise?: number): number {
+  const distanceBased =
+    BASE_RIDER_PAYOUT_PAISE + Math.round(distanceKm * PER_KM_RIDER_PAYOUT_PAISE);
+  const feeBased = Math.round((deliveryFeePaise ?? 0) * 0.85);
+  return Math.max(distanceBased, feeBased, BASE_RIDER_PAYOUT_PAISE);
+}
+
+export interface DeliveryOfferLocationRecord {
+  name: string;
+  addressLine: string;
+  landmark: string | null;
+  coordinates: [number, number];
+}
+
+export interface DeliveryOfferRecord {
+  offerId: string;
+  orderId: string;
+  outletId: string;
+  status: DeliveryAssignmentStatus;
+  offeredToPartnerId: string;
+  partnerId: string | null;
+  pickupLocation: DeliveryOfferLocationRecord;
+  dropLocation: DeliveryOfferLocationRecord;
+  estimatedDistanceKm: number;
+  estimatedDurationMinutes: number;
+  guaranteedPayoutPaise: number;
+  offeredAt: Date;
+  expiresAt: Date;
+  acceptedAt: Date | null;
+  declinedAt: Date | null;
+  declineReason: string | null;
+  reassignedFromOfferId: string | null;
+  version: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export function toDeliveryJobOfferDto(record: DeliveryOfferRecord): DeliveryJobOfferDto {
+  return {
+    offerId: record.offerId,
+    orderId: record.orderId,
+    outletId: record.outletId,
+    status: record.status,
+    offeredToPartnerId: record.offeredToPartnerId,
+    pickupLocation: {
+      name: record.pickupLocation.name,
+      addressLine: record.pickupLocation.addressLine,
+      landmark: record.pickupLocation.landmark,
+      coordinates: [record.pickupLocation.coordinates[0], record.pickupLocation.coordinates[1]],
+    },
+    dropLocation: {
+      name: record.dropLocation.name,
+      addressLine: record.dropLocation.addressLine,
+      landmark: record.dropLocation.landmark,
+      coordinates: [record.dropLocation.coordinates[0], record.dropLocation.coordinates[1]],
+    },
+    estimatedDistanceKm: record.estimatedDistanceKm,
+    estimatedDurationMinutes: record.estimatedDurationMinutes,
+    guaranteedPayoutPaise: record.guaranteedPayoutPaise,
+    offeredAt: record.offeredAt.toISOString(),
+    expiresAt: record.expiresAt.toISOString(),
+    acceptedAt: record.acceptedAt ? record.acceptedAt.toISOString() : null,
+    declinedAt: record.declinedAt ? record.declinedAt.toISOString() : null,
+    declineReason: record.declineReason,
+    reassignedFromOfferId: record.reassignedFromOfferId,
+  };
+}
 
 export const VEHICLE_TYPES_RUNTIME = [
   'BICYCLE',

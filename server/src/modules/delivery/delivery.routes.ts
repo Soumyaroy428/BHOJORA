@@ -168,5 +168,72 @@ export function createDeliveryRouter(params: CreateDeliveryRouterParams): Router
     }),
   );
 
+  // --- Checkpoint 19: Delivery assignment, dispatch engine & job inbox routes ---
+
+  router.get(
+    '/delivery/jobs/inbox',
+    requireAuth,
+    wrapAsync(async (req, res) => {
+      const ctx = resolveRbacRequestContext(req, res);
+      const inbox = await deliveryService.getJobInbox(ctx.userId);
+      sendSuccess(res, 200, { inbox });
+    }),
+  );
+
+  router.post(
+    '/delivery/jobs/:offerId/accept',
+    requireAuth,
+    wrapAsync(async (req, res) => {
+      const ctx = resolveRbacRequestContext(req, res);
+      const offer = await deliveryService.acceptOffer(
+        ctx.userId,
+        paramString(req.params['offerId']),
+        ctx.activeRole,
+        getRequestIdFromResponse(res),
+      );
+      sendSuccess(res, 200, { offer });
+    }),
+  );
+
+  router.post(
+    '/delivery/jobs/:offerId/decline',
+    requireAuth,
+    wrapAsync(async (req, res) => {
+      const ctx = resolveRbacRequestContext(req, res);
+      const result = await deliveryService.declineOffer(
+        ctx.userId,
+        paramString(req.params['offerId']),
+        req.body,
+        ctx.activeRole,
+        getRequestIdFromResponse(res),
+      );
+      sendSuccess(res, 200, result);
+    }),
+  );
+
+  router.get(
+    '/delivery/assignments/active',
+    requireAuth,
+    wrapAsync(async (req, res) => {
+      const ctx = resolveRbacRequestContext(req, res);
+      const assignment = await deliveryService.getActiveAssignment(ctx.userId);
+      sendSuccess(res, 200, { assignment });
+    }),
+  );
+
+  router.post(
+    '/delivery/dispatch/trigger',
+    requireAuth,
+    wrapAsync(async (req, res) => {
+      const ctx = resolveRbacRequestContext(req, res);
+      const result = await deliveryService.triggerDispatch(
+        req.body,
+        ctx.activeRole,
+        getRequestIdFromResponse(res),
+      );
+      sendSuccess(res, 201, result);
+    }),
+  );
+
   return router;
 }

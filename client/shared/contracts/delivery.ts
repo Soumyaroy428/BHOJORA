@@ -129,3 +129,58 @@ export interface DeliveryApplicationListResponseDto {
   applications: DeliveryPartnerDto[];
   totalCount: number;
 }
+
+export const DELIVERY_ASSIGNMENT_STATUSES = [
+  'OFFERED',
+  'ACCEPTED',
+  'DECLINED',
+  'TIMEOUT',
+  'CANCELLED',
+  'COMPLETED',
+] as const;
+export type DeliveryAssignmentStatus = (typeof DELIVERY_ASSIGNMENT_STATUSES)[number];
+
+export interface DeliveryOfferLocationDto {
+  name: string;
+  addressLine: string;
+  landmark?: string | null;
+  coordinates: [number, number]; // [lng, lat]
+}
+
+export interface DeliveryJobOfferDto {
+  offerId: string;
+  orderId: string;
+  outletId: string;
+  status: DeliveryAssignmentStatus;
+  offeredToPartnerId: string;
+  pickupLocation: DeliveryOfferLocationDto;
+  dropLocation: DeliveryOfferLocationDto;
+  estimatedDistanceKm: number;
+  estimatedDurationMinutes: number;
+  guaranteedPayoutPaise: number;
+  offeredAt: string;
+  expiresAt: string;
+  acceptedAt?: string | null;
+  declinedAt?: string | null;
+  declineReason?: string | null;
+  reassignedFromOfferId?: string | null;
+}
+
+export interface DeliveryJobInboxResponseDto {
+  activeOffers: DeliveryJobOfferDto[];
+  activeAssignment: DeliveryJobOfferDto | null;
+}
+
+export interface DeclineDeliveryJobRequestDto {
+  reason: string;
+}
+
+export interface TriggerDispatchOfferRequestDto {
+  orderId: string;
+  outletId: string;
+  pickupLocation: DeliveryOfferLocationDto;
+  dropLocation: DeliveryOfferLocationDto;
+  estimatedDistanceKm: number;
+  estimatedDurationMinutes: number;
+  deliveryFeePaise: number;
+}

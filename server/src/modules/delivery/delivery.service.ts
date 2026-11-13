@@ -1,6 +1,11 @@
 import crypto from 'node:crypto';
 import { z } from 'zod';
-import type { DeliveryPartnerDto, DeliveryPartnerStatus } from '@bhojora/shared';
+import type {
+  DeliveryJobInboxResponseDto,
+  DeliveryJobOfferDto,
+  DeliveryPartnerDto,
+  DeliveryPartnerStatus,
+} from '@bhojora/shared';
 import { AppError } from '../../middleware/error-handler';
 import { KOLKATA_ZONE_IDS } from '../customer/customer.types';
 import type { Clock, IdentityStore, UserRole } from '../identity/identity.types';
@@ -10,15 +15,20 @@ import { assertMfaSatisfiedForRole } from '../rbac/rbac.policy';
 import type { RbacStore } from '../rbac/rbac.store';
 import type { DeliveryStore } from './delivery.store';
 import {
+  calculateRiderPayoutPaise,
   DELIVERY_DOCUMENT_TYPES_RUNTIME,
   DELIVERY_SHIFT_STATUSES_RUNTIME,
   hmacDigest,
   maskBankAccount,
   maskDocumentNumber,
   maskRegistrationNumber,
+  OFFER_COUNTDOWN_SECONDS,
+  toDeliveryJobOfferDto,
   toDeliveryPartnerDto,
   VEHICLE_TYPES_RUNTIME,
   type DeliveryDocumentRecord,
+  type DeliveryOfferLocationRecord,
+  type DeliveryOfferRecord,
   type DeliveryPartnerRecord,
 } from './delivery.types';
 
@@ -70,6 +80,30 @@ const updateAvailabilitySchema = z.object({
 
 const reviewApplicationSchema = z.object({
   action: z.enum(['APPROVE', 'REJECT']),
+  reason: z.string().trim().max(240).optional(),
+});
+
+const triggerDispatchSchema = z.object({
+  orderId: z.string().trim().min(1, 'Order ID is required'),
+  outletId: z.string().trim().min(1, 'Outlet ID is required'),
+  pickupLocation: z.object({
+    name: z.string().trim().min(1),
+    addressLine: z.string().trim().min(1),
+    landmark: z.string().trim().nullish(),
+    coordinates: z.tuple([z.number(), z.number()]),
+  }),
+  dropLocation: z.object({
+    name: z.string().trim().min(1),
+    addressLine: z.string().trim().min(1),
+    landmark: z.string().trim().nullish(),
+    coordinates: z.tuple([z.number(), z.number()]),
+  }),
+  estimatedDistanceKm: z.number().positive(),
+  estimatedDurationMinutes: z.number().positive(),
+  deliveryFeePaise: z.number().nonnegative().optional(),
+});
+
+const declineJobSchema = z.object({
   reason: z.string().trim().max(240).optional(),
 });
 
@@ -661,5 +695,392 @@ export class DeliveryService {
     });
 
     return toDeliveryPartnerDto(updated);
+  }
+
+  // --- Checkpoint 19: Dispatch Engine, Job Inbox, and Assignment Handlers ---
+
+  private async dispatchInternal(options: {
+    orderId: string;
+    outletId: string;
+    pickupLocation: DeliveryOfferLocationRecord;
+    dropLocation: DeliveryOfferLocationRecord;
+    estimatedDistanceKm: number;
+    estimatedDurationMinutes: number;
+    deliveryFeePaise?: number;
+    excludePartnerIds: string[];
+    reassignedFromOfferId?: string | null;
+    callerRole?: string;
+    requestId?: string;
+  }): Promise<{ offered: boolean; offer: DeliveryJobOfferDto | null; reason?: string }> {
+    const now = this.now();
+    const candidates = await this.deliveryStore.findEligiblePartners({
+      outletCoordinates: options.pickupLocation.coordinates,
+      excludePartnerIds: options.excludePartnerIds,
+    });
+
+    if (candidates.length === 0 || !candidates[0]) {
+      return {
+        offered: false,
+        offer: null,
+        reason: 'NO_ELIGIBLE_PARTNERS_AVAILABLE',
+      };
+    }
+
+    const targetPartner = candidates[0];
+    const payoutPaise = calculateRiderPayoutPaise(
+      options.estimatedDistanceKm,
+      options.deliveryFeePaise,
+    );
+
+    const offerId = `dlo_${crypto.randomUUID()}`;
+    const expiresAt = new Date(now.getTime() + OFFER_COUNTDOWN_SECONDS * 1000);
+
+    const offerRecord: DeliveryOfferRecord = {
+      offerId,
+      orderId: options.orderId,
+      outletId: options.outletId,
+      status: 'OFFERED',
+      offeredToPartnerId: targetPartner.partnerId,
+      partnerId: null,
+      pickupLocation: options.pickupLocation,
+      dropLocation: options.dropLocation,
+      estimatedDistanceKm: options.estimatedDistanceKm,
+      estimatedDurationMinutes: options.estimatedDurationMinutes,
+      guaranteedPayoutPaise: payoutPaise,
+      offeredAt: now,
+      expiresAt,
+      acceptedAt: null,
+      declinedAt: null,
+      declineReason: null,
+      reassignedFromOfferId: options.reassignedFromOfferId ?? null,
+      version: 1,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const created = await this.deliveryStore.createOffer(offerRecord);
+
+    await this.rbacStore.appendAuditLog({
+      actorId: targetPartner.partnerId,
+      actorRole: 'DELIVERY_PARTNER',
+      action: 'delivery.dispatch_offered',
+      resourceType: 'delivery_assignment',
+      resourceId: offerId,
+      outcome: 'ALLOWED',
+      reason: `Job offer ${offerId} dispatched to partner ${targetPartner.partnerId} for order ${options.orderId}`,
+      requestId: options.requestId ?? null,
+      now,
+    });
+
+    return {
+      offered: true,
+      offer: toDeliveryJobOfferDto(created),
+    };
+  }
+
+  async triggerDispatch(
+    rawInput: unknown,
+    callerRole?: string,
+    requestId?: string,
+  ): Promise<{ offered: boolean; offer: DeliveryJobOfferDto | null; reason?: string }> {
+    const parse = triggerDispatchSchema.safeParse(rawInput);
+    if (!parse.success) {
+      throw new AppError(
+        400,
+        'VALIDATION_ERROR',
+        parse.error.issues[0]?.message ?? 'Invalid dispatch request',
+      );
+    }
+    const input = parse.data;
+
+    // Concurrency / safety check: Ensure order does not already have an active assigned rider
+    const activeAssignment = await this.deliveryStore.getActiveAssignmentForOrder(input.orderId);
+    if (activeAssignment) {
+      throw new AppError(
+        409,
+        'CONFLICT',
+        `Order ${input.orderId} already has an active delivery partner assigned (${activeAssignment.partnerId})`,
+      );
+    }
+
+    const existingOffers = await this.deliveryStore.getOffersForOrder(input.orderId);
+    const excludePartnerIds = new Set<string>();
+    for (const o of existingOffers) {
+      excludePartnerIds.add(o.offeredToPartnerId);
+    }
+
+    return this.dispatchInternal({
+      orderId: input.orderId,
+      outletId: input.outletId,
+      pickupLocation: {
+        name: input.pickupLocation.name,
+        addressLine: input.pickupLocation.addressLine,
+        landmark: input.pickupLocation.landmark ?? null,
+        coordinates: input.pickupLocation.coordinates,
+      },
+      dropLocation: {
+        name: input.dropLocation.name,
+        addressLine: input.dropLocation.addressLine,
+        landmark: input.dropLocation.landmark ?? null,
+        coordinates: input.dropLocation.coordinates,
+      },
+      estimatedDistanceKm: input.estimatedDistanceKm,
+      estimatedDurationMinutes: input.estimatedDurationMinutes,
+      deliveryFeePaise: input.deliveryFeePaise,
+      excludePartnerIds: Array.from(excludePartnerIds),
+      callerRole,
+      requestId,
+    });
+  }
+
+  async getJobInbox(userId: string): Promise<DeliveryJobInboxResponseDto> {
+    const partner = await this.deliveryStore.getPartnerByUserId(userId);
+    if (!partner) {
+      throw new AppError(404, 'NOT_FOUND', 'Delivery partner profile not found');
+    }
+    const now = this.now();
+    const activeOffers = await this.deliveryStore.getActiveOffersForPartner(partner.partnerId, now);
+    const activeAssignment = await this.deliveryStore.getActiveAssignmentForPartner(
+      partner.partnerId,
+    );
+
+    return {
+      activeOffers: activeOffers.map(toDeliveryJobOfferDto),
+      activeAssignment: activeAssignment ? toDeliveryJobOfferDto(activeAssignment) : null,
+    };
+  }
+
+  async acceptOffer(
+    userId: string,
+    offerId: string,
+    callerRole?: string,
+    requestId?: string,
+  ): Promise<DeliveryJobOfferDto> {
+    const now = this.now();
+    const partner = await this.deliveryStore.getPartnerByUserId(userId);
+    if (!partner) {
+      throw new AppError(404, 'NOT_FOUND', 'Delivery partner profile not found');
+    }
+
+    if (partner.status !== 'APPROVED') {
+      throw new AppError(403, 'FORBIDDEN', 'Partner must be APPROVED to accept job offers');
+    }
+
+    // Fairness & Safety guarantee: No duplicate active delivery assignments
+    if (partner.shiftStatus === 'ON_DELIVERY') {
+      throw new AppError(
+        409,
+        'CONFLICT',
+        'Partner is already on an active delivery assignment. Complete current delivery first.',
+      );
+    }
+    const existingActive = await this.deliveryStore.getActiveAssignmentForPartner(
+      partner.partnerId,
+    );
+    if (existingActive) {
+      throw new AppError(
+        409,
+        'CONFLICT',
+        `Partner already has active delivery assignment ${existingActive.offerId}`,
+      );
+    }
+
+    const offer = await this.deliveryStore.getOfferById(offerId);
+    if (!offer) {
+      throw new AppError(404, 'NOT_FOUND', `Job offer ${offerId} not found`);
+    }
+
+    if (offer.offeredToPartnerId !== partner.partnerId) {
+      throw new AppError(
+        403,
+        'FORBIDDEN',
+        'You are not authorized to accept an offer dispatched to another partner',
+      );
+    }
+
+    if (offer.status !== 'OFFERED') {
+      throw new AppError(
+        409,
+        'CONFLICT',
+        `Offer is no longer available (current status: ${offer.status})`,
+      );
+    }
+
+    if (offer.expiresAt.getTime() < now.getTime()) {
+      await this.deliveryStore.updateOffer(offerId, { status: 'TIMEOUT', updatedAt: now });
+      throw new AppError(409, 'CONFLICT', 'Offer expired before acceptance');
+    }
+
+    // Atomic compare-and-swap acceptance
+    const atomicRes = await this.deliveryStore.acceptOfferAtomic({
+      offerId,
+      partnerId: partner.partnerId,
+      expectedVersion: offer.version,
+      now,
+    });
+
+    if (!atomicRes.success || !atomicRes.updatedOffer) {
+      throw new AppError(
+        409,
+        'CONFLICT',
+        `Concurrent acceptance conflict: ${atomicRes.failureReason ?? 'offer modified by another process'}`,
+      );
+    }
+
+    // Update partner shiftStatus to ON_DELIVERY
+    await this.deliveryStore.updatePartner(partner.partnerId, {
+      shiftStatus: 'ON_DELIVERY',
+      updatedAt: now,
+    });
+
+    await this.rbacStore.appendAuditLog({
+      actorId: partner.partnerId,
+      actorRole: (callerRole as UserRole) ?? 'DELIVERY_PARTNER',
+      action: 'delivery.offer_accepted',
+      resourceType: 'delivery_assignment',
+      resourceId: offerId,
+      outcome: 'ALLOWED',
+      reason: `Partner ${partner.partnerId} accepted delivery for order ${offer.orderId}`,
+      requestId: requestId ?? null,
+      now,
+    });
+
+    return toDeliveryJobOfferDto(atomicRes.updatedOffer);
+  }
+
+  async declineOffer(
+    userId: string,
+    offerId: string,
+    rawInput: unknown,
+    callerRole?: string,
+    requestId?: string,
+  ): Promise<{ declined: boolean; reassigned: boolean; nextOfferId: string | null }> {
+    const parse = declineJobSchema.safeParse(rawInput ?? {});
+    const reason = parse.success && parse.data.reason ? parse.data.reason : 'DECLINED_BY_PARTNER';
+
+    const now = this.now();
+    const partner = await this.deliveryStore.getPartnerByUserId(userId);
+    if (!partner) {
+      throw new AppError(404, 'NOT_FOUND', 'Delivery partner profile not found');
+    }
+
+    const offer = await this.deliveryStore.getOfferById(offerId);
+    if (!offer) {
+      throw new AppError(404, 'NOT_FOUND', `Job offer ${offerId} not found`);
+    }
+
+    if (offer.offeredToPartnerId !== partner.partnerId) {
+      throw new AppError(
+        403,
+        'FORBIDDEN',
+        'You are not authorized to decline an offer dispatched to another partner',
+      );
+    }
+
+    if (offer.status !== 'OFFERED') {
+      throw new AppError(
+        409,
+        'CONFLICT',
+        `Offer cannot be declined (current status: ${offer.status})`,
+      );
+    }
+
+    await this.deliveryStore.updateOffer(offerId, {
+      status: 'DECLINED',
+      declinedAt: now,
+      declineReason: reason,
+      updatedAt: now,
+    });
+
+    await this.rbacStore.appendAuditLog({
+      actorId: partner.partnerId,
+      actorRole: (callerRole as UserRole) ?? 'DELIVERY_PARTNER',
+      action: 'delivery.offer_declined',
+      resourceType: 'delivery_assignment',
+      resourceId: offerId,
+      outcome: 'ALLOWED',
+      reason: `Partner ${partner.partnerId} declined offer ${offerId}: ${reason}`,
+      requestId: requestId ?? null,
+      now,
+    });
+
+    // Trigger immediate automated reassignment to next eligible candidate
+    const allOrderOffers = await this.deliveryStore.getOffersForOrder(offer.orderId);
+    const excludeIds = new Set<string>();
+    for (const o of allOrderOffers) {
+      excludeIds.add(o.offeredToPartnerId);
+    }
+
+    const reassignRes = await this.dispatchInternal({
+      orderId: offer.orderId,
+      outletId: offer.outletId,
+      pickupLocation: offer.pickupLocation,
+      dropLocation: offer.dropLocation,
+      estimatedDistanceKm: offer.estimatedDistanceKm,
+      estimatedDurationMinutes: offer.estimatedDurationMinutes,
+      deliveryFeePaise: offer.guaranteedPayoutPaise,
+      excludePartnerIds: Array.from(excludeIds),
+      reassignedFromOfferId: offer.offerId,
+      callerRole,
+      requestId,
+    });
+
+    return {
+      declined: true,
+      reassigned: reassignRes.offered,
+      nextOfferId: reassignRes.offer?.offerId ?? null,
+    };
+  }
+
+  async timeoutOffer(
+    offerId: string,
+  ): Promise<{ timedOut: boolean; reassigned: boolean; nextOfferId: string | null }> {
+    const now = this.now();
+    const offer = await this.deliveryStore.getOfferById(offerId);
+    if (!offer) {
+      throw new AppError(404, 'NOT_FOUND', `Job offer ${offerId} not found`);
+    }
+
+    if (offer.status !== 'OFFERED') {
+      return { timedOut: false, reassigned: false, nextOfferId: null };
+    }
+
+    await this.deliveryStore.updateOffer(offerId, {
+      status: 'TIMEOUT',
+      updatedAt: now,
+    });
+
+    const allOrderOffers = await this.deliveryStore.getOffersForOrder(offer.orderId);
+    const excludeIds = new Set<string>();
+    for (const o of allOrderOffers) {
+      excludeIds.add(o.offeredToPartnerId);
+    }
+
+    const reassignRes = await this.dispatchInternal({
+      orderId: offer.orderId,
+      outletId: offer.outletId,
+      pickupLocation: offer.pickupLocation,
+      dropLocation: offer.dropLocation,
+      estimatedDistanceKm: offer.estimatedDistanceKm,
+      estimatedDurationMinutes: offer.estimatedDurationMinutes,
+      deliveryFeePaise: offer.guaranteedPayoutPaise,
+      excludePartnerIds: Array.from(excludeIds),
+      reassignedFromOfferId: offer.offerId,
+    });
+
+    return {
+      timedOut: true,
+      reassigned: reassignRes.offered,
+      nextOfferId: reassignRes.offer?.offerId ?? null,
+    };
+  }
+
+  async getActiveAssignment(userId: string): Promise<DeliveryJobOfferDto | null> {
+    const partner = await this.deliveryStore.getPartnerByUserId(userId);
+    if (!partner) {
+      throw new AppError(404, 'NOT_FOUND', 'Delivery partner profile not found');
+    }
+    const assignment = await this.deliveryStore.getActiveAssignmentForPartner(partner.partnerId);
+    return assignment ? toDeliveryJobOfferDto(assignment) : null;
   }
 }

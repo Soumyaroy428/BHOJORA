@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type {
   DeliveryDocumentType,
+  DeliveryJobOfferDto,
   DeliveryPartnerDto,
   DeliveryShiftStatus,
   KolkataZoneId,
@@ -56,6 +57,84 @@ export function App() {
   // Shift & Availability
   const [shiftStatus, setShiftStatus] = useState<DeliveryShiftStatus>('OFFLINE');
   const [shiftError, setShiftError] = useState<string | null>(null);
+
+  // Checkpoint 19: Job Inbox & Dispatch State
+  const [activeOffer, setActiveOffer] = useState<DeliveryJobOfferDto | null>(null);
+  const [activeAssignment, setActiveAssignment] = useState<DeliveryJobOfferDto | null>(null);
+  const [offerCountdown, setOfferCountdown] = useState<number>(45);
+
+  useEffect(() => {
+    if (!activeOffer) return;
+    const interval = setInterval(() => {
+      setOfferCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setActiveOffer(null);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [activeOffer]);
+
+  const handleSimulateIncomingOffer = () => {
+    if (shiftStatus !== 'ONLINE') return;
+    const mockOffer: DeliveryJobOfferDto = {
+      offerId: `dlo_${Date.now()}`,
+      orderId: 'ord_kolkata_9842',
+      outletId: 'out_600000000000000000000001',
+      status: 'OFFERED',
+      offeredToPartnerId: profile?.partnerId || 'del_mock_001',
+      pickupLocation: {
+        name: 'Arsalan Restaurant',
+        addressLine: '191 Park Street, Park Circus 7-point crossing',
+        landmark: 'Near Quest Mall',
+        coordinates: [88.3639, 22.5412],
+      },
+      dropLocation: {
+        name: 'Soumya Roy',
+        addressLine: 'Flat 4B, Silver Oak, Salt Lake Sector V',
+        landmark: 'Opposite Webel Bhavan',
+        coordinates: [88.437, 22.58],
+      },
+      estimatedDistanceKm: 3.8,
+      estimatedDurationMinutes: 24,
+      guaranteedPayoutPaise: 9200, // ₹92.00
+      offeredAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 45000).toISOString(),
+    };
+    setActiveOffer(mockOffer);
+    setOfferCountdown(45);
+  };
+
+  const handleAcceptOffer = () => {
+    if (!activeOffer) return;
+    const accepted: DeliveryJobOfferDto = {
+      ...activeOffer,
+      status: 'ACCEPTED',
+      acceptedAt: new Date().toISOString(),
+    };
+    setActiveAssignment(accepted);
+    setActiveOffer(null);
+    setShiftStatus('ON_DELIVERY');
+  };
+
+  const handleDeclineOffer = () => {
+    setActiveOffer(null);
+  };
+
+  const handleCompleteActiveDelivery = () => {
+    if (!activeAssignment) return;
+    setActiveAssignment(null);
+    setShiftStatus('ONLINE');
+    if (profile) {
+      setProfile({
+        ...profile,
+        totalDeliveries: profile.totalDeliveries + 1,
+      });
+    }
+  };
 
   const toggleZone = (zoneId: KolkataZoneId) => {
     setSelectedZones((prev) =>
@@ -246,6 +325,155 @@ export function App() {
                 </div>
               )}
             </div>
+
+            {/* Checkpoint 19: Incoming Dispatch Job Offer Modal / Card */}
+            {activeOffer && (
+              <div data-testid="incoming-job-offer-card" className="job-offer-card">
+                <div className="job-header-row">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '1.2rem' }}>📦</span>
+                    <strong style={{ fontSize: '1rem', color: 'var(--brand-accent)' }}>
+                      NEW DELIVERY OFFER
+                    </strong>
+                  </div>
+                  <div data-testid="offer-countdown-timer" className="countdown-timer-badge">
+                    ⏱️ {offerCountdown}s
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'baseline',
+                  }}
+                >
+                  <div>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                      Guaranteed Payout
+                    </span>
+                    <div data-testid="offer-payout-amount" className="payout-badge">
+                      ₹{(activeOffer.guaranteedPayoutPaise / 100).toFixed(2)}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                      Total Trip
+                    </span>
+                    <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>
+                      {activeOffer.estimatedDistanceKm} km • {activeOffer.estimatedDurationMinutes}m
+                    </div>
+                  </div>
+                </div>
+
+                <div className="route-steps">
+                  <div className="route-step">
+                    <div className="step-marker pickup">1</div>
+                    <div className="step-info">
+                      <span className="step-title">{activeOffer.pickupLocation.name}</span>
+                      <span className="step-address">{activeOffer.pickupLocation.addressLine}</span>
+                      {activeOffer.pickupLocation.landmark && (
+                        <span style={{ fontSize: '0.75rem', color: 'var(--brand-accent)' }}>
+                          📍 {activeOffer.pickupLocation.landmark}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="route-step">
+                    <div className="step-marker drop">2</div>
+                    <div className="step-info">
+                      <span className="step-title">Customer: {activeOffer.dropLocation.name}</span>
+                      <span className="step-address">{activeOffer.dropLocation.addressLine}</span>
+                      {activeOffer.dropLocation.landmark && (
+                        <span style={{ fontSize: '0.75rem', color: 'var(--status-online)' }}>
+                          📍 {activeOffer.dropLocation.landmark}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="job-actions-row">
+                  <button
+                    data-testid="btn-decline-offer"
+                    type="button"
+                    className="btn-decline"
+                    onClick={handleDeclineOffer}
+                  >
+                    Decline
+                  </button>
+                  <button
+                    data-testid="btn-accept-offer"
+                    type="button"
+                    className="btn-accept"
+                    onClick={handleAcceptOffer}
+                  >
+                    Accept Job
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Active Delivery Trip Card */}
+            {activeAssignment && (
+              <div
+                data-testid="active-delivery-trip-card"
+                className="section-card"
+                style={{ border: '2px solid var(--status-online)' }}
+              >
+                <div className="section-title">
+                  <span style={{ color: 'var(--status-online)' }}>
+                    🚴 ACTIVE TRIP: EN ROUTE TO PICKUP
+                  </span>
+                  <span className="payout-badge" style={{ fontSize: '0.9rem', padding: '4px 8px' }}>
+                    ₹{(activeAssignment.guaranteedPayoutPaise / 100).toFixed(2)}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    fontSize: '0.88rem',
+                  }}
+                >
+                  <div>
+                    <strong>Pickup:</strong> {activeAssignment.pickupLocation.name}
+                  </div>
+                  <div>
+                    <strong>Drop:</strong> {activeAssignment.dropLocation.name} (
+                    {activeAssignment.dropLocation.addressLine})
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                    Order ID: <code>{activeAssignment.orderId}</code>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="btn-accept"
+                  style={{ width: '100%', marginTop: '12px' }}
+                  onClick={handleCompleteActiveDelivery}
+                >
+                  ✓ Complete Delivery
+                </button>
+              </div>
+            )}
+
+            {/* Test Simulation Button when Online & Idle */}
+            {shiftStatus === 'ONLINE' && !activeOffer && !activeAssignment && (
+              <div style={{ textAlign: 'center', margin: '4px 0' }}>
+                <button
+                  data-testid="btn-simulate-dispatch-offer"
+                  type="button"
+                  className="btn-secondary"
+                  style={{ fontSize: '0.85rem', padding: '10px 16px' }}
+                  onClick={handleSimulateIncomingOffer}
+                >
+                  ⚡ Simulate Incoming Job Offer
+                </button>
+              </div>
+            )}
 
             {/* Rider Performance Stats */}
             <div className="stats-grid">
