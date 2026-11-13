@@ -57,6 +57,13 @@ import { createDeliveryRouter } from './modules/delivery/delivery.routes';
 import { DeliveryService } from './modules/delivery/delivery.service';
 import { InMemoryDeliveryStore, MongooseDeliveryStore } from './modules/delivery/delivery.store';
 import type { DeliveryStore } from './modules/delivery/delivery.store';
+import { createInspectorRouter } from './modules/inspector/inspector.routes';
+import { InspectorService } from './modules/inspector/inspector.service';
+import {
+  InMemoryInspectorStore,
+  MongooseInspectorStore,
+} from './modules/inspector/inspector.store';
+import type { InspectorStore } from './modules/inspector/inspector.store';
 
 export interface CreateAppOptions {
   config: AppConfig;
@@ -88,6 +95,8 @@ export interface CreateAppOptions {
   orderService?: OrderService;
   deliveryStore?: DeliveryStore;
   deliveryService?: DeliveryService;
+  inspectorStore?: InspectorStore;
+  inspectorService?: InspectorService;
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -254,6 +263,18 @@ export function createApp(options: CreateAppOptions): Express {
       signingSecret: config.jwtAccessSecret,
       ...(options.clock ? { clock: options.clock } : {}),
     });
+  const inspectorStore =
+    options.inspectorStore ??
+    (isInMemoryMode
+      ? new InMemoryInspectorStore()
+      : new MongooseInspectorStore(mongoose.connection));
+  const inspectorService =
+    options.inspectorService ??
+    new InspectorService({
+      inspectorStore,
+      identityStore,
+      rbacStore,
+    });
   paymentService.setOnPaymentCapturedListener(async (payment) => {
     await orderService.confirmOrderFromPayment(payment);
   });
@@ -331,6 +352,11 @@ export function createApp(options: CreateAppOptions): Express {
     deliveryService,
     config,
   });
+  const inspectorRouter = createInspectorRouter({
+    identityService,
+    inspectorService,
+    config,
+  });
 
   app.use('/api/v1', healthRouter);
   app.use('/api/v1', identityRouter);
@@ -345,6 +371,7 @@ export function createApp(options: CreateAppOptions): Express {
   app.use('/api/v1', paymentsRouter);
   app.use('/api/v1', ordersRouter);
   app.use('/api/v1', deliveryRouter);
+  app.use('/api/v1', inspectorRouter);
   app.use(healthRouter);
 
   app.use(notFoundHandler);

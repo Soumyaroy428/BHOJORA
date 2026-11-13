@@ -43,6 +43,11 @@ import { evaluateCancellationEligibility, OrderService } from './modules/orders/
 import { InMemoryOrderStore, MongooseOrderStore } from './modules/orders/orders.store';
 import { DeliveryService } from './modules/delivery/delivery.service';
 import { InMemoryDeliveryStore, MongooseDeliveryStore } from './modules/delivery/delivery.store';
+import { InspectorService } from './modules/inspector/inspector.service';
+import {
+  InMemoryInspectorStore,
+  MongooseInspectorStore,
+} from './modules/inspector/inspector.store';
 import {
   DELIVERY_DOCUMENT_TYPES_RUNTIME,
   DELIVERY_PARTNER_STATUSES_RUNTIME,
@@ -107,6 +112,9 @@ export {
   DeliveryService,
   MongooseDeliveryStore,
   InMemoryDeliveryStore,
+  InspectorService,
+  MongooseInspectorStore,
+  InMemoryInspectorStore,
   DELIVERY_DOCUMENT_TYPES_RUNTIME,
   DELIVERY_PARTNER_STATUSES_RUNTIME,
   DELIVERY_SHIFT_STATUSES_RUNTIME,
@@ -288,6 +296,12 @@ async function startServer(): Promise<void> {
       identityStore,
       rbacStore,
       signingSecret: config.jwtAccessSecret,
+    }),
+    inspectorStore: new MongooseInspectorStore(dbManager.getConnection()),
+    inspectorService: new InspectorService({
+      inspectorStore: new MongooseInspectorStore(dbManager.getConnection()),
+      identityStore,
+      rbacStore,
     }),
   });
 
