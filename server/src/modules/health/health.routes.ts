@@ -5,11 +5,11 @@ import type { HealthService } from './health.service';
 export function createHealthRouter(healthService: HealthService): Router {
   const router = Router();
 
-  router.get('/health', (_req: Request, res: Response) => {
+  router.get(['/health', '/healthz'], (_req: Request, res: Response) => {
     sendSuccess(res, 200, healthService.getLiveness());
   });
 
-  router.get('/ready', async (_req: Request, res: Response, next: NextFunction) => {
+  router.get(['/ready', '/readyz'], async (_req: Request, res: Response, next: NextFunction) => {
     try {
       const readiness = await healthService.getReadiness();
       if (readiness.ready) {

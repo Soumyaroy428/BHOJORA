@@ -6,7 +6,7 @@ services:
     region: oregon
     buildCommand: npm install --include=dev && npm run build --workspace=@bhojora/shared && npm run build --workspace=@bhojora/server
     startCommand: node server/dist/index.js
-    healthCheckPath: /healthz
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
