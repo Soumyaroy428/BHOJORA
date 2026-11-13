@@ -57,7 +57,18 @@ export function createInspectionRouter(params: CreateInspectionRouterParams): Ro
     }),
   );
 
-  // 3. Get single inspection details (enforces privacy boundary)
+  // 3. Reviewer Queue: Fetch submitted inspections awaiting independent review
+  router.get(
+    '/inspections/review-queue',
+    requireAuth,
+    wrapAsync(async (req, res) => {
+      const ctx = resolveRbacRequestContext(req, res);
+      const queue = await inspectionService.getReviewQueue(ctx.userId, ctx.roles);
+      sendSuccess(res, 200, { queue });
+    }),
+  );
+
+  // 4. Get single inspection details (enforces privacy boundary)
   router.get(
     '/inspections/:id',
     requireAuth,
@@ -143,6 +154,53 @@ export function createInspectionRouter(params: CreateInspectionRouterParams): Ro
         inspectorId,
         req.params['id'] as string,
         req.body,
+      );
+      sendSuccess(res, 200, { inspection });
+    }),
+  );
+
+  // 8. Review inspection (Approve / Reject / Return for clarification)
+  router.post(
+    '/inspections/:id/review',
+    requireAuth,
+    wrapAsync(async (req, res) => {
+      const ctx = resolveRbacRequestContext(req, res);
+      const inspection = await inspectionService.reviewInspection(
+        ctx.userId,
+        req.params['id'] as string,
+        req.body,
+        ctx.roles,
+      );
+      sendSuccess(res, 200, { inspection });
+    }),
+  );
+
+  // 9. Lodge appeal against inspection report
+  router.post(
+    '/inspections/:id/appeal',
+    requireAuth,
+    wrapAsync(async (req, res) => {
+      const ctx = resolveRbacRequestContext(req, res);
+      const inspection = await inspectionService.submitAppeal(
+        ctx.userId,
+        req.params['id'] as string,
+        req.body,
+      );
+      sendSuccess(res, 201, { inspection });
+    }),
+  );
+
+  // 10. Admin: Resolve inspection appeal
+  router.post(
+    '/inspections/:id/appeal/resolve',
+    requireAuth,
+    wrapAsync(async (req, res) => {
+      const ctx = resolveRbacRequestContext(req, res);
+      const inspection = await inspectionService.resolveAppeal(
+        ctx.userId,
+        req.params['id'] as string,
+        req.body,
+        ctx.roles,
       );
       sendSuccess(res, 200, { inspection });
     }),

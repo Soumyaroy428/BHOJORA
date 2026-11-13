@@ -8,12 +8,18 @@ import {
   createInspectionSchema,
   draftInspectionSchema,
   evidenceUploadSchema,
+  resolveAppealSchema,
+  reviewInspectionSchema,
+  submitAppealSchema,
   submitInspectionSchema,
   toInspectionEvidenceDto,
   toInspectionRecordDto,
+  type InspectionAppealRecord,
   type InspectionEvidenceRecord,
   type InspectionFindingRecord,
   type InspectionRecord,
+  type InspectionScoreSummaryRecord,
+  type InspectionStatus,
 } from './inspection.types';
 
 export interface InspectionServiceOptions {
@@ -126,7 +132,19 @@ export class InspectionService {
       throw new AppError(403, 'FORBIDDEN', 'Cannot edit inspection assigned to another inspector');
     }
 
-    if (inspection.status !== 'DRAFT' && inspection.status !== 'SCHEDULED') {
+    if (inspection.status === 'APPROVED') {
+      throw new AppError(
+        409,
+        'CONFLICT',
+        'Approved inspection reports are immutable and cannot be modified',
+      );
+    }
+
+    if (
+      inspection.status !== 'DRAFT' &&
+      inspection.status !== 'SCHEDULED' &&
+      inspection.status !== 'RETURNED'
+    ) {
       throw new AppError(
         409,
         'CONFLICT',
@@ -171,7 +189,19 @@ export class InspectionService {
       throw new AppError(403, 'FORBIDDEN', 'Cannot attach evidence to another inspector audit');
     }
 
-    if (inspection.status !== 'DRAFT' && inspection.status !== 'SCHEDULED') {
+    if (inspection.status === 'APPROVED') {
+      throw new AppError(
+        409,
+        'CONFLICT',
+        'Approved inspection reports are immutable and evidence cannot be added',
+      );
+    }
+
+    if (
+      inspection.status !== 'DRAFT' &&
+      inspection.status !== 'SCHEDULED' &&
+      inspection.status !== 'RETURNED'
+    ) {
       throw new AppError(
         409,
         'CONFLICT',
@@ -280,11 +310,11 @@ export class InspectionService {
       );
     }
 
-    if (inspection.status !== 'DRAFT') {
+    if (inspection.status !== 'DRAFT' && inspection.status !== 'RETURNED') {
       throw new AppError(
         409,
         'CONFLICT',
-        `Inspection cannot be submitted in ${inspection.status} status (must be DRAFT)`,
+        `Inspection cannot be submitted in ${inspection.status} status (must be DRAFT or RETURNED)`,
       );
     }
 
@@ -340,6 +370,237 @@ export class InspectionService {
       managerSignedAt: parsed.signedAt ? new Date(parsed.signedAt) : now,
       managerName: parsed.managerName,
       managerDesignation: parsed.managerDesignation,
+    });
+
+    return toInspectionRecordDto(updated!);
+  }
+
+  async getReviewQueue(
+    _reviewerUserId: string,
+    userRoles: string[] = [],
+  ): Promise<InspectionRecordDto[]> {
+    const isPrivileged = userRoles.some((r) => PRIVILEGED_ROLES.has(r));
+    if (!isPrivileged) {
+      throw new AppError(403, 'FORBIDDEN', 'Access denied to inspection reviewer queue');
+    }
+    const queue = await this.inspectionStore.listInspectionsByStatus('SUBMITTED');
+    return queue.map(toInspectionRecordDto);
+  }
+
+  async reviewInspection(
+    reviewerUserId: string,
+    inspectionId: string,
+    rawInput: unknown,
+    userRoles: string[] = [],
+  ): Promise<InspectionRecordDto> {
+    const isPrivileged = userRoles.some((r) => PRIVILEGED_ROLES.has(r));
+    if (!isPrivileged) {
+      throw new AppError(403, 'FORBIDDEN', 'Reviewer access required to review inspections');
+    }
+
+    const inspection = await this.inspectionStore.getInspectionById(inspectionId);
+    if (!inspection) {
+      throw new AppError(404, 'NOT_FOUND', `Inspection ${inspectionId} not found`);
+    }
+
+    if (inspection.status === 'APPROVED') {
+      throw new AppError(
+        409,
+        'CONFLICT',
+        'Approved inspection reports are immutable and cannot be re-reviewed',
+      );
+    }
+
+    if (inspection.status !== 'SUBMITTED' && inspection.status !== 'IN_REVIEW') {
+      throw new AppError(
+        409,
+        'CONFLICT',
+        `Inspection is not awaiting review (current status: ${inspection.status})`,
+      );
+    }
+
+    // Strict Anti-Self-Review Rule (ADR-005): Inspector cannot approve or review their own inspection
+    const inspectorProfile = await this.inspectorService.getInspectorById(inspection.inspectorId);
+    if (inspectorProfile && inspectorProfile.userId === reviewerUserId) {
+      throw new AppError(
+        403,
+        'SELF_REVIEW_PROHIBITED',
+        'Inspectors cannot review or approve their own inspection report',
+      );
+    }
+
+    const parsed = reviewInspectionSchema.parse(rawInput);
+    const now = new Date();
+
+    if (parsed.decision === 'APPROVE') {
+      // Score Policy V1 Calculation
+      const totalScore = inspection.findings.reduce((acc, f) => acc + f.score, 0);
+      const maxScore = inspection.findings.reduce((acc, f) => acc + f.maxScore, 0);
+      const rawPercent = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
+
+      const hasCriticalViolation = inspection.findings.some((f) => f.severity === 'CRITICAL');
+      let criticalOverrideApplied = false;
+      let overrideReason: string | undefined;
+      let finalScorePercent = rawPercent;
+      let outcome: 'PASS' | 'FAIL' | 'NEEDS_IMPROVEMENT';
+      let grade: 'A_PLUS' | 'A' | 'B' | 'SUSPENDED';
+
+      if (hasCriticalViolation) {
+        criticalOverrideApplied = true;
+        overrideReason =
+          'CRITICAL_VIOLATION_OVERRIDE: Active critical hygiene violation overrides numeric score.';
+        finalScorePercent = 0;
+        outcome = 'FAIL';
+        grade = 'SUSPENDED';
+      } else {
+        if (rawPercent >= 85) {
+          outcome = 'PASS';
+          grade = 'A_PLUS';
+        } else if (rawPercent >= 70) {
+          outcome = 'PASS';
+          grade = 'A';
+        } else {
+          outcome = 'NEEDS_IMPROVEMENT';
+          grade = 'B';
+        }
+      }
+
+      const scoreSummary: InspectionScoreSummaryRecord = {
+        rawScore: totalScore,
+        maxScore,
+        scorePercent: rawPercent,
+        scorePolicyVersion: parsed.scorePolicyVersion ?? 'SCORE_POLICY_V1',
+        hasCriticalViolation,
+        criticalOverrideApplied,
+        overrideReason,
+        finalScorePercent,
+        outcome,
+        grade,
+      };
+
+      const updated = await this.inspectionStore.updateInspection(inspectionId, {
+        status: 'APPROVED',
+        reviewDecision: 'APPROVE',
+        reviewedByUserId: reviewerUserId,
+        reviewedAt: now,
+        reviewNotes: parsed.notes,
+        scoreSummary,
+      });
+
+      return toInspectionRecordDto(updated!);
+    }
+
+    if (parsed.decision === 'REJECT') {
+      const updated = await this.inspectionStore.updateInspection(inspectionId, {
+        status: 'REJECTED',
+        reviewDecision: 'REJECT',
+        reviewedByUserId: reviewerUserId,
+        reviewedAt: now,
+        reviewNotes: parsed.notes,
+      });
+      return toInspectionRecordDto(updated!);
+    }
+
+    if (parsed.decision === 'RETURN_FOR_CLARIFICATION') {
+      const updated = await this.inspectionStore.updateInspection(inspectionId, {
+        status: 'RETURNED',
+        reviewDecision: 'RETURN_FOR_CLARIFICATION',
+        reviewedByUserId: reviewerUserId,
+        reviewedAt: now,
+        reviewNotes: parsed.notes,
+      });
+      return toInspectionRecordDto(updated!);
+    }
+
+    throw new AppError(400, 'VALIDATION_ERROR', 'Unsupported review decision');
+  }
+
+  async submitAppeal(
+    userId: string,
+    inspectionId: string,
+    rawInput: unknown,
+  ): Promise<InspectionRecordDto> {
+    const inspection = await this.inspectionStore.getInspectionById(inspectionId);
+    if (!inspection) {
+      throw new AppError(404, 'NOT_FOUND', `Inspection ${inspectionId} not found`);
+    }
+
+    if (inspection.appeal || inspection.status === 'APPEALED') {
+      throw new AppError(
+        409,
+        'CONFLICT',
+        'An appeal has already been submitted for this inspection',
+      );
+    }
+
+    if (inspection.status !== 'APPROVED' && inspection.status !== 'REJECTED') {
+      throw new AppError(
+        400,
+        'VALIDATION_ERROR',
+        `Can only appeal an inspection in APPROVED or REJECTED status (current: ${inspection.status})`,
+      );
+    }
+
+    const parsed = submitAppealSchema.parse(rawInput);
+    const appealRecord: InspectionAppealRecord = {
+      id: `app_${nodeCrypto.randomUUID()}`,
+      inspectionId,
+      restaurantId: inspection.restaurantId,
+      appellantUserId: userId,
+      contestedItemIds: parsed.contestedItemIds,
+      reason: parsed.reason,
+      evidenceUrls: parsed.evidenceUrls,
+      status: 'SUBMITTED',
+      submittedAt: new Date(),
+    };
+
+    const updated = await this.inspectionStore.updateInspection(inspectionId, {
+      status: 'APPEALED',
+      appeal: appealRecord,
+    });
+
+    return toInspectionRecordDto(updated!);
+  }
+
+  async resolveAppeal(
+    reviewerUserId: string,
+    inspectionId: string,
+    rawInput: unknown,
+    userRoles: string[] = [],
+  ): Promise<InspectionRecordDto> {
+    const isPrivileged = userRoles.some((r) => PRIVILEGED_ROLES.has(r));
+    if (!isPrivileged) {
+      throw new AppError(403, 'FORBIDDEN', 'Admin access required to resolve appeals');
+    }
+
+    const inspection = await this.inspectionStore.getInspectionById(inspectionId);
+    if (!inspection) {
+      throw new AppError(404, 'NOT_FOUND', `Inspection ${inspectionId} not found`);
+    }
+
+    if (inspection.status !== 'APPEALED' || !inspection.appeal) {
+      throw new AppError(400, 'VALIDATION_ERROR', 'Inspection does not have an active appeal');
+    }
+
+    const parsed = resolveAppealSchema.parse(rawInput);
+    const now = new Date();
+    const updatedAppeal: InspectionAppealRecord = {
+      ...inspection.appeal,
+      status: parsed.resolution,
+      resolvedAt: now,
+      resolvedByUserId: reviewerUserId,
+      resolutionNotes: parsed.notes,
+    };
+
+    let nextStatus: InspectionStatus =
+      inspection.reviewDecision === 'REJECT' ? 'REJECTED' : 'APPROVED';
+    if (parsed.resolution === 'RE_INSPECTION_ORDERED') {
+      nextStatus = 'SCHEDULED';
+    }
+
+    const updated = await this.inspectionStore.updateInspection(inspectionId, {
+      status: nextStatus,
+      appeal: updatedAppeal,
     });
 
     return toInspectionRecordDto(updated!);

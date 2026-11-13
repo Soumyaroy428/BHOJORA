@@ -12,6 +12,7 @@ import {
 import { OnboardingReviewQueue } from './components/OnboardingReviewQueue';
 import { DeliveryPartnerReviewQueue } from './components/DeliveryPartnerReviewQueue';
 import { ZoneGovernancePanel } from './components/ZoneGovernancePanel';
+import { InspectionReviewerQueue } from './components/InspectionReviewerQueue';
 
 interface GovernanceItem {
   id: string;
@@ -335,6 +336,13 @@ export function App() {
         />
 
         <ZoneGovernancePanel
+          apiBase={getApiBase()}
+          accessToken={accessToken}
+          mfaVerified={Boolean(rbacContext?.mfaVerified)}
+          onStatusUpdate={setStatusMessage}
+        />
+
+        <InspectionReviewerQueue
           apiBase={getApiBase()}
           accessToken={accessToken}
           mfaVerified={Boolean(rbacContext?.mfaVerified)}

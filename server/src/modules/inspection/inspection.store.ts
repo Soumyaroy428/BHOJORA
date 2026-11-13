@@ -7,8 +7,10 @@ import {
   EVIDENCE_TYPES_RUNTIME,
   FINDING_SEVERITIES_RUNTIME,
   INSPECTION_STATUSES_RUNTIME,
+  REVIEW_DECISIONS_RUNTIME,
   type InspectionEvidenceRecord,
   type InspectionRecord,
+  type InspectionStatus,
 } from './inspection.types';
 
 export interface InspectionStore {
@@ -16,6 +18,8 @@ export interface InspectionStore {
   getInspectionById(id: string): Promise<InspectionRecord | null>;
   getInspectionsForInspector(inspectorId: string): Promise<InspectionRecord[]>;
   getInspectionsForOutlet(outletId: string): Promise<InspectionRecord[]>;
+  getInspectionsForRestaurant(restaurantId: string): Promise<InspectionRecord[]>;
+  listInspectionsByStatus(status: InspectionStatus): Promise<InspectionRecord[]>;
   updateInspection(id: string, patch: Partial<InspectionRecord>): Promise<InspectionRecord | null>;
   addEvidence(record: InspectionEvidenceRecord): Promise<InspectionEvidenceRecord>;
   getEvidenceById(id: string): Promise<InspectionEvidenceRecord | null>;
@@ -54,6 +58,20 @@ export class InMemoryInspectionStore implements InspectionStore {
   async getInspectionsForOutlet(outletId: string): Promise<InspectionRecord[]> {
     const results = Array.from(this.inspections.values())
       .filter((i) => i.outletId === outletId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return results.map((r) => ({ ...r }));
+  }
+
+  async getInspectionsForRestaurant(restaurantId: string): Promise<InspectionRecord[]> {
+    const results = Array.from(this.inspections.values())
+      .filter((i) => i.restaurantId === restaurantId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return results.map((r) => ({ ...r }));
+  }
+
+  async listInspectionsByStatus(status: InspectionStatus): Promise<InspectionRecord[]> {
+    const results = Array.from(this.inspections.values())
+      .filter((i) => i.status === status)
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     return results.map((r) => ({ ...r }));
   }
@@ -160,6 +178,12 @@ const InspectionMongooseSchema = new Schema<InspectionRecord>(
     findings: { type: [FindingMongooseSchema], default: [] },
     evidence: { type: [EvidenceMongooseSchema], default: [] },
     hasCriticalViolation: { type: Boolean, default: false },
+    scoreSummary: { type: Object, required: false },
+    reviewDecision: { type: String, enum: REVIEW_DECISIONS_RUNTIME, required: false },
+    reviewedByUserId: { type: String, required: false },
+    reviewedAt: { type: Date, required: false },
+    reviewNotes: { type: String, required: false },
+    appeal: { type: Object, required: false },
     managerSignedAt: { type: Date, required: false },
     managerName: { type: String, required: false },
     managerDesignation: { type: String, required: false },
@@ -170,6 +194,7 @@ const InspectionMongooseSchema = new Schema<InspectionRecord>(
 applyBaseSchemaConventions(InspectionMongooseSchema);
 InspectionMongooseSchema.index({ outletId: 1, startedAt: -1 });
 InspectionMongooseSchema.index({ inspectorId: 1, status: 1 });
+InspectionMongooseSchema.index({ status: 1, submittedAt: 1 });
 
 export class MongooseInspectionStore implements InspectionStore {
   private readonly inspectionModel: Model<InspectionRecord>;
@@ -211,6 +236,24 @@ export class MongooseInspectionStore implements InspectionStore {
     const docs = await this.inspectionModel
       .find({ outletId })
       .sort({ createdAt: -1 })
+      .lean<InspectionRecord[]>()
+      .exec();
+    return docs;
+  }
+
+  async getInspectionsForRestaurant(restaurantId: string): Promise<InspectionRecord[]> {
+    const docs = await this.inspectionModel
+      .find({ restaurantId })
+      .sort({ createdAt: -1 })
+      .lean<InspectionRecord[]>()
+      .exec();
+    return docs;
+  }
+
+  async listInspectionsByStatus(status: InspectionStatus): Promise<InspectionRecord[]> {
+    const docs = await this.inspectionModel
+      .find({ status })
+      .sort({ submittedAt: 1, createdAt: 1 })
       .lean<InspectionRecord[]>()
       .exec();
     return docs;

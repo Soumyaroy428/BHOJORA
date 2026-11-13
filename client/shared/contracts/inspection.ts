@@ -2,7 +2,68 @@ export type InspectionAssessmentType =
   'INITIAL' | 'ROUTINE' | 'COMPLAINT_TRIGGERED' | 'RE_INSPECTION';
 
 export type InspectionStatus =
-  'SCHEDULED' | 'DRAFT' | 'SUBMITTED' | 'IN_REVIEW' | 'APPROVED' | 'REJECTED';
+  | 'SCHEDULED'
+  | 'DRAFT'
+  | 'SUBMITTED'
+  | 'IN_REVIEW'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'RETURNED'
+  | 'APPEALED';
+
+export type ReviewDecision = 'APPROVE' | 'REJECT' | 'RETURN_FOR_CLARIFICATION';
+
+export type AuditOutcome = 'PASS' | 'FAIL' | 'NEEDS_IMPROVEMENT';
+
+export type AuditGrade = 'A_PLUS' | 'A' | 'B' | 'SUSPENDED';
+
+export type AppealStatus =
+  'SUBMITTED' | 'UNDER_REVIEW' | 'UPHELD' | 'OVERTURNED' | 'RE_INSPECTION_ORDERED';
+
+export interface InspectionScoreSummaryDto {
+  rawScore: number;
+  maxScore: number;
+  scorePercent: number;
+  scorePolicyVersion: string;
+  hasCriticalViolation: boolean;
+  criticalOverrideApplied: boolean;
+  overrideReason?: string;
+  finalScorePercent: number;
+  outcome: AuditOutcome;
+  grade: AuditGrade;
+}
+
+export interface InspectionReviewDto {
+  decision: ReviewDecision;
+  notes: string;
+  scorePolicyVersion?: string;
+}
+
+export interface InspectionAppealDto {
+  id: string;
+  inspectionId: string;
+  restaurantId: string;
+  appellantUserId: string;
+  contestedItemIds: string[];
+  reason: string;
+  evidenceUrls?: string[];
+  status: AppealStatus;
+  submittedAt: string;
+  resolvedAt?: string;
+  resolvedByUserId?: string;
+  resolutionNotes?: string;
+}
+
+export interface InspectionAppealSubmitDto {
+  contestedItemIds: string[];
+  reason: string;
+  evidenceUrls?: string[];
+}
+
+export interface InspectionAppealResolveDto {
+  resolution: 'UPHELD' | 'OVERTURNED' | 'RE_INSPECTION_ORDERED';
+  notes: string;
+}
 
 export type ChecklistCategory =
   | 'PERSONAL_HYGIENE'
@@ -176,6 +237,12 @@ export interface InspectionRecordDto {
   findings: InspectionFindingDto[];
   evidence: InspectionEvidenceDto[];
   hasCriticalViolation: boolean;
+  scoreSummary?: InspectionScoreSummaryDto;
+  reviewDecision?: ReviewDecision;
+  reviewedByUserId?: string;
+  reviewedAt?: string;
+  reviewNotes?: string;
+  appeal?: InspectionAppealDto;
   managerSignedAt?: string;
   managerName?: string;
   createdAt: string;
