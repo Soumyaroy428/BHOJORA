@@ -48,6 +48,7 @@ export const ORDER_EVENT_TYPES = [
   'ORDER_OUT_FOR_DELIVERY',
   'ORDER_DELIVERED',
   'ORDER_CANCELLED',
+  'PREP_TIME_UPDATED',
   'OUTBOX_EVENT_QUEUED',
 ] as const;
 
@@ -144,6 +145,7 @@ export interface OrderDto {
   formattedTotalPayableInr: string;
   addressSnapshot: QuoteAddressSnapshotDto;
   estimatedDeliveryMinutes: number;
+  prepTimeMinutes: number | null;
   specialInstructions: string | null;
   deliveryOtp: string | null;
   items: OrderItemSnapshotDto[];
@@ -203,6 +205,17 @@ export interface CancelOrderRequestDto {
 
 export interface TransitionOrderStatusRequestDto {
   status: OrderStatus;
+  prepTimeMinutes?: number;
+  note?: string;
+}
+
+export interface UpdatePrepTimeRequestDto {
+  prepTimeMinutes: number;
+  note?: string;
+}
+
+export interface RejectOrderRequestDto {
+  reasonCode?: OrderCancelReason;
   note?: string;
 }
 

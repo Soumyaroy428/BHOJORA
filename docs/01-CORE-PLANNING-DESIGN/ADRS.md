@@ -385,3 +385,23 @@ Checkpoint 16 implements the customer and restaurant order lifecycle (`/orders*`
 ### Consequences
 - **Positive:** Prevents duplicate orders under concurrent retries, eliminates cancel-vs-kitchen race corruption, and preserves complete financial and lifecycle auditability.
 - **Negative:** Outbox events remain persisted in `PENDING` state inside `outbox_events` until the asynchronous worker/notification dispatcher consumes them in later checkpoints.
+
+---
+
+## ADR-021: Restaurant Operations, Kitchen Prep Board & Role-Scoped Order Mutation Governance
+
+### Status: ACCEPTED (Locked Baseline — Checkpoint 17)
+
+### Context
+Checkpoint 17 implements the restaurant partner operations dashboard, live Kitchen Display System (KDS) prep board, order acceptance/rejection, dynamic preparation time buffers, and ready-for-pickup handover. Multi-tenant outlet isolation must ensure kitchen crew and restaurant managers can only inspect and transition orders belonging to their assigned outlet, with all operational actions and cross-tenant access attempts permanently audited.
+
+### Decision
+1. **Tenant-Scoped Outlet Order Access & Cross-Outlet Rejection (`hasOutletMembership`):** Enforce `restaurant:order:manage` permission and verify active user outlet membership (`hasOutletMembership`) on all `/api/v1/restaurant/orders*` routes. Cross-outlet query or mutation attempts by staff belonging to another restaurant or outlet are rejected with `403 FORBIDDEN` and immediately append an immutable `DENIED` audit event to `audit_logs` capturing actor ID, active role, target resource, and request ID.
+2. **Kitchen Order Acceptance & Dynamic Prep Buffers (`PATCH /restaurant/orders/:orderId/prep-time`):** When staff accept an incoming `CONFIRMED` order into `PREPARING`, they can specify target prep time in minutes (`5..180`). During peak rush hours, staff can adjust turnaround buffers (`+5m`, `+10m`, `+15m`), which updates `prepTimeMinutes` and recalibrates `estimatedDeliveryMinutes`, appending a `PREP_TIME_UPDATED` event to `order_events` and an `ALLOWED` audit entry to `audit_logs`.
+3. **Out-of-Stock Kitchen Rejections with Customer Refund (`POST /restaurant/orders/:orderId/reject`):** Kitchen staff can reject incoming orders due to inventory exhaustion (`OUTLET_OUT_OF_STOCK`) or capacity constraints (`DELIVERY_DELAY`). Rejections execute the atomic order cancellation flow, transitioning the order to `CANCELLED`, setting `refundStatus: QUEUED_FULL_REFUND` (if paid), logging the cancellation reason, and emitting an `ORDER_CANCELLED` outbox event.
+4. **Kitchen Ready Status & Rider Handover PIN Verification:** Transitioning `PREPARING -> READY_FOR_PICKUP` records `readyForPickupAt` timestamp, appends `ORDER_READY_FOR_PICKUP` to `order_events` and `outbox_events` for rider dispatch, and surfaces the delivery partner handover PIN (`deliveryOtp`) on the KDS display for physical verification at counter handover.
+5. **Kitchen Display System UI (`client/restaurant-web/src/components/KitchenOrderDashboardPanel.tsx`):** Deliver a high-contrast 3-column Kanban interface (`Incoming`, `Cooking / In Prep`, `Ready for Pickup`) with Web Audio alert chimes for incoming orders, timer progress bars, touch-friendly `>= 44px` targets, itemized dietary/allergen tags, and simulated preview modes for standalone operations.
+
+### Consequences
+- **Positive:** Guarantees strict multi-tenant isolation, real-time prep time transparency for delivery estimates, and safe handling of out-of-stock items with automatic customer refunds.
+- **Negative:** Real-time push notifications currently rely on interval polling and preview simulator until WebSocket/SSE sidecars are integrated in subsequent checkpoints.

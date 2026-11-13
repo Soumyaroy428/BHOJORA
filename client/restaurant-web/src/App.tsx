@@ -9,6 +9,7 @@ import {
 import { MenuCatalogPanel } from './components/MenuCatalogPanel';
 import { OutletZonesPanel } from './components/OutletZonesPanel';
 import { RestaurantOnboardingPanel } from './components/RestaurantOnboardingPanel';
+import { KitchenOrderDashboardPanel } from './components/KitchenOrderDashboardPanel';
 
 interface PartnerOutletView {
   outletId: string;
@@ -315,6 +316,15 @@ export function App() {
             </li>
           </ul>
         </section>
+
+        <KitchenOrderDashboardPanel
+          apiBase={getApiBase()}
+          accessToken={accessToken}
+          activeRole={partnerActiveRole}
+          selectedOutletId={selectedOutlet.outletId}
+          selectedOutletName={selectedOutlet.name}
+          onStatusUpdate={setStatusMessage}
+        />
 
         <RestaurantOnboardingPanel
           apiBase={getApiBase()}

@@ -241,5 +241,39 @@ export function createOrdersRouter(params: {
     }),
   );
 
+  router.patch(
+    '/restaurant/orders/:orderId/prep-time',
+    requireAuth,
+    requirePerm('restaurant:order:manage'),
+    wrapAsync(async (req, res) => {
+      const ctx = getRbacContext(res);
+      const result = await orderService.updatePrepTime(
+        paramString(req.params['orderId']),
+        ctx.userId,
+        ctx.activeRole,
+        req.body,
+        getRequestIdFromResponse(res),
+      );
+      sendSuccess(res, 200, result);
+    }),
+  );
+
+  router.post(
+    '/restaurant/orders/:orderId/reject',
+    requireAuth,
+    requirePerm('restaurant:order:manage'),
+    wrapAsync(async (req, res) => {
+      const ctx = getRbacContext(res);
+      const result = await orderService.rejectOrder(
+        paramString(req.params['orderId']),
+        ctx.userId,
+        ctx.activeRole,
+        req.body,
+        getRequestIdFromResponse(res),
+      );
+      sendSuccess(res, 200, result);
+    }),
+  );
+
   return router;
 }

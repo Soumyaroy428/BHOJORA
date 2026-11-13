@@ -68,6 +68,7 @@ const orderSchema = applyBaseSchemaConventions(
     couponCode: { type: String, trim: true, maxlength: 40, default: null },
     addressSnapshot: { type: Schema.Types.Mixed, required: true },
     estimatedDeliveryMinutes: { type: Number, required: true, min: 1 },
+    prepTimeMinutes: { type: Number, default: null },
     specialInstructions: { type: String, trim: true, maxlength: 240, default: null },
     deliveryOtp: { type: String, required: true, trim: true, maxlength: 12 },
     cancellation: { type: cancellationSubSchema, default: null },
@@ -168,6 +169,8 @@ function toOrderRecord(doc: Record<string, unknown>): OrderRecord {
     couponCode: typeof doc['couponCode'] === 'string' ? doc['couponCode'] : null,
     addressSnapshot: doc['addressSnapshot'] as QuoteAddressSnapshotDto,
     estimatedDeliveryMinutes: Number(doc['estimatedDeliveryMinutes'] ?? 30),
+    prepTimeMinutes:
+      typeof doc['prepTimeMinutes'] === 'number' ? Number(doc['prepTimeMinutes']) : null,
     specialInstructions:
       typeof doc['specialInstructions'] === 'string' ? doc['specialInstructions'] : null,
     deliveryOtp: String(doc['deliveryOtp'] ?? ''),
@@ -438,6 +441,10 @@ export class MongooseOrderStore implements OrderStore {
       updatedAt: input.patch.updatedAt,
     };
     if (input.patch.paymentId !== undefined) setFields['paymentId'] = input.patch.paymentId;
+    if (input.patch.prepTimeMinutes !== undefined)
+      setFields['prepTimeMinutes'] = input.patch.prepTimeMinutes;
+    if (input.patch.estimatedDeliveryMinutes !== undefined)
+      setFields['estimatedDeliveryMinutes'] = input.patch.estimatedDeliveryMinutes;
     if (input.patch.cancellation !== undefined)
       setFields['cancellation'] = input.patch.cancellation;
     if (input.patch.confirmedAt !== undefined) setFields['confirmedAt'] = input.patch.confirmedAt;
@@ -637,6 +644,14 @@ export class InMemoryOrderStore implements OrderStore {
       ...cloneOrder(existing),
       status: input.patch.status,
       paymentId: input.patch.paymentId !== undefined ? input.patch.paymentId : existing.paymentId,
+      prepTimeMinutes:
+        input.patch.prepTimeMinutes !== undefined
+          ? input.patch.prepTimeMinutes
+          : existing.prepTimeMinutes,
+      estimatedDeliveryMinutes:
+        input.patch.estimatedDeliveryMinutes !== undefined
+          ? input.patch.estimatedDeliveryMinutes
+          : existing.estimatedDeliveryMinutes,
       cancellation:
         input.patch.cancellation !== undefined ? input.patch.cancellation : existing.cancellation,
       confirmedAt:

@@ -124,6 +124,7 @@ export function buildPreviewOrderBundle(params: {
       coordinates: [...quote.addressSnapshot.coordinates],
     },
     estimatedDeliveryMinutes: quote.estimatedDeliveryMinutes,
+    prepTimeMinutes: null,
     specialInstructions: specialInstructions?.trim() || null,
     deliveryOtp,
     items,

@@ -693,6 +693,30 @@
         }
       }
     },
+    "/restaurant/orders/{id}/prep-time": {
+      "patch": {
+        "summary": "Update order kitchen prep buffer during preparation",
+        "tags": ["Cart & Ordering"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Prep time and delivery estimate updated" },
+          "403": { "description": "Cross-outlet prep update forbidden" },
+          "409": { "description": "Order not in PREPARING or CONFIRMED state" }
+        }
+      }
+    },
+    "/restaurant/orders/{id}/reject": {
+      "post": {
+        "summary": "Reject incoming order due to kitchen capacity or stock exhaustion (triggers customer refund)",
+        "tags": ["Cart & Ordering"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Order cancelled and full refund queued" },
+          "403": { "description": "Cross-outlet rejection forbidden" },
+          "409": { "description": "Order not in cancellable kitchen state" }
+        }
+      }
+    },
     "/payments/create": {
       "post": {
         "summary": "Initialize sandbox payment attempt from server-verified signed quote (zero raw card data)",

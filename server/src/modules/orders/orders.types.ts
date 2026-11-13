@@ -52,6 +52,7 @@ export const ORDER_EVENT_TYPES_RUNTIME = [
   'ORDER_OUT_FOR_DELIVERY',
   'ORDER_DELIVERED',
   'ORDER_CANCELLED',
+  'PREP_TIME_UPDATED',
   'OUTBOX_EVENT_QUEUED',
 ] as const satisfies readonly OrderEventType[];
 
@@ -108,6 +109,7 @@ export const FORBIDDEN_CLIENT_ORDER_OVERRIDE_FIELDS = [
   'confirmedAt',
   'deliveredAt',
   'cancelledAt',
+  'prepTimeMinutes',
 ] as const;
 
 export const ORDER_IDEMPOTENCY_TTL_SECONDS = 86_400;
@@ -131,6 +133,7 @@ export interface OrderRecord {
   couponCode: string | null;
   addressSnapshot: QuoteAddressSnapshotDto;
   estimatedDeliveryMinutes: number;
+  prepTimeMinutes: number | null;
   specialInstructions: string | null;
   deliveryOtp: string;
   cancellation: {
@@ -218,6 +221,8 @@ export interface TransitionOrderAtomicallyInput {
   patch: {
     status: OrderStatus;
     paymentId?: string | null;
+    prepTimeMinutes?: number | null;
+    estimatedDeliveryMinutes?: number;
     cancellation?: OrderRecord['cancellation'];
     confirmedAt?: Date | null;
     preparingAt?: Date | null;

@@ -64,6 +64,21 @@ const cancelOrderSchema = z
 const transitionOrderStatusSchema = z
   .object({
     status: z.enum(ORDER_STATUSES_RUNTIME),
+    prepTimeMinutes: z.number().int().min(5).max(180).optional(),
+    note: z.string().trim().max(240).optional(),
+  })
+  .strict();
+
+const updatePrepTimeSchema = z
+  .object({
+    prepTimeMinutes: z.number().int().min(5).max(180),
+    note: z.string().trim().max(240).optional(),
+  })
+  .strict();
+
+const rejectOrderSchema = z
+  .object({
+    reasonCode: z.enum(ORDER_CANCEL_REASONS_RUNTIME).default('OUTLET_OUT_OF_STOCK'),
     note: z.string().trim().max(240).optional(),
   })
   .strict();
@@ -81,6 +96,7 @@ function assertNoClientOrderOverrides(
   rawBody: unknown,
   endpointLabel: string,
   allowStatusField = false,
+  allowPrepTimeField = false,
 ): void {
   if (!rawBody || typeof rawBody !== 'object' || Array.isArray(rawBody)) {
     return;
@@ -88,6 +104,9 @@ function assertNoClientOrderOverrides(
   const obj = rawBody as Record<string, unknown>;
   for (const field of FORBIDDEN_CLIENT_ORDER_OVERRIDE_FIELDS) {
     if (allowStatusField && field === 'status') {
+      continue;
+    }
+    if (allowPrepTimeField && field === 'prepTimeMinutes') {
       continue;
     }
     if (Object.prototype.hasOwnProperty.call(obj, field)) {
@@ -313,6 +332,7 @@ export class OrderService {
         coordinates: [...order.addressSnapshot.coordinates],
       },
       estimatedDeliveryMinutes: order.estimatedDeliveryMinutes,
+      prepTimeMinutes: order.prepTimeMinutes,
       specialInstructions: order.specialInstructions,
       deliveryOtp: revealOtp ? order.deliveryOtp : null,
       items: items.map((item) => this.toItemDto(item)),
@@ -513,6 +533,7 @@ export class OrderService {
         coordinates: [...quote.addressSnapshot.coordinates],
       },
       estimatedDeliveryMinutes: quote.estimatedDeliveryMinutes,
+      prepTimeMinutes: outlet.prepTimeMinutes ?? null,
       specialInstructions: parsed.specialInstructions?.trim() || null,
       deliveryOtp: generateDeliveryOtp(),
       cancellation: null,
@@ -1065,7 +1086,7 @@ export class OrderService {
     rawBody: unknown,
     requestId = 'unknown-request',
   ): Promise<{ order: OrderDto; events: OrderEventDto[] }> {
-    assertNoClientOrderOverrides(rawBody, `PATCH /orders/${orderId}/status`, true);
+    assertNoClientOrderOverrides(rawBody, `PATCH /orders/${orderId}/status`, true, true);
     const parsed: TransitionOrderStatusRequestDto = transitionOrderStatusSchema.parse(rawBody);
 
     const order = await this.orderStore.getOrderById(orderId);
@@ -1165,7 +1186,17 @@ export class OrderService {
       patch: {
         status: parsed.status,
         ...(parsed.status === 'CONFIRMED' ? { confirmedAt: now } : {}),
-        ...(parsed.status === 'PREPARING' ? { preparingAt: now } : {}),
+        ...(parsed.status === 'PREPARING'
+          ? {
+              preparingAt: now,
+              ...(parsed.prepTimeMinutes !== undefined
+                ? {
+                    prepTimeMinutes: parsed.prepTimeMinutes,
+                    estimatedDeliveryMinutes: Math.min(180, parsed.prepTimeMinutes + 15),
+                  }
+                : {}),
+            }
+          : {}),
         ...(parsed.status === 'READY_FOR_PICKUP' ? { readyForPickupAt: now } : {}),
         ...(parsed.status === 'OUT_FOR_DELIVERY' ? { outForDeliveryAt: now } : {}),
         ...(parsed.status === 'DELIVERED' ? { deliveredAt: now } : {}),
@@ -1180,7 +1211,10 @@ export class OrderService {
         actorId: actorUserId,
         actorRole,
         note:
-          parsed.note?.trim() || `Transitioned ${order.status} -> ${parsed.status} by ${actorRole}`,
+          parsed.note?.trim() ||
+          (parsed.status === 'PREPARING' && parsed.prepTimeMinutes
+            ? `Accepted & preparing (prep time: ${parsed.prepTimeMinutes} mins)`
+            : `Transitioned ${order.status} -> ${parsed.status} by ${actorRole}`),
         occurredAt: now,
       },
       outboxEvents,
@@ -1192,6 +1226,19 @@ export class OrderService {
         'CONFLICT',
         `Concurrent state modification rejected; order is now ${transitionResult.currentOrder?.status ?? 'unavailable'}`,
       );
+    }
+
+    if (this.rbacStore) {
+      await this.rbacStore.appendAuditLog({
+        actorId: actorUserId,
+        actorRole,
+        action: `orders.transition.${parsed.status}`,
+        resourceType: 'order',
+        resourceId: order.orderId,
+        outcome: 'ALLOWED',
+        reason: `Status updated to ${parsed.status}`,
+        requestId,
+      });
     }
 
     const events = await this.orderStore.listOrderEvents(order.orderId);
@@ -1206,5 +1253,139 @@ export class OrderService {
       order: await this.hydrateOrderDto(transitionResult.order, false),
       events: events.map((e) => this.toEventDto(e)),
     };
+  }
+
+  async updatePrepTime(
+    orderId: string,
+    actorUserId: string,
+    actorRole: UserRole,
+    rawBody: unknown,
+    requestId = 'unknown-request',
+  ): Promise<{ order: OrderDto; events: OrderEventDto[] }> {
+    assertNoClientOrderOverrides(
+      rawBody,
+      `PATCH /restaurant/orders/${orderId}/prep-time`,
+      false,
+      true,
+    );
+    const parsed = updatePrepTimeSchema.parse(rawBody);
+
+    const order = await this.orderStore.getOrderById(orderId);
+    if (!order) {
+      throw new AppError(404, 'NOT_FOUND', `Order "${orderId}" not found`);
+    }
+
+    const isOps =
+      hasPermissionForRole(actorRole, 'ops:outlet:manage') ||
+      hasPermissionForRole(actorRole, 'system:admin:override');
+
+    let authorized = isOps;
+    if (!authorized) {
+      if (hasPermissionForRole(actorRole, 'restaurant:order:manage') && this.rbacStore) {
+        const memberships = await this.rbacStore.listMembershipsForUser(actorUserId);
+        authorized = hasOutletMembership(memberships, order.restaurantId, order.outletId);
+      }
+    }
+
+    if (!authorized) {
+      if (this.rbacStore) {
+        await this.rbacStore.appendAuditLog({
+          actorId: actorUserId,
+          actorRole,
+          action: 'orders.prep_time.update',
+          resourceType: 'order',
+          resourceId: orderId,
+          outcome: 'DENIED',
+          reason: `Role ${actorRole} cannot update prep time for outlet ${order.outletId}`,
+          requestId,
+        });
+      }
+      throw new AppError(
+        403,
+        'FORBIDDEN',
+        'You do not have permission to update prep time for this order',
+      );
+    }
+
+    if (order.status !== 'CONFIRMED' && order.status !== 'PREPARING') {
+      throw new AppError(
+        409,
+        'CONFLICT',
+        `Prep time can only be updated while order is CONFIRMED or PREPARING; current status is ${order.status}`,
+      );
+    }
+
+    const now = this.clock.now();
+    const newDeliveryMinutes = Math.min(180, parsed.prepTimeMinutes + 15);
+    const transitionResult = await this.orderStore.transitionOrderAtomically({
+      orderId: order.orderId,
+      expectedStatuses: [order.status],
+      expectedVersion: order.version,
+      patch: {
+        status: order.status,
+        prepTimeMinutes: parsed.prepTimeMinutes,
+        estimatedDeliveryMinutes: newDeliveryMinutes,
+        updatedAt: now,
+      },
+      event: {
+        eventId: `oevt_${crypto.randomUUID()}`,
+        orderId: order.orderId,
+        eventType: 'PREP_TIME_UPDATED',
+        fromStatus: order.status,
+        toStatus: order.status,
+        actorId: actorUserId,
+        actorRole,
+        note:
+          parsed.note?.trim() ||
+          `Prep time updated from ${order.prepTimeMinutes ?? 'unset'}m to ${parsed.prepTimeMinutes}m by ${actorRole}`,
+        occurredAt: now,
+      },
+    });
+
+    if (!transitionResult.updated) {
+      throw new AppError(
+        409,
+        'CONFLICT',
+        `Order "${order.orderNumber}" state changed concurrently; please reload order ticket`,
+      );
+    }
+
+    if (this.rbacStore) {
+      await this.rbacStore.appendAuditLog({
+        actorId: actorUserId,
+        actorRole,
+        action: 'orders.prep_time.update',
+        resourceType: 'order',
+        resourceId: orderId,
+        outcome: 'ALLOWED',
+        reason: `Prep time adjusted to ${parsed.prepTimeMinutes} mins`,
+        requestId,
+      });
+    }
+
+    const updated = transitionResult.order;
+    const hydrated = await this.hydrateOrderDto(updated, false);
+    const events = await this.orderStore.listOrderEvents(order.orderId);
+    return { order: hydrated, events: events.map((e) => this.toEventDto(e)) };
+  }
+
+  async rejectOrder(
+    orderId: string,
+    actorUserId: string,
+    actorRole: UserRole,
+    rawBody: unknown,
+    requestId = 'unknown-request',
+  ): Promise<{ order: OrderDto; events: OrderEventDto[] }> {
+    const parsed = rejectOrderSchema.parse(rawBody || {});
+    return this.cancelOrder(
+      orderId,
+      actorUserId,
+      actorRole,
+      {
+        reasonCode: parsed.reasonCode,
+        note: parsed.note || 'Rejected by kitchen staff',
+      },
+      requestId,
+    );
   }
 }

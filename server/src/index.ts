@@ -44,7 +44,7 @@ import { InMemoryOrderStore, MongooseOrderStore } from './modules/orders/orders.
 
 export const SERVER_BASELINE = {
   service: 'bhojora-api',
-  checkpoint: '16',
+  checkpoint: '17',
   runtime: 'node-22-lts',
   currency: 'INR',
   currencyUnit: 'paise',
