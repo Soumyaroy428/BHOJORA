@@ -12,3 +12,4 @@ export * from './rbac';
 export * from './restaurant';
 export * from './delivery';
 export * from './inspector';
+export * from './inspection';

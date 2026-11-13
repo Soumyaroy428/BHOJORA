@@ -64,6 +64,13 @@ import {
   MongooseInspectorStore,
 } from './modules/inspector/inspector.store';
 import type { InspectorStore } from './modules/inspector/inspector.store';
+import { createInspectionRouter } from './modules/inspection/inspection.routes';
+import { InspectionService } from './modules/inspection/inspection.service';
+import {
+  InMemoryInspectionStore,
+  MongooseInspectionStore,
+} from './modules/inspection/inspection.store';
+import type { InspectionStore } from './modules/inspection/inspection.store';
 
 export interface CreateAppOptions {
   config: AppConfig;
@@ -97,6 +104,8 @@ export interface CreateAppOptions {
   deliveryService?: DeliveryService;
   inspectorStore?: InspectorStore;
   inspectorService?: InspectorService;
+  inspectionStore?: InspectionStore;
+  inspectionService?: InspectionService;
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -275,6 +284,17 @@ export function createApp(options: CreateAppOptions): Express {
       identityStore,
       rbacStore,
     });
+  const inspectionStore =
+    options.inspectionStore ??
+    (isInMemoryMode
+      ? new InMemoryInspectionStore()
+      : new MongooseInspectionStore(mongoose.connection));
+  const inspectionService =
+    options.inspectionService ??
+    new InspectionService({
+      inspectionStore,
+      inspectorService,
+    });
   paymentService.setOnPaymentCapturedListener(async (payment) => {
     await orderService.confirmOrderFromPayment(payment);
   });
@@ -357,6 +377,12 @@ export function createApp(options: CreateAppOptions): Express {
     inspectorService,
     config,
   });
+  const inspectionRouter = createInspectionRouter({
+    identityService,
+    inspectorService,
+    inspectionService,
+    config,
+  });
 
   app.use('/api/v1', healthRouter);
   app.use('/api/v1', identityRouter);
@@ -372,6 +398,7 @@ export function createApp(options: CreateAppOptions): Express {
   app.use('/api/v1', ordersRouter);
   app.use('/api/v1', deliveryRouter);
   app.use('/api/v1', inspectorRouter);
+  app.use('/api/v1', inspectionRouter);
   app.use(healthRouter);
 
   app.use(notFoundHandler);

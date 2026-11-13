@@ -48,6 +48,11 @@ import {
   InMemoryInspectorStore,
   MongooseInspectorStore,
 } from './modules/inspector/inspector.store';
+import { InspectionService } from './modules/inspection/inspection.service';
+import {
+  InMemoryInspectionStore,
+  MongooseInspectionStore,
+} from './modules/inspection/inspection.store';
 import {
   DELIVERY_DOCUMENT_TYPES_RUNTIME,
   DELIVERY_PARTNER_STATUSES_RUNTIME,
@@ -115,6 +120,9 @@ export {
   InspectorService,
   MongooseInspectorStore,
   InMemoryInspectorStore,
+  InspectionService,
+  MongooseInspectionStore,
+  InMemoryInspectionStore,
   DELIVERY_DOCUMENT_TYPES_RUNTIME,
   DELIVERY_PARTNER_STATUSES_RUNTIME,
   DELIVERY_SHIFT_STATUSES_RUNTIME,
@@ -265,6 +273,19 @@ async function startServer(): Promise<void> {
     );
   });
 
+  const inspectorStore = new MongooseInspectorStore(mongoConnection);
+  const inspectorService = new InspectorService({
+    inspectorStore,
+    identityStore,
+    rbacStore,
+  });
+
+  const inspectionStore = new MongooseInspectionStore(mongoConnection);
+  const inspectionService = new InspectionService({
+    inspectionStore,
+    inspectorService,
+  });
+
   const app = createApp({
     config,
     logger,
@@ -290,19 +311,17 @@ async function startServer(): Promise<void> {
     paymentGatewayAdapter,
     orderStore,
     orderService,
-    deliveryStore: new MongooseDeliveryStore(dbManager.getConnection()),
+    deliveryStore: new MongooseDeliveryStore(mongoConnection),
     deliveryService: new DeliveryService({
-      deliveryStore: new MongooseDeliveryStore(dbManager.getConnection()),
+      deliveryStore: new MongooseDeliveryStore(mongoConnection),
       identityStore,
       rbacStore,
       signingSecret: config.jwtAccessSecret,
     }),
-    inspectorStore: new MongooseInspectorStore(dbManager.getConnection()),
-    inspectorService: new InspectorService({
-      inspectorStore: new MongooseInspectorStore(dbManager.getConnection()),
-      identityStore,
-      rbacStore,
-    }),
+    inspectorStore,
+    inspectorService,
+    inspectionStore,
+    inspectionService,
   });
 
   const server = http.createServer(app);
