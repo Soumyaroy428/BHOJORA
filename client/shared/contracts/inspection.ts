@@ -65,13 +65,16 @@ export interface InspectionAppealResolveDto {
   notes: string;
 }
 
-export type ChecklistCategory =
-  | 'PERSONAL_HYGIENE'
-  | 'FOOD_STORAGE_TEMPERATURE'
-  | 'CROSS_CONTAMINATION_PREVENTION'
-  | 'CLEANING_SANITATION'
-  | 'PEST_CONTROL'
-  | 'WASTE_MANAGEMENT_DRAINAGE';
+export const CHECKLIST_CATEGORIES = [
+  'PERSONAL_HYGIENE',
+  'FOOD_STORAGE_TEMPERATURE',
+  'CROSS_CONTAMINATION_PREVENTION',
+  'CLEANING_SANITATION',
+  'PEST_CONTROL',
+  'WASTE_MANAGEMENT_DRAINAGE',
+] as const;
+
+export type ChecklistCategory = (typeof CHECKLIST_CATEGORIES)[number];
 
 export type FindingSeverity = 'PASS' | 'MINOR' | 'MAJOR' | 'CRITICAL';
 

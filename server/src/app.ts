@@ -71,6 +71,8 @@ import {
   MongooseInspectionStore,
 } from './modules/inspection/inspection.store';
 import type { InspectionStore } from './modules/inspection/inspection.store';
+import { createSafetyRouter } from './modules/safety/safety.routes';
+import { SafetyService } from './modules/safety/safety.service';
 
 export interface CreateAppOptions {
   config: AppConfig;
@@ -106,6 +108,7 @@ export interface CreateAppOptions {
   inspectorService?: InspectorService;
   inspectionStore?: InspectionStore;
   inspectionService?: InspectionService;
+  safetyService?: SafetyService;
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -383,6 +386,15 @@ export function createApp(options: CreateAppOptions): Express {
     inspectionService,
     config,
   });
+  const safetyService =
+    options.safetyService ??
+    new SafetyService({
+      restaurantStore,
+      inspectionStore,
+      signingSecret: config.jwtAccessSecret,
+      ...(options.clock ? { clock: options.clock } : {}),
+    });
+  const safetyRouter = createSafetyRouter({ safetyService });
 
   app.use('/api/v1', healthRouter);
   app.use('/api/v1', identityRouter);
@@ -399,6 +411,7 @@ export function createApp(options: CreateAppOptions): Express {
   app.use('/api/v1', deliveryRouter);
   app.use('/api/v1', inspectorRouter);
   app.use('/api/v1', inspectionRouter);
+  app.use('/api/v1', safetyRouter);
   app.use(healthRouter);
 
   app.use(notFoundHandler);
