@@ -55,6 +55,7 @@ import {
 } from './modules/inspection/inspection.store';
 import { SupportService } from './modules/support/support.service';
 import { InMemorySupportStore, MongooseSupportStore } from './modules/support/support.store';
+import { SafetyService } from './modules/safety/safety.service';
 import {
   DELIVERY_DOCUMENT_TYPES_RUNTIME,
   DELIVERY_PARTNER_STATUSES_RUNTIME,
@@ -291,6 +292,21 @@ async function startServer(): Promise<void> {
     inspectorService,
   });
 
+  const supportStore = new MongooseSupportStore(mongoConnection);
+  const supportService = new SupportService({
+    supportStore,
+    orderStore,
+    restaurantStore,
+  });
+
+  const safetyService = new SafetyService({
+    restaurantStore,
+    inspectionStore,
+    signingSecret: config.jwtAccessSecret,
+    hasActiveSafetyInvestigationFn: (outletId: string) =>
+      supportService.hasActiveSafetyInvestigation(outletId),
+  });
+
   const app = createApp({
     config,
     logger,
@@ -327,6 +343,9 @@ async function startServer(): Promise<void> {
     inspectorService,
     inspectionStore,
     inspectionService,
+    supportStore,
+    supportService,
+    safetyService,
   });
 
   const server = http.createServer(app);

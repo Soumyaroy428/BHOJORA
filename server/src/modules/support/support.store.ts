@@ -310,12 +310,12 @@ export class MongooseSupportStore implements SupportStore {
   }
 
   async getReviewById(reviewId: string): Promise<OrderReviewRecord | null> {
-    const doc = await this.reviewModel.findOne({ reviewId }).lean<OrderReviewRecord>();
+    const doc = await this.reviewModel.findOne({ reviewId }).lean<OrderReviewRecord>().exec();
     return doc ?? null;
   }
 
   async getReviewByOrderId(orderId: string): Promise<OrderReviewRecord | null> {
-    const doc = await this.reviewModel.findOne({ orderId }).lean<OrderReviewRecord>();
+    const doc = await this.reviewModel.findOne({ orderId }).lean<OrderReviewRecord>().exec();
     return doc ?? null;
   }
 
@@ -331,7 +331,7 @@ export class MongooseSupportStore implements SupportStore {
     if (options?.limit && options.limit > 0) {
       q.limit(options.limit);
     }
-    const docs = await q.lean<OrderReviewRecord[]>();
+    const docs = await q.lean<OrderReviewRecord[]>().exec();
     return docs;
   }
 
@@ -345,7 +345,8 @@ export class MongooseSupportStore implements SupportStore {
         { ...updates, updatedAt: new Date().toISOString() },
         { new: true },
       )
-      .lean<OrderReviewRecord>();
+      .lean<OrderReviewRecord>()
+      .exec();
     return doc ?? null;
   }
 
@@ -357,12 +358,16 @@ export class MongooseSupportStore implements SupportStore {
   async getComplaintById(complaintId: string): Promise<FoodSafetyComplaintRecord | null> {
     const doc = await this.complaintModel
       .findOne({ complaintId })
-      .lean<FoodSafetyComplaintRecord>();
+      .lean<FoodSafetyComplaintRecord>()
+      .exec();
     return doc ?? null;
   }
 
   async getComplaintByOrderId(orderId: string): Promise<FoodSafetyComplaintRecord | null> {
-    const doc = await this.complaintModel.findOne({ orderId }).lean<FoodSafetyComplaintRecord>();
+    const doc = await this.complaintModel
+      .findOne({ orderId })
+      .lean<FoodSafetyComplaintRecord>()
+      .exec();
     return doc ?? null;
   }
 
@@ -370,7 +375,8 @@ export class MongooseSupportStore implements SupportStore {
     const docs = await this.complaintModel
       .find({ outletId })
       .sort({ createdAt: -1 })
-      .lean<FoodSafetyComplaintRecord[]>();
+      .lean<FoodSafetyComplaintRecord[]>()
+      .exec();
     return docs;
   }
 
@@ -378,7 +384,8 @@ export class MongooseSupportStore implements SupportStore {
     const docs = await this.complaintModel
       .find({ customerId })
       .sort({ createdAt: -1 })
-      .lean<FoodSafetyComplaintRecord[]>();
+      .lean<FoodSafetyComplaintRecord[]>()
+      .exec();
     return docs;
   }
 
@@ -391,7 +398,8 @@ export class MongooseSupportStore implements SupportStore {
     ];
     const docs = await this.complaintModel
       .find({ outletId, status: { $in: activeStatuses } })
-      .lean<FoodSafetyComplaintRecord[]>();
+      .lean<FoodSafetyComplaintRecord[]>()
+      .exec();
     return docs;
   }
 
@@ -405,7 +413,8 @@ export class MongooseSupportStore implements SupportStore {
         { ...updates, updatedAt: new Date().toISOString() },
         { new: true },
       )
-      .lean<FoodSafetyComplaintRecord>();
+      .lean<FoodSafetyComplaintRecord>()
+      .exec();
     return doc ?? null;
   }
 }
