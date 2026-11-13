@@ -405,3 +405,23 @@ Checkpoint 17 implements the restaurant partner operations dashboard, live Kitch
 ### Consequences
 - **Positive:** Guarantees strict multi-tenant isolation, real-time prep time transparency for delivery estimates, and safe handling of out-of-stock items with automatic customer refunds.
 - **Negative:** Real-time push notifications currently rely on interval polling and preview simulator until WebSocket/SSE sidecars are integrated in subsequent checkpoints.
+
+
+## ADR-022: Delivery Partner Onboarding, Private KYC Vault & Availability State Governance
+
+### Status: ACCEPTED (Locked Baseline — Checkpoint 18)
+
+### Context
+Checkpoint 18 implements the delivery partner domain, driver profile creation, vehicle registration, private KYC document submission, administrative compliance review queue, role promotion, and shift availability governance. Rider compliance documents contain sensitive statutory records (Driving License, Vehicle Registration Certificate, PAN card, and Bank Account numbers) that must be strictly isolated from public endpoints, masked against internal data leaks, and protected from unauthorized peer inspection (IDOR). Furthermore, privileged ops administrators must be prevented from self-approving their own onboarding applications to guarantee unbiased compliance oversight.
+
+### Decision
+1. **Dedicated Delivery Domain (`server/src/modules/delivery/`):** Own `BhojoraDeliveryPartner` (`delivery_partners` collection) while reusing `IdentityStore` (`users`) and `RbacStore` (`audit_logs`) per ADR-001 modular monolith boundaries. Forbidden client override fields (`status`, `shiftStatus`, `rating`, `totalDeliveries`, `rejectionReason`, `approvedAt`, `reviewedByUserId`, `reviewedAt`) are stripped or rejected on partner write endpoints.
+2. **Private KYC Vault & Zero Raw Secret Storage (`ADR-007`):** All compliance documents (`DRIVING_LICENSE`, `VEHICLE_RC`, `GOVERNMENT_ID`, `PAN_CARD`) enforce `isPublic: false`. Raw statutory document numbers and bank account numbers are masked immediately upon receipt (`X`-masked except the last 4 digits) and cryptographically stored with HMAC-SHA256 digests (`hmacDigest`) for tamper detection and audit matching without persisting plaintext numbers in database indexes or application logs.
+3. **Strict Self-Review Prohibition & Audit Logging:** Ops reviewers (`OPS_ADMIN`, `TRUST_ADMIN`, `SUPER_ADMIN`) cannot approve or reject their own delivery partner applications. If `application.userId === reviewerUserId`, the API immediately rejects the mutation with `403 FORBIDDEN` (`SELF_REVIEW_PROHIBITED`) and logs an immutable `DENIED` entry in `audit_logs`. Rejection requires an explicit audit reason of at least 8 characters.
+4. **Automated RBAC Role Promotion Upon Approval:** When an application is approved by an authorized reviewer with verified step-up MFA, the delivery partner record transitions to `APPROVED`, all uploaded KYC documents are marked `VERIFIED`, and the applicant's account in `IdentityStore` is automatically promoted to include the `DELIVERY_PARTNER` role (`profile:own:read`, `profile:own:write`, `delivery:job:read`, `delivery:job:update`, `delivery:earnings:own:read`).
+5. **Shift Availability Governance & Kolkata Boundary Lock:** Delivery partners cannot switch shift status to `ONLINE` or `ON_DELIVERY` unless their profile status is `APPROVED` (`409 CONFLICT` if in `DRAFT`, `SUBMITTED`, `UNDER_REVIEW`, or `REJECTED`). When going `ONLINE`, supplied GPS coordinates are validated against Kolkata service bounds (`[88.1..88.7, 22.3..22.85]`) using `assertValidGeoJsonPoint` (`400 VALIDATION_ERROR` if outside Kolkata).
+6. **Mobile Touch Ergonomics & Admin Review Queue (`client/delivery-mobile` & `client/admin-web`):** Provide mobile-optimized, thumb-accessible (>=48px touch targets) rider onboarding and shift switcher at 390px/320px viewport with zero horizontal overflow, paired with an admin review panel displaying masked applicant KYC details and one-click approval/rejection actions.
+
+### Consequences
+- **Positive:** Guarantees strict DPDP compliance, zero plaintext identity/bank secret storage, unbreakable self-review boundaries, and server-enforced shift availability locking.
+- **Negative:** Full automated biometric and OCR document verification is deferred to enterprise KYC integration; current verification relies on ops visual review and HMAC digests.

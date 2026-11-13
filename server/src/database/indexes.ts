@@ -382,6 +382,26 @@ export const INITIAL_DATABASE_INDEXES: readonly DatabaseIndexSpec[] = [
     options: { name: 'idx_reconciliation_records_status_created_desc' },
   },
   {
+    collection: COLLECTION_NAMES.deliveryPartners,
+    key: { partnerId: 1 },
+    options: { name: 'idx_delivery_partners_partner_id_unique', unique: true },
+  },
+  {
+    collection: COLLECTION_NAMES.deliveryPartners,
+    key: { userId: 1 },
+    options: { name: 'idx_delivery_partners_user_id_unique', unique: true },
+  },
+  {
+    collection: COLLECTION_NAMES.deliveryPartners,
+    key: { status: 1, createdAt: -1 },
+    options: { name: 'idx_delivery_partners_status_created_desc' },
+  },
+  {
+    collection: COLLECTION_NAMES.deliveryPartners,
+    key: { shiftStatus: 1, status: 1 },
+    options: { name: 'idx_delivery_partners_shift_status' },
+  },
+  {
     collection: COLLECTION_NAMES.deliveryAssignments,
     key: { partnerId: 1, status: 1 },
     options: { name: 'idx_delivery_assignments_partner_status' },

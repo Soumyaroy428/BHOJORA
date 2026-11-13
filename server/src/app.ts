@@ -53,6 +53,10 @@ import { createOrdersRouter } from './modules/orders/orders.routes';
 import { OrderService } from './modules/orders/orders.service';
 import { InMemoryOrderStore, MongooseOrderStore } from './modules/orders/orders.store';
 import type { OrderStore } from './modules/orders/orders.types';
+import { createDeliveryRouter } from './modules/delivery/delivery.routes';
+import { DeliveryService } from './modules/delivery/delivery.service';
+import { InMemoryDeliveryStore, MongooseDeliveryStore } from './modules/delivery/delivery.store';
+import type { DeliveryStore } from './modules/delivery/delivery.store';
 
 export interface CreateAppOptions {
   config: AppConfig;
@@ -82,6 +86,8 @@ export interface CreateAppOptions {
   paymentGatewayAdapter?: SandboxPaymentGatewayAdapter;
   orderStore?: OrderStore;
   orderService?: OrderService;
+  deliveryStore?: DeliveryStore;
+  deliveryService?: DeliveryService;
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -235,6 +241,18 @@ export function createApp(options: CreateAppOptions): Express {
       logger,
       ...(options.clock ? { clock: options.clock } : {}),
     });
+  const deliveryStore =
+    options.deliveryStore ??
+    (isInMemoryMode ? new InMemoryDeliveryStore() : new MongooseDeliveryStore(mongoose.connection));
+  const deliveryService =
+    options.deliveryService ??
+    new DeliveryService({
+      deliveryStore,
+      identityStore,
+      rbacStore,
+      signingSecret: config.jwtAccessSecret,
+      ...(options.clock ? { clock: options.clock } : {}),
+    });
   paymentService.setOnPaymentCapturedListener(async (payment) => {
     await orderService.confirmOrderFromPayment(payment);
   });
@@ -306,6 +324,12 @@ export function createApp(options: CreateAppOptions): Express {
     rbacStore,
     config,
   });
+  const deliveryRouter = createDeliveryRouter({
+    identityService,
+    identityStore,
+    deliveryService,
+    config,
+  });
 
   app.use('/api/v1', healthRouter);
   app.use('/api/v1', identityRouter);
@@ -319,6 +343,7 @@ export function createApp(options: CreateAppOptions): Express {
   app.use('/api/v1', pricingRouter);
   app.use('/api/v1', paymentsRouter);
   app.use('/api/v1', ordersRouter);
+  app.use('/api/v1', deliveryRouter);
   app.use(healthRouter);
 
   app.use(notFoundHandler);

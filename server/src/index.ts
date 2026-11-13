@@ -41,10 +41,18 @@ import { PaymentService } from './modules/payments/payments.service';
 import { InMemoryPaymentStore, MongoosePaymentStore } from './modules/payments/payments.store';
 import { evaluateCancellationEligibility, OrderService } from './modules/orders/orders.service';
 import { InMemoryOrderStore, MongooseOrderStore } from './modules/orders/orders.store';
+import { DeliveryService } from './modules/delivery/delivery.service';
+import { InMemoryDeliveryStore, MongooseDeliveryStore } from './modules/delivery/delivery.store';
+import {
+  DELIVERY_DOCUMENT_TYPES_RUNTIME,
+  DELIVERY_PARTNER_STATUSES_RUNTIME,
+  DELIVERY_SHIFT_STATUSES_RUNTIME,
+  VEHICLE_TYPES_RUNTIME,
+} from './modules/delivery/delivery.types';
 
 export const SERVER_BASELINE = {
   service: 'bhojora-api',
-  checkpoint: '17',
+  checkpoint: '18',
   runtime: 'node-22-lts',
   currency: 'INR',
   currencyUnit: 'paise',
@@ -96,6 +104,13 @@ export {
   MongooseOrderStore,
   InMemoryOrderStore,
   evaluateCancellationEligibility,
+  DeliveryService,
+  MongooseDeliveryStore,
+  InMemoryDeliveryStore,
+  DELIVERY_DOCUMENT_TYPES_RUNTIME,
+  DELIVERY_PARTNER_STATUSES_RUNTIME,
+  DELIVERY_SHIFT_STATUSES_RUNTIME,
+  VEHICLE_TYPES_RUNTIME,
   SafeLogOtpSenderAdapter,
 };
 
@@ -267,6 +282,13 @@ async function startServer(): Promise<void> {
     paymentGatewayAdapter,
     orderStore,
     orderService,
+    deliveryStore: new MongooseDeliveryStore(dbManager.getConnection()),
+    deliveryService: new DeliveryService({
+      deliveryStore: new MongooseDeliveryStore(dbManager.getConnection()),
+      identityStore,
+      rbacStore,
+      signingSecret: config.jwtAccessSecret,
+    }),
   });
 
   const server = http.createServer(app);

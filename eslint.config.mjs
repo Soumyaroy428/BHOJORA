@@ -9,6 +9,7 @@ export default tseslint.config(
       '**/dist/**',
       '**/build/**',
       '**/.next/**',
+      '**/.vercel/**',
       '**/out/**',
       '**/coverage/**',
       'client/public/**',
@@ -41,6 +42,7 @@ export default tseslint.config(
       'client/customer-web/src/**/*.{ts,tsx}',
       'client/restaurant-web/src/**/*.{ts,tsx}',
       'client/admin-web/src/**/*.{ts,tsx}',
+      'client/delivery-mobile/src/**/*.{ts,tsx}',
     ],
     languageOptions: {
       globals: {

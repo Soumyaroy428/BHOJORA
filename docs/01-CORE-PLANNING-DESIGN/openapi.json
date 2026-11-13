@@ -1115,9 +1115,72 @@
     "/admin/restaurant-applications/{applicationId}/review": {
       "post": {
         "summary": "Record audited APPROVE/REQUEST_CHANGES/REJECT decision and statutory FSSAI status independently from platform inspection",
-        "tags": ["Administration"],
+        "tags": ["Restaurant Onboarding"],
         "parameters": [{ "name": "applicationId", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "Audited decision recorded; platformInspectionStatus remains NOT_INSPECTED" }, "403": { "description": "SELF_REVIEW_PROHIBITED or MFA_REQUIRED" } }
+      }
+    },
+    "/delivery/applications": {
+      "post": {
+        "summary": "Create delivery partner onboarding application in DRAFT state",
+        "tags": ["Delivery Onboarding"],
+        "responses": { "201": { "description": "Delivery application created" }, "409": { "description": "Application already exists" } }
+      }
+    },
+    "/delivery/profile/me": {
+      "get": {
+        "summary": "Get authenticated delivery partner profile with masked KYC details",
+        "tags": ["Delivery Onboarding"],
+        "responses": { "200": { "description": "Partner profile returned" }, "404": { "description": "Partner profile not found" } }
+      },
+      "put": {
+        "summary": "Update editable delivery profile, vehicle, and payout fields prior to submission",
+        "tags": ["Delivery Onboarding"],
+        "responses": { "200": { "description": "Partner profile updated" }, "409": { "description": "Cannot edit profile while under review" } }
+      }
+    },
+    "/delivery/profile/me/documents": {
+      "post": {
+        "summary": "Upload private KYC compliance document with masked number and HMAC-SHA256 digest",
+        "tags": ["Delivery Onboarding"],
+        "responses": { "200": { "description": "Document attached to vault" }, "409": { "description": "Cannot upload while under review" } }
+      }
+    },
+    "/delivery/profile/me/submit": {
+      "post": {
+        "summary": "Submit delivery partner application for ops compliance review",
+        "tags": ["Delivery Onboarding"],
+        "responses": { "200": { "description": "Application transitioned to UNDER_REVIEW" }, "400": { "description": "Mandatory documents or payout missing" } }
+      }
+    },
+    "/delivery/profile/me/availability": {
+      "patch": {
+        "summary": "Update rider shift status (ONLINE/OFFLINE) and report GPS coordinates within Kolkata bounds",
+        "tags": ["Delivery Availability"],
+        "responses": { "200": { "description": "Availability updated" }, "409": { "description": "Partner must be APPROVED to accept shifts" } }
+      }
+    },
+    "/delivery/admin/applications": {
+      "get": {
+        "summary": "List delivery partner application review queue (ops reviewer + MFA verified)",
+        "tags": ["Delivery Administration"],
+        "responses": { "200": { "description": "Delivery review queue" }, "403": { "description": "Privileged role or MFA required" } }
+      }
+    },
+    "/delivery/admin/applications/{partnerId}": {
+      "get": {
+        "summary": "Inspect delivery partner application with masked documents and vehicle details",
+        "tags": ["Delivery Administration"],
+        "parameters": [{ "name": "partnerId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Partner application detail" }, "404": { "description": "Application not found" } }
+      }
+    },
+    "/delivery/admin/applications/{partnerId}/review": {
+      "post": {
+        "summary": "Approve or reject delivery partner application with self-review prohibition and role promotion",
+        "tags": ["Delivery Administration"],
+        "parameters": [{ "name": "partnerId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Application review decision recorded" }, "403": { "description": "SELF_REVIEW_PROHIBITED or MFA required" } }
       }
     }
   }

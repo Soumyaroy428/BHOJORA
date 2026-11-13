@@ -10,6 +10,7 @@ import {
   type UserProfileDto,
 } from '@bhojora/shared';
 import { OnboardingReviewQueue } from './components/OnboardingReviewQueue';
+import { DeliveryPartnerReviewQueue } from './components/DeliveryPartnerReviewQueue';
 import { ZoneGovernancePanel } from './components/ZoneGovernancePanel';
 
 interface GovernanceItem {
@@ -320,6 +321,13 @@ export function App() {
         </section>
 
         <OnboardingReviewQueue
+          apiBase={getApiBase()}
+          accessToken={accessToken}
+          mfaVerified={Boolean(rbacContext?.mfaVerified)}
+          onStatusUpdate={setStatusMessage}
+        />
+
+        <DeliveryPartnerReviewQueue
           apiBase={getApiBase()}
           accessToken={accessToken}
           mfaVerified={Boolean(rbacContext?.mfaVerified)}
