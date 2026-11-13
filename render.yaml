@@ -4,12 +4,14 @@ services:
     runtime: node
     plan: free
     region: oregon
-    buildCommand: npm ci && npm run build --workspace=@bhojora/shared && npm run build --workspace=@bhojora/server
+    buildCommand: npm install --include=dev && npm run build --workspace=@bhojora/shared && npm run build --workspace=@bhojora/server
     startCommand: node server/dist/index.js
     healthCheckPath: /healthz
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_VERSION
+        value: 22.21.0
       - key: PORT
         value: 10000
       - key: APP_TIMEZONE
