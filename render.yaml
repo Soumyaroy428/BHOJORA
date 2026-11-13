@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: bhojora-backend
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm run build --workspace=@bhojora/shared && npm run build --workspace=@bhojora/server
+    startCommand: node server/dist/index.js
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: APP_TIMEZONE
+        value: Asia/Kolkata
+      - key: DEFAULT_CITY_CODE
+        value: KOLKATA
+      - key: DEFAULT_CURRENCY
+        value: INR
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://customer-web-phi-ten.vercel.app,https://restaurant-web-liard-seven.vercel.app,https://bhojora-admin.vercel.app
+      - key: MONGODB_URI
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: PAYMENT_WEBHOOK_SECRET
+        generateValue: true
