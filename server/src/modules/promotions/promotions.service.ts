@@ -331,8 +331,7 @@ export class PromotionsService {
     // Extract referrer identity or fallback
     const registeredReferrerId = await this.store.getUserIdByReferralCode(normalizedCode);
     const referrerUserId =
-      registeredReferrerId ??
-      `user_${normalizedCode.replace(/[^A-Z0-9]/g, '').toLowerCase()}`;
+      registeredReferrerId ?? `user_${normalizedCode.replace(/[^A-Z0-9]/g, '').toLowerCase()}`;
 
     const record: ReferralRecord = {
       referralId,
