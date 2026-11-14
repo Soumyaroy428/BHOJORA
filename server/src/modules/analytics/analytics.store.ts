@@ -202,16 +202,13 @@ export class MongooseAnalyticsStore implements AnalyticsStore {
       connection.model<OrderAnalyticsDocument>('AnalyticsOrder', OrderAnalyticsSchema);
     this.inspectionModel =
       (connection.models['AnalyticsInspection'] as
-        | Model<InspectionAnalyticsDocument>
-        | undefined) ??
+        Model<InspectionAnalyticsDocument> | undefined) ??
       connection.model<InspectionAnalyticsDocument>(
         'AnalyticsInspection',
         InspectionAnalyticsSchema,
       );
     this.complaintModel =
-      (connection.models['AnalyticsComplaint'] as
-        | Model<ComplaintAnalyticsDocument>
-        | undefined) ??
+      (connection.models['AnalyticsComplaint'] as Model<ComplaintAnalyticsDocument> | undefined) ??
       connection.model<ComplaintAnalyticsDocument>('AnalyticsComplaint', ComplaintAnalyticsSchema);
   }
 
