@@ -132,6 +132,13 @@ import {
 } from './modules/privacy/privacy.store';
 import { createPerformanceRouter } from './modules/performance/performance.routes';
 import { PerformanceService } from './modules/performance/performance.service';
+import { createComplianceRouter } from './modules/compliance/compliance.routes';
+import { ComplianceService } from './modules/compliance/compliance.service';
+import {
+  InMemoryComplianceStore,
+  MongooseComplianceStore,
+  type ComplianceStore,
+} from './modules/compliance/compliance.store';
 
 export interface CreateAppOptions {
   config: AppConfig;
@@ -190,6 +197,8 @@ export interface CreateAppOptions {
   privacyStore?: PrivacyStore;
   privacyService?: PrivacyService;
   performanceService?: PerformanceService;
+  complianceStore?: ComplianceStore;
+  complianceService?: ComplianceService;
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -624,6 +633,17 @@ export function createApp(options: CreateAppOptions): Express {
     config,
   });
 
+  const complianceStore =
+    options.complianceStore ??
+    (isInMemoryMode ? new InMemoryComplianceStore() : new MongooseComplianceStore());
+  const complianceService =
+    options.complianceService ?? new ComplianceService(complianceStore);
+  const complianceRouter = createComplianceRouter({
+    identityService,
+    complianceService,
+    config,
+  });
+
   app.use('/api/v1', healthRouter);
   app.use('/api/v1', identityRouter);
   app.use('/api/v1', rbacRouter);
@@ -650,6 +670,7 @@ export function createApp(options: CreateAppOptions): Express {
   app.use('/api/v1', integrationsRouter);
   app.use('/api/v1', privacyRouter);
   app.use('/api/v1', performanceRouter);
+  app.use('/api/v1', complianceRouter);
   app.use(healthRouter);
 
   app.use(notFoundHandler);

@@ -25,3 +25,4 @@ export * from './ai';
 export * from './integrations';
 export * from './privacy';
 export * from './performance';
+export * from './compliance';
