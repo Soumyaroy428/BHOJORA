@@ -117,6 +117,10 @@ import {
   MongooseAnalyticsStore,
   type AnalyticsStore,
 } from './modules/analytics/analytics.store';
+import { createAiRouter } from './modules/ai/ai.routes';
+import { AiService } from './modules/ai/ai.service';
+import { DeterministicAiAdapter, type AiProviderAdapter } from './modules/ai/ai.adapter';
+import { InMemoryAiStore, MongooseAiStore, type AiStore } from './modules/ai/ai.store';
 
 export interface CreateAppOptions {
   config: AppConfig;
@@ -168,6 +172,9 @@ export interface CreateAppOptions {
   promotionsService?: PromotionsService;
   analyticsStore?: AnalyticsStore;
   analyticsService?: AnalyticsService;
+  aiStore?: AiStore;
+  aiAdapter?: AiProviderAdapter;
+  aiService?: AiService;
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -566,6 +573,18 @@ export function createApp(options: CreateAppOptions): Express {
     config,
   });
 
+  const aiStore =
+    options.aiStore ??
+    (isInMemoryMode ? new InMemoryAiStore() : new MongooseAiStore(mongoose.connection));
+  const aiAdapter = options.aiAdapter ?? new DeterministicAiAdapter();
+  const aiService = options.aiService ?? new AiService(aiStore, aiAdapter);
+  const aiRouter = createAiRouter({
+    identityService,
+    aiService,
+    rbacStore,
+    config,
+  });
+
   app.use('/api/v1', healthRouter);
   app.use('/api/v1', identityRouter);
   app.use('/api/v1', rbacRouter);
@@ -588,6 +607,7 @@ export function createApp(options: CreateAppOptions): Express {
   app.use('/api/v1', notificationRouter);
   app.use('/api/v1', promotionsRouter);
   app.use('/api/v1', analyticsRouter);
+  app.use('/api/v1', aiRouter);
   app.use(healthRouter);
 
   app.use(notFoundHandler);

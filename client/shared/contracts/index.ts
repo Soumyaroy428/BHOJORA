@@ -21,3 +21,4 @@ export * from './governance';
 export * from './notifications';
 export * from './promotions';
 export * from './analytics';
+export * from './ai';

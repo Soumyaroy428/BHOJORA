@@ -16,6 +16,7 @@ import { InspectionReviewerQueue } from './components/InspectionReviewerQueue';
 import { SupportOperationsDashboard } from './components/SupportOperationsDashboard';
 import { FinanceSettlementPanel } from './components/FinanceSettlementPanel';
 import { AdminGovernanceDashboard } from './components/AdminGovernanceDashboard';
+import { AiReviewDashboard } from './components/AiReviewDashboard';
 
 interface GovernanceItem {
   id: string;
@@ -367,6 +368,13 @@ export function App() {
         />
 
         <AdminGovernanceDashboard
+          apiBase={getApiBase()}
+          accessToken={accessToken}
+          mfaVerified={Boolean(rbacContext?.mfaVerified)}
+          onStatusUpdate={setStatusMessage}
+        />
+
+        <AiReviewDashboard
           apiBase={getApiBase()}
           accessToken={accessToken}
           mfaVerified={Boolean(rbacContext?.mfaVerified)}
