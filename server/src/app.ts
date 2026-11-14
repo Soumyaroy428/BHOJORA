@@ -88,6 +88,21 @@ import {
   MongooseGovernanceStore,
 } from './modules/governance/governance.store';
 import type { GovernanceStore } from './modules/governance/governance.store';
+import {
+  InMemorySmsAdapter,
+  InMemoryEmailAdapter,
+  InMemoryPushAdapter,
+  type SmsAdapter,
+  type EmailAdapter,
+  type PushAdapter,
+} from './modules/notifications/notifications.adapters';
+import { createNotificationRouter } from './modules/notifications/notifications.routes';
+import { NotificationService } from './modules/notifications/notifications.service';
+import {
+  InMemoryNotificationStore,
+  MongooseNotificationStore,
+  type NotificationStore,
+} from './modules/notifications/notifications.store';
 
 export interface CreateAppOptions {
   config: AppConfig;
@@ -130,6 +145,11 @@ export interface CreateAppOptions {
   financeService?: FinanceService;
   governanceStore?: GovernanceStore;
   governanceService?: GovernanceService;
+  notificationStore?: NotificationStore;
+  notificationService?: NotificationService;
+  smsAdapter?: SmsAdapter;
+  emailAdapter?: EmailAdapter;
+  pushAdapter?: PushAdapter;
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -468,6 +488,30 @@ export function createApp(options: CreateAppOptions): Express {
     config,
   });
 
+  const notificationStore =
+    options.notificationStore ??
+    (isInMemoryMode
+      ? new InMemoryNotificationStore()
+      : new MongooseNotificationStore(mongoose.connection));
+  const smsAdapter = options.smsAdapter ?? new InMemorySmsAdapter();
+  const emailAdapter = options.emailAdapter ?? new InMemoryEmailAdapter();
+  const pushAdapter = options.pushAdapter ?? new InMemoryPushAdapter();
+  const notificationService =
+    options.notificationService ??
+    new NotificationService({
+      notificationStore,
+      smsAdapter,
+      emailAdapter,
+      pushAdapter,
+      ...(options.clock ? { clock: { now: () => options.clock!.now() } } : {}),
+    });
+  const notificationRouter = createNotificationRouter({
+    identityService,
+    notificationService,
+    rbacStore,
+    config,
+  });
+
   app.use('/api/v1', healthRouter);
   app.use('/api/v1', identityRouter);
   app.use('/api/v1', rbacRouter);
@@ -487,6 +531,7 @@ export function createApp(options: CreateAppOptions): Express {
   app.use('/api/v1', supportRouter);
   app.use('/api/v1', financeRouter);
   app.use('/api/v1', governanceRouter);
+  app.use('/api/v1', notificationRouter);
   app.use(healthRouter);
 
   app.use(notFoundHandler);

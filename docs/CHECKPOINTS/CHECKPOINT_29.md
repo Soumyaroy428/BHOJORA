@@ -42,14 +42,35 @@ body.
 
 ## Completion report
 
--   Implemented:
+-   Implemented: Multi-channel notification service (SMS, Email, Push, In-App), localized templates (en-IN & bn-IN), strict PII sanitizer (masking cards, CVVs, passwords, auth tokens, bank accounts), user consent and opt-out preferences, idempotent retries with exponential backoff and Dead Letter Queue, in-app notification center with read states, and admin delivery logs.
 -   Files changed:
--   Dependencies added and rationale:
+    - `client/shared/contracts/notifications.ts`
+    - `client/shared/contracts/index.ts`
+    - `server/src/modules/notifications/notifications.types.ts`
+    - `server/src/modules/notifications/notifications.adapters.ts`
+    - `server/src/modules/notifications/notifications.store.ts`
+    - `server/src/modules/notifications/notifications.service.ts`
+    - `server/src/modules/notifications/notifications.routes.ts`
+    - `server/src/app.ts`
+    - `server/package.json`
+    - `server/tests/verify-checkpoint-29.test.js`
+    - `docs/CHECKPOINTS/CHECKPOINT_29.md`
+-   Dependencies added and rationale: None (built on native crypto, zod, and express).
 -   Database/API changes:
--   Tests run and results:
--   Security/privacy impact:
--   Known issues:
--   Staging URL/screenshots:
--   Git branch/commit:
--   Deployment and smoke-test status:
--   Approval requested:
+    - Collections: `notifications` and `notification_preferences`.
+    - Endpoints:
+      - `POST /api/v1/notifications/dispatch`
+      - `GET /api/v1/notifications/me`
+      - `PATCH /api/v1/notifications/:id/read`
+      - `GET /api/v1/notifications/preferences`
+      - `PATCH /api/v1/notifications/preferences`
+      - `POST /api/v1/notifications/opt-out`
+      - `GET /api/v1/notifications/logs`
+      - `POST /api/v1/notifications/logs/:id/retry`
+-   Tests run and results: All 10 checks in `verify-checkpoint-29.test.js` passed with 100% success; full test suite passing.
+-   Security/privacy impact: Automatic PII sanitization prevents credentials, financial numbers, or tokens from reaching notification bodies. RBAC enforces least-privilege on admin delivery logs (`audit:log:read`).
+-   Known issues: None.
+-   Staging URL/screenshots: Staging test harness verified with simulated multi-channel adapters.
+-   Git branch/commit: `main`.
+-   Deployment and smoke-test status: Verified locally across in-memory and Mongoose stores; CI will run automated tests on push.
+-   Approval requested: Yes, submitted for founder review and acceptance.
