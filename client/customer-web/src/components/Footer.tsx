@@ -1,6 +1,6 @@
 export function Footer() {
   return (
-    <footer id="kolkata-launch">
+    <footer id="site-footer">
       <div className="container">
         <div className="footer-grid">
           <div className="footer-col">

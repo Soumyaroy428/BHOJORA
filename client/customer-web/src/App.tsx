@@ -29,6 +29,7 @@ import { Footer } from './components/Footer';
 import { Header } from './components/Header';
 import { HeroSection } from './components/HeroSection';
 import { KitchenDiscovery } from './components/KitchenDiscovery';
+import { KolkataZonesSection } from './components/KolkataZonesSection';
 import { OutletMenuDialog } from './components/OutletMenuDialog';
 import { PillarsSection } from './components/PillarsSection';
 import { PilotInfoDialog } from './components/PilotInfoDialog';
@@ -1203,6 +1204,16 @@ export function App() {
         <BengaliBanner
           inEnglish={bannerInEnglish}
           onToggleLanguage={() => setBannerInEnglish((prev) => !prev)}
+        />
+
+        <KolkataZonesSection
+          selectedZone={selectedZone}
+          onSelectZone={(zone) => {
+            setSelectedZone(zone);
+            setOfflinePageLimit(DEFAULT_OFFLINE_PAGE_SIZE);
+          }}
+          onOpenPilotDialog={() => setPilotInfoOpen(true)}
+          onDetectGpsZone={handleDetectGpsZone}
         />
 
         <PillarsSection />
