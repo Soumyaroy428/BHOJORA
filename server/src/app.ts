@@ -636,8 +636,7 @@ export function createApp(options: CreateAppOptions): Express {
   const complianceStore =
     options.complianceStore ??
     (isInMemoryMode ? new InMemoryComplianceStore() : new MongooseComplianceStore());
-  const complianceService =
-    options.complianceService ?? new ComplianceService(complianceStore);
+  const complianceService = options.complianceService ?? new ComplianceService(complianceStore);
   const complianceRouter = createComplianceRouter({
     identityService,
     complianceService,
