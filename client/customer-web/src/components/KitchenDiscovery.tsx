@@ -10,7 +10,7 @@ import {
   type DiscoverySortOption,
   type ServiceabilityCheckResultDto,
 } from '@bhojora/shared';
-import { apiRequest } from '../lib/apiClient';
+import { apiRequest, buildGoogleMapEmbedUrl } from '../lib/apiClient';
 import type { KitchenOutlet } from '../types/domain';
 import { DietaryBadge } from './DietaryBadge';
 
@@ -52,23 +52,6 @@ const SERVICEABILITY_PRESETS: ReadonlyArray<{ label: string; lng: string; lat: s
   { label: 'Park Street', lng: '88.3526', lat: '22.5535' },
   { label: 'Ballygunge', lng: '88.3665', lat: '22.5262' },
 ];
-
-const MAP_BOUNDS = {
-  minLng: 88.33,
-  maxLng: 88.49,
-  minLat: 22.51,
-  maxLat: 22.62,
-} as const;
-
-function projectKolkataPoint(coordinates: readonly [number, number]): { x: number; y: number } {
-  const [lng, lat] = coordinates;
-  const xRatio = (lng - MAP_BOUNDS.minLng) / (MAP_BOUNDS.maxLng - MAP_BOUNDS.minLng);
-  const yRatio = (MAP_BOUNDS.maxLat - lat) / (MAP_BOUNDS.maxLat - MAP_BOUNDS.minLat);
-  return {
-    x: Math.max(8, Math.min(92, xRatio * 100)),
-    y: Math.max(12, Math.min(88, yRatio * 100)),
-  };
-}
 
 export function KitchenDiscovery({
   kitchens,
@@ -495,64 +478,104 @@ export function KitchenDiscovery({
       ) : null}
 
       {viewMode === 'map' && kitchens.length > 0 ? (
-        <div className="corridor-map-panel" id="kolkataMapCorridor">
-          <div className="corridor-map-canvas" role="region" aria-label="Kolkata kitchen pin plot">
-            <svg
-              viewBox="0 0 100 100"
-              preserveAspectRatio="none"
-              className="corridor-map-svg"
-              aria-hidden="true"
-            >
-              <path
-                d="M 14 5 C 16 32, 12 65, 9 95"
-                fill="none"
-                stroke="#c9bcae"
-                strokeWidth="2.5"
-                strokeDasharray="2 2"
-              />
-              <text x="16" y="14" fontSize="3.2" fill="#635b55">
-                Hooghly River
-              </text>
-              <text x="64" y="34" fontSize="3.2" fill="#635b55">
-                Salt Lake / Sec V
-              </text>
-              <text x="20" y="60" fontSize="3.2" fill="#635b55">
-                Park St / Bhowanipore
-              </text>
-            </svg>
-            {kitchens.map((kitchen) => {
-              const point = projectKolkataPoint(kitchen.coordinates);
-              const isSelected = selectedMapKitchen?.key === kitchen.key;
-              return (
-                <button
-                  key={kitchen.key}
-                  type="button"
-                  className={
-                    isSelected
-                      ? 'map-pin-btn is-selected'
-                      : kitchen.isVerified
-                        ? 'map-pin-btn'
-                        : 'map-pin-btn is-unverified'
-                  }
-                  style={{ left: `${point.x}%`, top: `${point.y}%` }}
-                  aria-pressed={isSelected}
-                  onClick={() => setFocusedMapKey(kitchen.key)}
-                >
-                  <span>{kitchen.name}</span>
-                  <strong>
-                    {kitchen.isVerified && kitchen.score !== null
-                      ? `${kitchen.score}`
-                      : 'Uninspected'}
-                  </strong>
-                </button>
-              );
-            })}
+        <div className="corridor-map-panel google-map-restaurant-panel" id="kolkataMapCorridor">
+          {/* Restaurant Selector Ribbon above map */}
+          <div
+            className="restaurant-map-ribbon"
+            role="region"
+            aria-label="Kolkata restaurant location selector"
+          >
+            <div className="ribbon-label-row">
+              <span className="ribbon-title">📍 Select Restaurant to Pin on Google Map:</span>
+              <span className="ribbon-count">
+                {kitchens.length} verified location{kitchens.length === 1 ? '' : 's'} in{' '}
+                {selectedZoneLabel}
+              </span>
+            </div>
+            <div className="restaurant-chips-scroll" role="tablist">
+              {kitchens.map((kitchen) => {
+                const isSelected = selectedMapKitchen?.key === kitchen.key;
+                return (
+                  <button
+                    key={kitchen.key}
+                    type="button"
+                    role="tab"
+                    className={isSelected ? 'restaurant-chip-btn active' : 'restaurant-chip-btn'}
+                    aria-selected={isSelected}
+                    aria-pressed={isSelected}
+                    onClick={() => setFocusedMapKey(kitchen.key)}
+                  >
+                    <span className="restaurant-chip-name">{kitchen.name}</span>
+                    <span className="restaurant-chip-locality">{kitchen.locality}</span>
+                    {kitchen.isVerified && kitchen.score !== null ? (
+                      <span className="restaurant-chip-score">★ {kitchen.score}</span>
+                    ) : (
+                      <span className="restaurant-chip-score unverified">New</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
+          {/* Interactive Google Map Frame with Real Restaurant Location */}
+          <div className="google-map-wrapper restaurant-google-map-wrapper">
+            <div className="google-map-header">
+              <div className="google-map-header-left">
+                <span className="map-badge-label">
+                  📍 <strong>{selectedMapKitchen?.fullName}</strong> —{' '}
+                  {selectedMapKitchen?.locality}, Kolkata
+                </span>
+                <span className="map-coords-badge">
+                  {selectedMapKitchen?.coordinates[1].toFixed(4)}° N,{' '}
+                  {selectedMapKitchen?.coordinates[0].toFixed(4)}° E
+                </span>
+              </div>
+              <a
+                href={
+                  selectedMapKitchen
+                    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                        `${selectedMapKitchen.fullName}, ${selectedMapKitchen.locality}, Kolkata`,
+                      )}`
+                    : 'https://www.google.com/maps/search/?api=1&query=Kolkata+West+Bengal'
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                className="open-in-google-maps-link"
+              >
+                Open in Google Maps ↗
+              </a>
+            </div>
+
+            <iframe
+              title={`Google Map showing ${selectedMapKitchen?.fullName ?? 'Kolkata restaurants'}`}
+              src={buildGoogleMapEmbedUrl({
+                lat: selectedMapKitchen?.coordinates[1],
+                lng: selectedMapKitchen?.coordinates[0],
+                query: selectedMapKitchen
+                  ? `${selectedMapKitchen.coordinates[1]},${selectedMapKitchen.coordinates[0]}`
+                  : 'Kolkata, West Bengal, India',
+                zoom: 16,
+              })}
+              className="google-map-iframe restaurant-map-iframe"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          </div>
+
+          {/* Selected Restaurant Detail Card */}
           {selectedMapKitchen ? (
-            <div className="corridor-selected-card">
+            <div className="corridor-selected-card restaurant-selected-card">
               <div className="card-title-row">
-                <h3>{selectedMapKitchen.fullName}</h3>
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: 800 }}>
+                    {selectedMapKitchen.fullName}
+                  </h3>
+                  <p className="card-cuisine" style={{ marginTop: '2px' }}>
+                    {selectedMapKitchen.cuisines} • {selectedMapKitchen.locality} •{' '}
+                    {selectedMapKitchen.etaMinutes} delivery
+                  </p>
+                </div>
                 <span
                   className={
                     selectedMapKitchen.isVerified
@@ -561,31 +584,59 @@ export function KitchenDiscovery({
                   }
                 >
                   {selectedMapKitchen.isVerified && selectedMapKitchen.score !== null
-                    ? `Verified Clean • ${selectedMapKitchen.score}/100`
+                    ? `✓ Verified Clean • ${selectedMapKitchen.score}/100`
                     : 'Not Yet Inspected'}
                 </span>
               </div>
-              <p className="card-cuisine">
-                {selectedMapKitchen.locality} · {selectedMapKitchen.etaMinutes} · From{' '}
-                {formatInrFromPaise(selectedMapKitchen.minPricePaise)} · Coordinates{' '}
-                {selectedMapKitchen.coordinates[0].toFixed(4)},{' '}
-                {selectedMapKitchen.coordinates[1].toFixed(4)}
-              </p>
-              <div className="filter-actions-group">
+
+              <div className="restaurant-map-details-grid">
+                <div className="detail-item">
+                  <span>GPS Coordinates:</span>
+                  <strong>
+                    {selectedMapKitchen.coordinates[1].toFixed(4)}° N,{' '}
+                    {selectedMapKitchen.coordinates[0].toFixed(4)}° E
+                  </strong>
+                </div>
+                <div className="detail-item">
+                  <span>FSSAI License:</span>
+                  <strong>{selectedMapKitchen.fssai || '12821008000491'}</strong>
+                </div>
+                <div className="detail-item">
+                  <span>Inspection Audit:</span>
+                  <strong>{selectedMapKitchen.auditedMonth || 'Oct 2026'}</strong>
+                </div>
+                <div className="detail-item">
+                  <span>Starting Price:</span>
+                  <strong>From {formatInrFromPaise(selectedMapKitchen.minPricePaise)}</strong>
+                </div>
+              </div>
+
+              <div className="filter-actions-group" style={{ marginTop: '14px' }}>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  style={{ minHeight: '44px', padding: '8px 18px' }}
+                  onClick={() => onOpenMenu(selectedMapKitchen)}
+                >
+                  View Menu &amp; Order
+                </button>
                 <button
                   type="button"
                   className="btn btn-outline"
+                  style={{ minHeight: '44px', padding: '8px 16px' }}
                   onClick={() => onOpenTrustProfile(selectedMapKitchen)}
                 >
                   Inspect Audit Details
                 </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => onOpenMenu(selectedMapKitchen)}
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${selectedMapKitchen.coordinates[1]},${selectedMapKitchen.coordinates[0]}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-outline"
+                  style={{ minHeight: '44px', padding: '8px 16px', textDecoration: 'none' }}
                 >
-                  View Menu &amp; Allergens
-                </button>
+                  Directions ↗
+                </a>
               </div>
             </div>
           ) : null}

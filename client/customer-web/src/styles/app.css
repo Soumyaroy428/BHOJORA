@@ -2976,3 +2976,176 @@ dialog.trust-dialog::backdrop {
   line-height: 1.5;
   margin: 0;
 }
+
+/* ==========================================================================
+   Restaurant Google Map Discovery Panel (KitchenDiscovery)
+   ========================================================================== */
+
+.google-map-restaurant-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--cream-card);
+  border: 1px solid var(--neutral-300);
+  border-radius: var(--radius-xl);
+  padding: 18px;
+  margin-bottom: 28px;
+}
+
+.restaurant-map-ribbon {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ribbon-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--neutral-700);
+}
+
+.ribbon-title {
+  font-weight: 700;
+  color: var(--neutral-900);
+}
+
+.ribbon-count {
+  font-size: 12px;
+  color: var(--neutral-600);
+}
+
+.restaurant-chips-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
+}
+
+.restaurant-chip-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1.5px solid var(--neutral-300);
+  border-radius: var(--radius-full);
+  padding: 8px 14px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--neutral-800);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.18s ease;
+  min-height: 44px;
+  flex-shrink: 0;
+}
+
+.restaurant-chip-btn:hover {
+  border-color: var(--terracotta);
+  background: var(--cream);
+}
+
+.restaurant-chip-btn.active {
+  background: var(--terracotta);
+  color: #ffffff;
+  border-color: var(--terracotta);
+  box-shadow: 0 4px 12px rgba(184, 80, 66, 0.2);
+}
+
+.restaurant-chip-btn.active .restaurant-chip-locality {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.restaurant-chip-btn.active .restaurant-chip-score {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+.restaurant-chip-locality {
+  font-size: 11px;
+  color: var(--neutral-600);
+}
+
+.restaurant-chip-score {
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--trust-green-light);
+  color: var(--trust-green-text);
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+}
+
+.restaurant-chip-score.unverified {
+  background: var(--neutral-200);
+  color: var(--neutral-700);
+}
+
+.restaurant-google-map-wrapper {
+  background: #ffffff;
+  border: 1px solid var(--neutral-300);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-subtle);
+}
+
+.google-map-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.map-coords-badge {
+  font-size: 11px;
+  font-family: monospace;
+  background: var(--cream);
+  color: var(--neutral-700);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--neutral-300);
+}
+
+.restaurant-map-iframe {
+  width: 100%;
+  height: 400px;
+  border: none;
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .restaurant-map-iframe {
+    height: 300px;
+  }
+}
+
+.restaurant-selected-card {
+  background: #ffffff;
+  border: 1px solid var(--neutral-200);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+}
+
+.restaurant-map-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--cream-card);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+}
+
+.restaurant-map-details-grid .detail-item span {
+  display: block;
+  font-size: 11px;
+  color: var(--neutral-600);
+}
+
+.restaurant-map-details-grid .detail-item strong {
+  color: var(--neutral-900);
+  font-weight: 700;
+}
