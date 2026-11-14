@@ -110,6 +110,13 @@ import {
   MongoosePromotionsStore,
   type PromotionsStore,
 } from './modules/promotions/promotions.store';
+import { createAnalyticsRouter } from './modules/analytics/analytics.routes';
+import { AnalyticsService } from './modules/analytics/analytics.service';
+import {
+  InMemoryAnalyticsStore,
+  MongooseAnalyticsStore,
+  type AnalyticsStore,
+} from './modules/analytics/analytics.store';
 
 export interface CreateAppOptions {
   config: AppConfig;
@@ -159,6 +166,8 @@ export interface CreateAppOptions {
   pushAdapter?: PushAdapter;
   promotionsStore?: PromotionsStore;
   promotionsService?: PromotionsService;
+  analyticsStore?: AnalyticsStore;
+  analyticsService?: AnalyticsService;
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -539,6 +548,24 @@ export function createApp(options: CreateAppOptions): Express {
     config,
   });
 
+  const analyticsStore =
+    options.analyticsStore ??
+    (isInMemoryMode
+      ? new InMemoryAnalyticsStore()
+      : new MongooseAnalyticsStore(mongoose.connection));
+  const analyticsService =
+    options.analyticsService ??
+    new AnalyticsService({
+      analyticsStore,
+      ...(options.clock ? { clock: { now: () => options.clock!.now() } } : {}),
+    });
+  const analyticsRouter = createAnalyticsRouter({
+    identityService,
+    analyticsService,
+    rbacStore,
+    config,
+  });
+
   app.use('/api/v1', healthRouter);
   app.use('/api/v1', identityRouter);
   app.use('/api/v1', rbacRouter);
@@ -560,6 +587,7 @@ export function createApp(options: CreateAppOptions): Express {
   app.use('/api/v1', governanceRouter);
   app.use('/api/v1', notificationRouter);
   app.use('/api/v1', promotionsRouter);
+  app.use('/api/v1', analyticsRouter);
   app.use(healthRouter);
 
   app.use(notFoundHandler);

@@ -20,3 +20,4 @@ export * from './support-operations';
 export * from './governance';
 export * from './notifications';
 export * from './promotions';
+export * from './analytics';
