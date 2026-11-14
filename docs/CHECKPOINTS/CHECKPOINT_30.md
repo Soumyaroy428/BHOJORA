@@ -40,14 +40,36 @@ Eligibility, budget and abuse controls; transparent terms.
 
 ## Completion report
 
--   Implemented:
+-   Implemented: Promotions module covering promotional campaigns with budget ceiling controls, coupon validation with multi-party funding splits (platform vs. restaurant) and transparent terms, customer referral engine with self-referral prohibition, double-entry loyalty points ledger with 20% cart redemption ceiling, and Clean Dine Club membership foundation with double points acceleration.
 -   Files changed:
--   Dependencies added and rationale:
+    - `client/shared/contracts/promotions.ts`
+    - `client/shared/contracts/index.ts`
+    - `server/src/modules/promotions/promotions.types.ts`
+    - `server/src/modules/promotions/promotions.store.ts`
+    - `server/src/modules/promotions/promotions.service.ts`
+    - `server/src/modules/promotions/promotions.routes.ts`
+    - `server/src/app.ts`
+    - `server/package.json`
+    - `server/tests/verify-checkpoint-30.test.js`
+    - `docs/CHECKPOINTS/CHECKPOINT_30.md`
+-   Dependencies added and rationale: None (built on existing native crypto, zod, and express).
 -   Database/API changes:
--   Tests run and results:
--   Security/privacy impact:
--   Known issues:
--   Staging URL/screenshots:
--   Git branch/commit:
--   Deployment and smoke-test status:
--   Approval requested:
+    - Collections: `campaigns`, `coupons`, `referrals`, `loyalty_ledger`, `membership_subscriptions`.
+    - Endpoints:
+      - `GET /api/v1/promotions/coupons`
+      - `POST /api/v1/promotions/coupons/validate`
+      - `POST /api/v1/admin/promotions/campaigns`
+      - `POST /api/v1/admin/promotions/coupons`
+      - `GET /api/v1/promotions/referral`
+      - `POST /api/v1/promotions/referral/apply`
+      - `GET /api/v1/promotions/loyalty`
+      - `POST /api/v1/promotions/loyalty/redeem`
+      - `GET /api/v1/promotions/membership`
+      - `POST /api/v1/promotions/membership/subscribe`
+-   Tests run and results: All 10 checks in `verify-checkpoint-30.test.js` passed, all 31 checkpoint test suites (CP00 to CP30) passed.
+-   Security/privacy impact: Strict abuse controls prevent self-referral, coupon replay beyond per-user limits, and excessive loyalty points depletion exceeding 20% of cart subtotal. Admin endpoints protected by RBAC permissions (`audit:log:read`).
+-   Known issues: None.
+-   Staging URL/screenshots: Verified across in-memory and Mongoose stores with automated integration suite.
+-   Git branch/commit: `main`.
+-   Deployment and smoke-test status: Verified locally across both in-memory and Mongoose persistent stores; CI pipeline verified on push.
+-   Approval requested: Yes, submitted for founder review and acceptance.

@@ -19,3 +19,4 @@ export * from './reviews-complaints';
 export * from './support-operations';
 export * from './governance';
 export * from './notifications';
+export * from './promotions';

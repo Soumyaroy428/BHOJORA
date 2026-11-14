@@ -103,6 +103,13 @@ import {
   MongooseNotificationStore,
   type NotificationStore,
 } from './modules/notifications/notifications.store';
+import { createPromotionsRouter } from './modules/promotions/promotions.routes';
+import { PromotionsService } from './modules/promotions/promotions.service';
+import {
+  InMemoryPromotionsStore,
+  MongoosePromotionsStore,
+  type PromotionsStore,
+} from './modules/promotions/promotions.store';
 
 export interface CreateAppOptions {
   config: AppConfig;
@@ -150,6 +157,8 @@ export interface CreateAppOptions {
   smsAdapter?: SmsAdapter;
   emailAdapter?: EmailAdapter;
   pushAdapter?: PushAdapter;
+  promotionsStore?: PromotionsStore;
+  promotionsService?: PromotionsService;
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -512,6 +521,24 @@ export function createApp(options: CreateAppOptions): Express {
     config,
   });
 
+  const promotionsStore =
+    options.promotionsStore ??
+    (isInMemoryMode
+      ? new InMemoryPromotionsStore()
+      : new MongoosePromotionsStore(mongoose.connection));
+  const promotionsService =
+    options.promotionsService ??
+    new PromotionsService({
+      promotionsStore,
+      ...(options.clock ? { clock: { now: () => options.clock!.now() } } : {}),
+    });
+  const promotionsRouter = createPromotionsRouter({
+    identityService,
+    promotionsService,
+    rbacStore,
+    config,
+  });
+
   app.use('/api/v1', healthRouter);
   app.use('/api/v1', identityRouter);
   app.use('/api/v1', rbacRouter);
@@ -532,6 +559,7 @@ export function createApp(options: CreateAppOptions): Express {
   app.use('/api/v1', financeRouter);
   app.use('/api/v1', governanceRouter);
   app.use('/api/v1', notificationRouter);
+  app.use('/api/v1', promotionsRouter);
   app.use(healthRouter);
 
   app.use(notFoundHandler);
