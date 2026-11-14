@@ -130,6 +130,8 @@ import {
   MongoosePrivacyStore,
   type PrivacyStore,
 } from './modules/privacy/privacy.store';
+import { createPerformanceRouter } from './modules/performance/performance.routes';
+import { PerformanceService } from './modules/performance/performance.service';
 
 export interface CreateAppOptions {
   config: AppConfig;
@@ -187,6 +189,7 @@ export interface CreateAppOptions {
   integrationsService?: IntegrationsService;
   privacyStore?: PrivacyStore;
   privacyService?: PrivacyService;
+  performanceService?: PerformanceService;
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -614,6 +617,13 @@ export function createApp(options: CreateAppOptions): Express {
     config,
   });
 
+  const performanceService = options.performanceService ?? new PerformanceService();
+  const performanceRouter = createPerformanceRouter({
+    identityService,
+    performanceService,
+    config,
+  });
+
   app.use('/api/v1', healthRouter);
   app.use('/api/v1', identityRouter);
   app.use('/api/v1', rbacRouter);
@@ -639,6 +649,7 @@ export function createApp(options: CreateAppOptions): Express {
   app.use('/api/v1', aiRouter);
   app.use('/api/v1', integrationsRouter);
   app.use('/api/v1', privacyRouter);
+  app.use('/api/v1', performanceRouter);
   app.use(healthRouter);
 
   app.use(notFoundHandler);
