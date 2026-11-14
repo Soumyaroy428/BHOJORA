@@ -10,6 +10,8 @@ import {
   CONSENT_TYPES,
   LANGUAGE_PREFERENCES,
   USER_ROLES,
+  type AccountStatus,
+  type UserRole,
   type AuthChallengeRecord,
   type ChallengePurpose,
   type ConsentRecord,
@@ -382,6 +384,38 @@ export class MongooseIdentityStore implements IdentityStore {
       }
       throw error;
     }
+  }
+
+  async listUsers(
+    options: {
+      role?: UserRole;
+      status?: AccountStatus;
+      search?: string;
+      limit?: number;
+      offset?: number;
+    } = {},
+  ): Promise<{ users: UserRecord[]; totalCount: number }> {
+    const filter: Record<string, unknown> = {};
+    if (options.role) {
+      filter.roles = options.role;
+    }
+    if (options.status) {
+      filter.status = options.status;
+    }
+    if (options.search) {
+      const reg = new RegExp(options.search, 'i');
+      filter.$or = [{ name: reg }, { emailNormalized: reg }, { phoneNormalized: reg }];
+    }
+    const limit = Math.min(Math.max(1, options.limit ?? 50), 100);
+    const skip = Math.max(0, options.offset ?? 0);
+    const [totalCount, docs] = await Promise.all([
+      this.models.User.countDocuments(filter),
+      this.models.User.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    ]);
+    return {
+      users: docs.map((doc) => toUserRecord(doc)),
+      totalCount,
+    };
   }
 
   async updateUser(
@@ -806,6 +840,39 @@ export class InMemoryIdentityStore implements IdentityStore {
     }
 
     return user;
+  }
+
+  async listUsers(
+    options: {
+      role?: UserRole;
+      status?: AccountStatus;
+      search?: string;
+      limit?: number;
+      offset?: number;
+    } = {},
+  ): Promise<{ users: UserRecord[]; totalCount: number }> {
+    let result = Array.from(this.usersById.values());
+    if (options.role) {
+      result = result.filter((u) => u.roles.includes(options.role!));
+    }
+    if (options.status) {
+      result = result.filter((u) => u.status === options.status);
+    }
+    if (options.search) {
+      const s = options.search.toLowerCase();
+      result = result.filter(
+        (u) =>
+          u.name.toLowerCase().includes(s) ||
+          (u.emailNormalized && u.emailNormalized.toLowerCase().includes(s)) ||
+          (u.phoneNormalized && u.phoneNormalized.includes(s)),
+      );
+    }
+    result.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    const totalCount = result.length;
+    const limit = Math.min(Math.max(1, options.limit ?? 50), 100);
+    const skip = Math.max(0, options.offset ?? 0);
+    const page = result.slice(skip, skip + limit);
+    return { users: page, totalCount };
   }
 
   async updateUser(

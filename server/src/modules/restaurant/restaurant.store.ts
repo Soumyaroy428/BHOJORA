@@ -501,6 +501,23 @@ export class MongooseRestaurantStore implements RestaurantStore {
     return docs.map((doc) => toOutletRecord(doc.toObject() as Record<string, unknown>));
   }
 
+  async listAllOutlets(
+    options: {
+      zoneId?: KolkataZoneId;
+      status?: OutletOperationalStatus;
+    } = {},
+  ): Promise<RestaurantOutletRecord[]> {
+    const filter: Record<string, unknown> = {};
+    if (options.status) {
+      filter['status'] = options.status;
+    }
+    if (options.zoneId) {
+      filter['zoneId'] = options.zoneId;
+    }
+    const docs = await this.models.RestaurantOutlet.find(filter).sort({ createdAt: -1 });
+    return docs.map((doc) => toOutletRecord(doc.toObject() as Record<string, unknown>));
+  }
+
   async createDocument(doc: RestaurantDocumentRecord): Promise<RestaurantDocumentRecord> {
     const created = await this.models.RestaurantDocument.create(
       doc as unknown as Record<string, unknown>,
@@ -613,6 +630,22 @@ export class InMemoryRestaurantStore implements RestaurantStore {
     return Array.from(this.outlets.values())
       .filter(
         (item) => item.status === 'ACTIVE' && (zoneId === undefined || item.zoneId === zoneId),
+      )
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .map((item) => structuredClone(item));
+  }
+
+  async listAllOutlets(
+    options: {
+      zoneId?: KolkataZoneId;
+      status?: OutletOperationalStatus;
+    } = {},
+  ): Promise<RestaurantOutletRecord[]> {
+    return Array.from(this.outlets.values())
+      .filter(
+        (item) =>
+          (options.status === undefined || item.status === options.status) &&
+          (options.zoneId === undefined || item.zoneId === options.zoneId),
       )
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
       .map((item) => structuredClone(item));

@@ -228,6 +228,10 @@ export interface RestaurantStore {
   upsertOutlet(outlet: RestaurantOutletRecord): Promise<RestaurantOutletRecord>;
   getOutletById(outletId: string): Promise<RestaurantOutletRecord | null>;
   listPublicOutlets(zoneId?: KolkataZoneId): Promise<RestaurantOutletRecord[]>;
+  listAllOutlets(options?: {
+    zoneId?: KolkataZoneId;
+    status?: OutletOperationalStatus;
+  }): Promise<RestaurantOutletRecord[]>;
 
   createDocument(doc: RestaurantDocumentRecord): Promise<RestaurantDocumentRecord>;
   getDocumentById(documentId: string): Promise<RestaurantDocumentRecord | null>;

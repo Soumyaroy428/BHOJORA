@@ -50,6 +50,18 @@ export interface InspectionScopeRecord {
   approvedAt?: Date | null;
 }
 
+export interface AuditSearchQuery {
+  actorId?: string;
+  actorRole?: string;
+  action?: string;
+  resourceType?: string;
+  resourceId?: string;
+  outcome?: 'ALLOWED' | 'DENIED';
+  search?: string;
+  limit?: number;
+  offset?: number;
+}
+
 export interface RbacStore {
   listMembershipsForUser(userId: string): Promise<TenantMembershipRecord[]>;
   upsertMembership(input: {
@@ -65,6 +77,9 @@ export interface RbacStore {
     entry: Omit<AuditLogEntryRecord, 'auditId' | 'createdAt'> & { now?: Date },
   ): Promise<AuditLogEntryRecord>;
   listAuditLogs(limit?: number): Promise<AuditLogEntryRecord[]>;
+  searchAuditLogs(
+    query?: AuditSearchQuery,
+  ): Promise<{ logs: AuditLogEntryRecord[]; total: number }>;
 
   getOutlet(outletId: string): Promise<OutletScopeRecord | null>;
   upsertOutlet(outlet: OutletScopeRecord): Promise<OutletScopeRecord>;
@@ -240,6 +255,48 @@ export class InMemoryRbacStore implements RbacStore {
     return this.audits.slice(0, Math.min(Math.max(1, limit), 100));
   }
 
+  async searchAuditLogs(
+    query: AuditSearchQuery = {},
+  ): Promise<{ logs: AuditLogEntryRecord[]; total: number }> {
+    let result = [...this.audits];
+    if (query.actorId) {
+      result = result.filter((a) => a.actorId === query.actorId);
+    }
+    if (query.actorRole) {
+      result = result.filter((a) => a.actorRole === query.actorRole);
+    }
+    if (query.action) {
+      result = result.filter((a) => a.action === query.action);
+    }
+    if (query.resourceType) {
+      result = result.filter((a) => a.resourceType === query.resourceType);
+    }
+    if (query.resourceId) {
+      result = result.filter((a) => a.resourceId === query.resourceId);
+    }
+    if (query.outcome) {
+      result = result.filter((a) => a.outcome === query.outcome);
+    }
+    if (query.search) {
+      const s = query.search.toLowerCase();
+      result = result.filter(
+        (a) =>
+          (a.reason && a.reason.toLowerCase().includes(s)) ||
+          a.action.toLowerCase().includes(s) ||
+          a.resourceId.toLowerCase().includes(s) ||
+          a.actorId.toLowerCase().includes(s),
+      );
+    }
+    result.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    const total = result.length;
+    const limit = Math.min(Math.max(1, query.limit ?? 50), 100);
+    const offset = Math.max(0, query.offset ?? 0);
+    return {
+      logs: result.slice(offset, offset + limit),
+      total,
+    };
+  }
+
   async getOutlet(outletId: string): Promise<OutletScopeRecord | null> {
     return this.outlets.get(outletId) ?? null;
   }
@@ -373,6 +430,44 @@ export class MongooseRbacStore implements RbacStore {
       .sort({ createdAt: -1 })
       .limit(Math.min(Math.max(1, limit), 100));
     return docs.map((doc) => toAuditRecord(doc.toObject() as Record<string, unknown>));
+  }
+
+  async searchAuditLogs(
+    query: AuditSearchQuery = {},
+  ): Promise<{ logs: AuditLogEntryRecord[]; total: number }> {
+    const filter: Record<string, unknown> = {};
+    if (query.actorId) {
+      filter.actorId = query.actorId;
+    }
+    if (query.actorRole) {
+      filter.actorRole = query.actorRole;
+    }
+    if (query.action) {
+      filter.action = query.action;
+    }
+    if (query.resourceType) {
+      filter.resourceType = query.resourceType;
+    }
+    if (query.resourceId) {
+      filter.resourceId = query.resourceId;
+    }
+    if (query.outcome) {
+      filter.outcome = query.outcome;
+    }
+    if (query.search) {
+      const reg = new RegExp(query.search, 'i');
+      filter.$or = [{ reason: reg }, { action: reg }, { resourceId: reg }, { actorId: reg }];
+    }
+    const limit = Math.min(Math.max(1, query.limit ?? 50), 100);
+    const offset = Math.max(0, query.offset ?? 0);
+    const [total, docs] = await Promise.all([
+      this.models.AuditLog.countDocuments(filter),
+      this.models.AuditLog.find(filter).sort({ createdAt: -1 }).skip(offset).limit(limit),
+    ]);
+    return {
+      logs: docs.map((doc) => toAuditRecord(doc.toObject() as Record<string, unknown>)),
+      total,
+    };
   }
 
   getOutlet(outletId: string) {

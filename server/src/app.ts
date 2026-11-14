@@ -81,6 +81,13 @@ import { createFinanceRouter } from './modules/finance/finance.routes';
 import { FinanceService } from './modules/finance/finance.service';
 import { InMemoryFinanceStore, MongooseFinanceStore } from './modules/finance/finance.store';
 import type { FinanceStore } from './modules/finance/finance.store';
+import { createGovernanceRouter } from './modules/governance/governance.routes';
+import { GovernanceService } from './modules/governance/governance.service';
+import {
+  InMemoryGovernanceStore,
+  MongooseGovernanceStore,
+} from './modules/governance/governance.store';
+import type { GovernanceStore } from './modules/governance/governance.store';
 
 export interface CreateAppOptions {
   config: AppConfig;
@@ -121,6 +128,8 @@ export interface CreateAppOptions {
   supportService?: SupportService;
   financeStore?: FinanceStore;
   financeService?: FinanceService;
+  governanceStore?: GovernanceStore;
+  governanceService?: GovernanceService;
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -435,6 +444,29 @@ export function createApp(options: CreateAppOptions): Express {
       ...(options.clock ? { clock: options.clock } : {}),
     });
   const financeRouter = createFinanceRouter({ identityService, financeService, config });
+  const governanceStore =
+    options.governanceStore ??
+    (isInMemoryMode
+      ? new InMemoryGovernanceStore()
+      : new MongooseGovernanceStore(mongoose.connection));
+  const governanceService =
+    options.governanceService ??
+    new GovernanceService({
+      governanceStore,
+      identityStore: fallbackIdentityStore,
+      restaurantStore,
+      deliveryStore,
+      rbacStore,
+      supportStore,
+      inspectionStore,
+      ...(options.clock ? { clock: options.clock } : {}),
+    });
+  const governanceRouter = createGovernanceRouter({
+    identityService,
+    governanceService,
+    rbacStore,
+    config,
+  });
 
   app.use('/api/v1', healthRouter);
   app.use('/api/v1', identityRouter);
@@ -454,6 +486,7 @@ export function createApp(options: CreateAppOptions): Express {
   app.use('/api/v1', safetyRouter);
   app.use('/api/v1', supportRouter);
   app.use('/api/v1', financeRouter);
+  app.use('/api/v1', governanceRouter);
   app.use(healthRouter);
 
   app.use(notFoundHandler);

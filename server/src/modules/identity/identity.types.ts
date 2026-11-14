@@ -284,6 +284,13 @@ export interface IdentityStore {
     now: Date;
   }): Promise<ConsentRecord>;
   listConsentRecordsForUser(userId: string, limit?: number): Promise<ConsentRecord[]>;
+  listUsers(options?: {
+    role?: UserRole;
+    status?: AccountStatus;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<{ users: UserRecord[]; totalCount: number }>;
   updateUser(
     userId: string,
     patch: Partial<

@@ -482,4 +482,30 @@ Checkpoint 20 implements active delivery tracking, GPS streaming, trip execution
 - **Positive:** Uncompromised rider privacy, tamper-proof OTP handover proof, anti-spoof brute-force lockout, real-time customer tracking visibility, and structured exception reporting.
 - **Negative:** Full turn-by-turn map rendering in web client relies on Leaflet/MapLibre tiles; GPS battery optimization on mobile clients relies on background geolocation APIs.
 
+---
+
+## ADR-025: Platform Administration, Least-Privilege Governance, Reason-Bound Auditing & Two-Person Configuration Approvals
+
+### Context & Problem Statement
+Checkpoint 28 implements the platform administration and governance console (`client/admin-web`), encompassing user account status management, restaurant outlet operational state controls, delivery partner compliance enforcement, platform configuration / weather protocols, and immutable audit search.
+Sensitive administrative mutations (such as suspending merchants, banning users, or modifying Kolkata emergency surge and weather flags) carry systemic risk. Without rigorous architectural constraints, administrative abuse, accidental outages, or insider collusion could jeopardize platform operations.
+
+### Decision Drivers
+1. **Least Privilege & Role Boundaries:** Restrict sensitive operations to MFA-authenticated operators with explicit permissions (`ops:outlet:manage`, `system:admin:override`, `audit:log:read`).
+2. **Mandatory Reason Capture:** Every account suspension, outlet deactivation, and configuration modification must capture an explicit justification (`reason >= 8` characters).
+3. **Self-Action & Segregation of Duties Prohibition:** Operators are strictly prohibited from suspending their own accounts to prevent deadlock and circumvention of oversight.
+4. **Two-Person Rule for Platform Configuration:** Operational parameter changes (e.g., monsoon waterlogging mode, emergency surge lock, maintenance mode) must follow a proposal-and-peer-review workflow where the proposer is cryptographically and logically barred from approving their own proposal.
+5. **Immutable Audit Trails:** All actions—allowed and denied—must append tamper-evident records to `audit_logs` queryable with sub-second full-text and field-level filters.
+
+### Implementation Pattern
+1. **Shared Governance Contracts (`client/shared/contracts/governance.ts`):** Standardizes `PlatformConfigDto`, `ConfigChangeProposalDto`, `AdminOverviewDto`, `AdminUserSummaryDto`, `AdminOutletSummaryDto`, `AdminPartnerSummaryDto`, and `AuditLogPageDto`.
+2. **Dedicated Governance Module (`server/src/modules/governance/`):** Houses `GovernanceStore`, `GovernanceService`, and `governanceRouter` mounted at `/api/v1/admin/*`.
+3. **Two-Person Configuration Approvals:** `POST /admin/config/proposals` generates proposals in `PENDING` status. `POST /admin/config/proposals/:id/review` validates that `proposal.proposerUserId !== actorId` (`403 FORBIDDEN` + `DENIED` audit log on self-approval attempt) and commits the live configuration upon peer approval.
+4. **Accessible Admin Console (`client/admin-web/src/components/AdminGovernanceDashboard.tsx`):** Offers tabbed KPI monitoring, account governance with reason prompts, configuration proposals, and audit explorer.
+
+### Consequences
+- **Positive:** Enforces strict segregation of duties, prevents rogue configuration shifts via the two-person rule, audits every administrative intervention, and provides an accessible, unified operations console.
+- **Negative:** Emergency configuration changes require coordination between at least two privileged administrators.
+
+
 

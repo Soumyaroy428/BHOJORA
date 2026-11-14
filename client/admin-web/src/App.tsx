@@ -15,6 +15,7 @@ import { ZoneGovernancePanel } from './components/ZoneGovernancePanel';
 import { InspectionReviewerQueue } from './components/InspectionReviewerQueue';
 import { SupportOperationsDashboard } from './components/SupportOperationsDashboard';
 import { FinanceSettlementPanel } from './components/FinanceSettlementPanel';
+import { AdminGovernanceDashboard } from './components/AdminGovernanceDashboard';
 
 interface GovernanceItem {
   id: string;
@@ -359,6 +360,13 @@ export function App() {
         />
 
         <FinanceSettlementPanel
+          apiBase={getApiBase()}
+          accessToken={accessToken}
+          mfaVerified={Boolean(rbacContext?.mfaVerified)}
+          onStatusUpdate={setStatusMessage}
+        />
+
+        <AdminGovernanceDashboard
           apiBase={getApiBase()}
           accessToken={accessToken}
           mfaVerified={Boolean(rbacContext?.mfaVerified)}
