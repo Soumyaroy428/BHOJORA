@@ -123,6 +123,13 @@ import { DeterministicAiAdapter, type AiProviderAdapter } from './modules/ai/ai.
 import { InMemoryAiStore, MongooseAiStore, type AiStore } from './modules/ai/ai.store';
 import { createIntegrationsRouter } from './modules/integrations/integrations.routes';
 import { IntegrationsService } from './modules/integrations/integrations.service';
+import { createPrivacyRouter } from './modules/privacy/privacy.routes';
+import { PrivacyService } from './modules/privacy/privacy.service';
+import {
+  InMemoryPrivacyStore,
+  MongoosePrivacyStore,
+  type PrivacyStore,
+} from './modules/privacy/privacy.store';
 
 export interface CreateAppOptions {
   config: AppConfig;
@@ -178,6 +185,8 @@ export interface CreateAppOptions {
   aiAdapter?: AiProviderAdapter;
   aiService?: AiService;
   integrationsService?: IntegrationsService;
+  privacyStore?: PrivacyStore;
+  privacyService?: PrivacyService;
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -595,6 +604,16 @@ export function createApp(options: CreateAppOptions): Express {
     config,
   });
 
+  const privacyStore =
+    options.privacyStore ??
+    (isInMemoryMode ? new InMemoryPrivacyStore() : new MongoosePrivacyStore(mongoose.connection));
+  const privacyService = options.privacyService ?? new PrivacyService(privacyStore, identityStore);
+  const privacyRouter = createPrivacyRouter({
+    identityService,
+    privacyService,
+    config,
+  });
+
   app.use('/api/v1', healthRouter);
   app.use('/api/v1', identityRouter);
   app.use('/api/v1', rbacRouter);
@@ -619,6 +638,7 @@ export function createApp(options: CreateAppOptions): Express {
   app.use('/api/v1', analyticsRouter);
   app.use('/api/v1', aiRouter);
   app.use('/api/v1', integrationsRouter);
+  app.use('/api/v1', privacyRouter);
   app.use(healthRouter);
 
   app.use(notFoundHandler);

@@ -23,3 +23,4 @@ export * from './promotions';
 export * from './analytics';
 export * from './ai';
 export * from './integrations';
+export * from './privacy';
