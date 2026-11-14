@@ -26,3 +26,4 @@ export * from './integrations';
 export * from './privacy';
 export * from './performance';
 export * from './compliance';
+export * from './pilot';

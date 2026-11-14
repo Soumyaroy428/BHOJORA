@@ -139,6 +139,13 @@ import {
   MongooseComplianceStore,
   type ComplianceStore,
 } from './modules/compliance/compliance.store';
+import { createPilotRouter } from './modules/pilot/pilot.routes';
+import { PilotService } from './modules/pilot/pilot.service';
+import {
+  InMemoryPilotStore,
+  MongoosePilotStore,
+  type PilotStore,
+} from './modules/pilot/pilot.store';
 
 export interface CreateAppOptions {
   config: AppConfig;
@@ -199,6 +206,8 @@ export interface CreateAppOptions {
   performanceService?: PerformanceService;
   complianceStore?: ComplianceStore;
   complianceService?: ComplianceService;
+  pilotStore?: PilotStore;
+  pilotService?: PilotService;
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -643,6 +652,15 @@ export function createApp(options: CreateAppOptions): Express {
     config,
   });
 
+  const pilotStore =
+    options.pilotStore ?? (isInMemoryMode ? new InMemoryPilotStore() : new MongoosePilotStore());
+  const pilotService = options.pilotService ?? new PilotService(pilotStore);
+  const pilotRouter = createPilotRouter({
+    identityService,
+    pilotService,
+    config,
+  });
+
   app.use('/api/v1', healthRouter);
   app.use('/api/v1', identityRouter);
   app.use('/api/v1', rbacRouter);
@@ -670,6 +688,7 @@ export function createApp(options: CreateAppOptions): Express {
   app.use('/api/v1', privacyRouter);
   app.use('/api/v1', performanceRouter);
   app.use('/api/v1', complianceRouter);
+  app.use('/api/v1', pilotRouter);
   app.use(healthRouter);
 
   app.use(notFoundHandler);
