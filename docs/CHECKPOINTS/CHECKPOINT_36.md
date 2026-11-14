@@ -85,6 +85,6 @@ procedures confirmed.
     -   Customer Web: https://customer-web-phi-ten.vercel.app (HTTP 200)
     -   Admin Web: https://bhojora-admin.vercel.app (HTTP 200)
     -   Restaurant Web: https://restaurant-web-liard-seven.vercel.app (HTTP 200)
--   **Git branch/commit:** `main` / `feat(checkpoint-36): implement compliance framework, statutory sign-off ledger, and launch readiness dossier`
+-   **Git branch/commit:** `main` / `3f9eb54` (`feat(checkpoint-36)`) & `9a75793` (`style(app)`)
 -   **Deployment and smoke-test status:** Verified live staging health on Vercel deployments.
 -   **Approval requested:** Ready for founder acceptance and deployment.
