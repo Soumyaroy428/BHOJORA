@@ -77,6 +77,10 @@ import { createSupportRouter } from './modules/support/support.routes';
 import { SupportService } from './modules/support/support.service';
 import { InMemorySupportStore, MongooseSupportStore } from './modules/support/support.store';
 import type { SupportStore } from './modules/support/support.store';
+import { createFinanceRouter } from './modules/finance/finance.routes';
+import { FinanceService } from './modules/finance/finance.service';
+import { InMemoryFinanceStore, MongooseFinanceStore } from './modules/finance/finance.store';
+import type { FinanceStore } from './modules/finance/finance.store';
 
 export interface CreateAppOptions {
   config: AppConfig;
@@ -115,6 +119,8 @@ export interface CreateAppOptions {
   safetyService?: SafetyService;
   supportStore?: SupportStore;
   supportService?: SupportService;
+  financeStore?: FinanceStore;
+  financeService?: FinanceService;
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -419,6 +425,16 @@ export function createApp(options: CreateAppOptions): Express {
       ...(options.clock ? { clock: options.clock } : {}),
     });
   const safetyRouter = createSafetyRouter({ safetyService });
+  const financeStore =
+    options.financeStore ??
+    (isInMemoryMode ? new InMemoryFinanceStore() : new MongooseFinanceStore(mongoose.connection));
+  const financeService =
+    options.financeService ??
+    new FinanceService({
+      financeStore,
+      ...(options.clock ? { clock: options.clock } : {}),
+    });
+  const financeRouter = createFinanceRouter({ identityService, financeService, config });
 
   app.use('/api/v1', healthRouter);
   app.use('/api/v1', identityRouter);
@@ -437,6 +453,7 @@ export function createApp(options: CreateAppOptions): Express {
   app.use('/api/v1', inspectionRouter);
   app.use('/api/v1', safetyRouter);
   app.use('/api/v1', supportRouter);
+  app.use('/api/v1', financeRouter);
   app.use(healthRouter);
 
   app.use(notFoundHandler);
