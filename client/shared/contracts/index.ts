@@ -22,3 +22,4 @@ export * from './notifications';
 export * from './promotions';
 export * from './analytics';
 export * from './ai';
+export * from './integrations';

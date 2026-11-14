@@ -121,6 +121,8 @@ import { createAiRouter } from './modules/ai/ai.routes';
 import { AiService } from './modules/ai/ai.service';
 import { DeterministicAiAdapter, type AiProviderAdapter } from './modules/ai/ai.adapter';
 import { InMemoryAiStore, MongooseAiStore, type AiStore } from './modules/ai/ai.store';
+import { createIntegrationsRouter } from './modules/integrations/integrations.routes';
+import { IntegrationsService } from './modules/integrations/integrations.service';
 
 export interface CreateAppOptions {
   config: AppConfig;
@@ -175,6 +177,7 @@ export interface CreateAppOptions {
   aiStore?: AiStore;
   aiAdapter?: AiProviderAdapter;
   aiService?: AiService;
+  integrationsService?: IntegrationsService;
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -585,6 +588,13 @@ export function createApp(options: CreateAppOptions): Express {
     config,
   });
 
+  const integrationsService = options.integrationsService ?? new IntegrationsService();
+  const integrationsRouter = createIntegrationsRouter({
+    identityService,
+    integrationsService,
+    config,
+  });
+
   app.use('/api/v1', healthRouter);
   app.use('/api/v1', identityRouter);
   app.use('/api/v1', rbacRouter);
@@ -608,6 +618,7 @@ export function createApp(options: CreateAppOptions): Express {
   app.use('/api/v1', promotionsRouter);
   app.use('/api/v1', analyticsRouter);
   app.use('/api/v1', aiRouter);
+  app.use('/api/v1', integrationsRouter);
   app.use(healthRouter);
 
   app.use(notFoundHandler);
