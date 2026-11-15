@@ -210,6 +210,5 @@ npm run start --workspace=server
 
 ## 8. Intellectual Property & Legal Notice
 
-© 2026 Bhojora Platform Ltd. All rights reserved.  
-Registered office: 14 Park Street, Kolkata, West Bengal 700016, India.  
+© 2026 Bhojora Platform Ltd. All rights reserved.   
 _Bhojora, the Bhojora logo, and "Food You Love. Trust You Deserve." are proprietary trademarks of Bhojora Platform Ltd._
