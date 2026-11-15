@@ -1,5 +1,5 @@
 import mongoose, { type Document, type Model, Schema } from 'mongoose';
-import type { FounderApprovalRequest, GoNoGoDecision, NextCityCandidate } from '@bhojora/shared';
+import type { GoNoGoDecision, NextCityCandidate } from '@bhojora/shared';
 
 export interface ExpansionStore {
   getFounderSignOff(): Promise<GoNoGoDecision['founderSignOff'] | null>;
