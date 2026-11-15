@@ -1159,7 +1159,7 @@ footer {
   padding-top: 6px;
 }
 
-/* Checkpoint 13 Discovery Controls, Map Corridor View, Dish Results & Uninspected Distinction */
+/* Discovery Controls, Map Corridor View, Dish Results & Uninspected Distinction */
 .recent-searches-bar {
   display: flex;
   flex-wrap: wrap;
@@ -1472,7 +1472,7 @@ footer {
   }
 }
 
-/* Checkpoint 14: Variant/addon selectors, Cart & Quote modal (modern-web-guidance compliant) */
+/* Variant/addon selectors, Cart & Quote modal (modern-web-guidance compliant) */
 dialog.trust-dialog:modal {
   overscroll-behavior: contain;
 }
@@ -1852,7 +1852,7 @@ dialog.trust-dialog::backdrop {
   }
 }
 
-/* Checkpoint 16 Customer Order Lifecycle & Tracking Dialog */
+/* Customer Order Lifecycle & Tracking Dialog */
 .orders-dialog {
   max-width: 780px;
 }

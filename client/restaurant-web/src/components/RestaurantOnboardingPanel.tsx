@@ -539,7 +539,7 @@ export function RestaurantOnboardingPanel({
     <section className="panel" aria-labelledby="onboarding-heading">
       <div className="action-row" style={{ justifyContent: 'space-between' }}>
         <div>
-          <p className="eyebrow">Checkpoint 10 · Partner Onboarding &amp; KYC</p>
+          <p className="eyebrow">Partner Onboarding &amp; KYC Governance</p>
           <h2 id="onboarding-heading">Restaurant Onboarding &amp; Statutory Compliance</h2>
         </div>
         {activeApp ? (

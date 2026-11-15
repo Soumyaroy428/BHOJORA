@@ -214,7 +214,7 @@ export function ZoneGovernancePanel({
     <section className="panel" aria-labelledby="zone-governance-heading">
       <div className="topbar-inner" style={{ marginBottom: '0.75rem' }}>
         <div>
-          <span className="badge">Checkpoint 11 · Geospatial Delivery Zones</span>
+          <span className="badge">Geospatial Delivery Zones &amp; Service Corridors</span>
           <h2 id="zone-governance-heading" style={{ marginTop: '0.5rem', marginBottom: '0.25rem' }}>
             Kolkata Delivery Zone Polygons &amp; Serviceability Policies
           </h2>

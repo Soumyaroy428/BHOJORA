@@ -314,13 +314,8 @@ npm run typecheck
 The platform includes **39 sequential verification suites** covering every subsystem:
 
 ```bash
-# Run complete test suite across all 39 checkpoints
+# Run complete automated verification test suite
 npm run test --prefix server
-
-# Run a specific domain test suite (e.g., Compliance, Pilot, or Expansion)
-node server/tests/verify-checkpoint-36.test.js
-node server/tests/verify-checkpoint-37.test.js
-node server/tests/verify-checkpoint-38.test.js
 ```
 
 #### 5. Starting Local Development Servers

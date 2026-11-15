@@ -311,7 +311,7 @@ export function AdminGovernanceDashboard({
     <section className="panel" aria-label="Admin Governance and Oversight Control Plane">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <span className="pill">Checkpoint 28 — Platform Governance</span>
+          <span className="pill">Platform Governance &amp; System Oversight</span>
           <h2 style={{ margin: '0.25rem 0' }}>Bhojora Control &amp; System Governance</h2>
         </div>
         <div className="filter-row" role="group" aria-label="Governance section selector">

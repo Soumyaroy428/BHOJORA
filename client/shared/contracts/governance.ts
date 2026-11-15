@@ -1,5 +1,5 @@
 /**
- * BHOJORA — Checkpoint 28: Admin Governance, Account Management, Configuration Approvals & Audit Search
+ * BHOJORA — Admin Governance, Account Management, Configuration Approvals & Audit Search
  */
 
 export interface PlatformConfigDto {

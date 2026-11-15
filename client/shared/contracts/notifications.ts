@@ -1,5 +1,5 @@
 /**
- * BHOJORA — Notifications Domain Contracts (Checkpoint 29)
+ * BHOJORA — Notifications Domain Contracts
  * Multi-channel messaging: SMS, Email, Push, In-App.
  * Enforces strict PII sanitization, consent opt-outs, and idempotent retries.
  */

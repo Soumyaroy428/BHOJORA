@@ -248,7 +248,7 @@ export function SupportOperationsDashboard({ apiBase, accessToken, onStatusUpdat
     <section className="panel" style={{ marginTop: '1.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h2>Support Operations &amp; Escalation (Checkpoint 26)</h2>
+          <h2>Support Operations &amp; Escalation Control</h2>
           <p className="meta" style={{ margin: 0 }}>
             Ticket queues · SLA breach monitoring · Multi-tier escalation · Canned responses ·
             Immutable case history

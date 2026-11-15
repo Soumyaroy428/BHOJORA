@@ -60,7 +60,7 @@ export function App() {
   const [shiftStatus, setShiftStatus] = useState<DeliveryShiftStatus>('OFFLINE');
   const [shiftError, setShiftError] = useState<string | null>(null);
 
-  // Checkpoint 19 & 20: Job Inbox, Dispatch & Trip Execution State
+  // Job Inbox, Dispatch & Trip Execution State
   const [activeOffer, setActiveOffer] = useState<DeliveryJobOfferDto | null>(null);
   const [activeAssignment, setActiveAssignment] = useState<DeliveryJobOfferDto | null>(null);
   const [offerCountdown, setOfferCountdown] = useState<number>(45);
@@ -364,7 +364,7 @@ export function App() {
               )}
             </div>
 
-            {/* Checkpoint 19: Incoming Dispatch Job Offer Modal / Card */}
+            {/* Incoming Dispatch Job Offer Modal / Card */}
             {activeOffer && (
               <div data-testid="incoming-job-offer-card" className="job-offer-card">
                 <div className="job-header-row">
@@ -453,7 +453,7 @@ export function App() {
               </div>
             )}
 
-            {/* Active Delivery Trip Card (Checkpoint 20: Execution, Live GPS & Handover Proof) */}
+            {/* Active Delivery Trip Card (Execution, Live GPS & Handover Proof) */}
             {activeAssignment && (
               <div
                 data-testid="active-delivery-trip-card"

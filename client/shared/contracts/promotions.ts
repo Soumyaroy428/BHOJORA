@@ -1,5 +1,5 @@
 /**
- * BHOJORA — Promotions, Loyalty & Memberships Domain Contracts (Checkpoint 30)
+ * BHOJORA — Promotions, Loyalty & Memberships Domain Contracts
  * Coupons, campaigns, referrals, points ledger, and membership club foundations.
  * Enforces strict budget caps, eligibility criteria, and transparent funding terms.
  */

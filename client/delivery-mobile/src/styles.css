@@ -474,7 +474,7 @@ body {
   color: oklch(0.88 0.1 145);
 }
 
-/* Checkpoint 19: Dispatch Job Inbox & Offer Styles */
+/* Dispatch Job Inbox & Offer Styles */
 .job-offer-card {
   background-color: var(--bg-surface);
   border: 2px solid var(--brand-accent);

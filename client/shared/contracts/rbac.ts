@@ -1,7 +1,7 @@
 import type { UserRole } from './auth';
 
 /**
- * BHOJORA — Canonical RBAC & Tenant Isolation Contracts (CHECKPOINT_08 & AUTH.md).
+ * BHOJORA — Canonical RBAC & Tenant Isolation Contracts.
  */
 export const PERMISSION_CATALOG = [
   'profile:own:read',

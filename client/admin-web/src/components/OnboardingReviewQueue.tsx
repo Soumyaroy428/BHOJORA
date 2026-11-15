@@ -222,7 +222,7 @@ export function OnboardingReviewQueue({
     <section className="panel" aria-labelledby="onboarding-review-heading">
       <div className="hero-split" style={{ gridTemplateColumns: '1fr auto', alignItems: 'center' }}>
         <div>
-          <p className="eyebrow">Checkpoint 10 · Audited KYC &amp; FSSAI Governance</p>
+          <p className="eyebrow">Audited KYC &amp; FSSAI Governance</p>
           <h2 id="onboarding-review-heading">Restaurant Onboarding Review Queue</h2>
         </div>
         <button

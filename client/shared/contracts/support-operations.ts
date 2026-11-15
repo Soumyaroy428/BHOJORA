@@ -1,5 +1,5 @@
 /**
- * BHOJORA Support Operations & Escalation Contracts (CHECKPOINT_26)
+ * BHOJORA Support Operations & Escalation Contracts
  *
  * Defines canonical data contracts for support ticketing, SLA monitoring,
  * assignment, tiered escalation, canned response templates, and immutable case history.

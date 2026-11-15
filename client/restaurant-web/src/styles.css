@@ -485,7 +485,7 @@ textarea:focus-visible {
   }
 }
 
-/* --- Checkpoint 17: Kitchen Order Dashboard & KDS Styles --- */
+/* --- Kitchen Order Dashboard & KDS Styles --- */
 .kds-panel {
   display: grid;
   gap: 1.25rem;

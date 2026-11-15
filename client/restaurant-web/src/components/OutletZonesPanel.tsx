@@ -396,7 +396,7 @@ export function OutletZonesPanel({
     <section className="panel" aria-labelledby="outlet-ops-heading">
       <div className="topbar-inner" style={{ marginBottom: '0.75rem' }}>
         <div>
-          <span className="badge">Checkpoint 11 · GeoJSON [lng, lat] &amp; Asia/Kolkata Hours</span>
+          <span className="badge">GeoJSON [lng, lat] &amp; Asia/Kolkata Operating Hours</span>
           <h2 id="outlet-ops-heading" style={{ marginTop: '0.5rem', marginBottom: '0.25rem' }}>
             Outlet Map Pin, Delivery Radius &amp; Operating Hours
           </h2>

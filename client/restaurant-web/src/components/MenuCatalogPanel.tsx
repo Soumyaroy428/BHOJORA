@@ -373,9 +373,7 @@ export function MenuCatalogPanel({
     <section className="panel" aria-labelledby="catalog-management-heading">
       <div className="topbar-inner" style={{ marginBottom: '0.75rem' }}>
         <div>
-          <span className="badge">
-            Checkpoint 12 · Catalog, Integer Paise &amp; Allergen Labels
-          </span>
+          <span className="badge">Catalog, Integer Paise &amp; Allergen Labels</span>
           <h2
             id="catalog-management-heading"
             style={{ marginTop: '0.5rem', marginBottom: '0.25rem' }}

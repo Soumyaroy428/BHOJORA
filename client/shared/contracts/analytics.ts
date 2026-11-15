@@ -1,6 +1,6 @@
 /**
  * BHOJORA Platform --- Analytics, Reporting & Dashboard Contracts
- * Checkpoint 31: Marketplace, restaurant, delivery, finance & trust KPIs,
+ * Marketplace, restaurant, delivery, finance & trust KPIs,
  * with scoped access, financial reconciliation & PII-sanitized exports.
  */
 
