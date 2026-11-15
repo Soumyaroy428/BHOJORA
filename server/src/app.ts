@@ -146,6 +146,13 @@ import {
   MongoosePilotStore,
   type PilotStore,
 } from './modules/pilot/pilot.store';
+import { createExpansionRouter } from './modules/expansion/expansion.routes';
+import { ExpansionService } from './modules/expansion/expansion.service';
+import {
+  InMemoryExpansionStore,
+  MongooseExpansionStore,
+  type ExpansionStore,
+} from './modules/expansion/expansion.store';
 
 export interface CreateAppOptions {
   config: AppConfig;
@@ -208,6 +215,8 @@ export interface CreateAppOptions {
   complianceService?: ComplianceService;
   pilotStore?: PilotStore;
   pilotService?: PilotService;
+  expansionStore?: ExpansionStore;
+  expansionService?: ExpansionService;
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -661,6 +670,16 @@ export function createApp(options: CreateAppOptions): Express {
     config,
   });
 
+  const expansionStore =
+    options.expansionStore ??
+    (isInMemoryMode ? new InMemoryExpansionStore() : new MongooseExpansionStore());
+  const expansionService = options.expansionService ?? new ExpansionService(expansionStore);
+  const expansionRouter = createExpansionRouter({
+    identityService,
+    expansionService,
+    config,
+  });
+
   app.use('/api/v1', healthRouter);
   app.use('/api/v1', identityRouter);
   app.use('/api/v1', rbacRouter);
@@ -689,6 +708,7 @@ export function createApp(options: CreateAppOptions): Express {
   app.use('/api/v1', performanceRouter);
   app.use('/api/v1', complianceRouter);
   app.use('/api/v1', pilotRouter);
+  app.use('/api/v1', expansionRouter);
   app.use(healthRouter);
 
   app.use(notFoundHandler);
