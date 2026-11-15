@@ -1098,3 +1098,343 @@ textarea:focus-visible {
     width: 100%;
   }
 }
+
+/* =========================================================
+   PARTNER PORTAL: LANDING & ONBOARDING / SIGN-IN STYLES
+   ========================================================= */
+
+.landing-shell {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 4rem;
+  display: grid;
+  gap: 2.5rem;
+}
+
+.landing-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.05fr);
+  gap: 2.25rem;
+  align-items: start;
+}
+
+.landing-copy {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.landing-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--terracotta);
+}
+
+.landing-heading {
+  font-size: clamp(2rem, 3.4vw, 2.75rem);
+  line-height: 1.15;
+  margin: 0;
+  color: var(--ink-950);
+}
+
+.landing-sub {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--ink-800);
+  margin: 0;
+}
+
+.landing-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.metric-tile {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem 0.85rem;
+  text-align: center;
+}
+
+.metric-number {
+  font-family: 'Manrope', sans-serif;
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--terracotta);
+  line-height: 1.2;
+}
+
+.metric-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ink-600);
+  margin-top: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.pillars-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.pillar-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.pillar-icon {
+  font-size: 1.2rem;
+  line-height: 1;
+  padding-top: 0.15rem;
+}
+
+.pillar-title {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--ink-950);
+  margin: 0;
+}
+
+.pillar-desc {
+  font-size: 0.82rem;
+  color: var(--ink-600);
+  margin: 0.15rem 0 0;
+  line-height: 1.45;
+}
+
+/* Dedicated Auth / Onboarding Portal Card */
+.auth-portal-card {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow: 0 4px 20px rgba(23, 20, 18, 0.05);
+}
+
+.auth-mode-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--bg-canvas);
+  padding: 0.35rem;
+  border-radius: 10px;
+  gap: 0.35rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--border);
+}
+
+.auth-mode-btn {
+  border: none;
+  background: transparent;
+  color: var(--ink-800);
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 0.6rem 0.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.auth-mode-btn[aria-selected='true'] {
+  background: var(--bg-card);
+  color: var(--terracotta);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.auth-card-header {
+  margin-bottom: 1.25rem;
+}
+
+.auth-card-header h2 {
+  font-size: 1.4rem;
+  margin: 0.25rem 0 0.4rem;
+  color: var(--ink-950);
+}
+
+.auth-card-header p {
+  font-size: 0.86rem;
+  color: var(--ink-600);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.password-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-group input {
+  padding-right: 4.5rem;
+}
+
+.btn-toggle-password {
+  position: absolute;
+  right: 0.5rem;
+  background: transparent;
+  border: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--terracotta);
+  cursor: pointer;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+}
+
+.btn-toggle-password:hover {
+  background: var(--bg-alt);
+}
+
+.onboarding-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.full-span {
+  grid-column: 1 / -1;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  font-size: 0.82rem;
+  color: var(--ink-800);
+  line-height: 1.45;
+  margin: 0.5rem 0;
+}
+
+.checkbox-row input[type='checkbox'] {
+  margin-top: 0.2rem;
+  accent-color: var(--terracotta);
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.env-credential-callout {
+  margin-top: 1.25rem;
+  padding: 0.85rem 1rem;
+  background: var(--bg-canvas);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  font-size: 0.8rem;
+  color: var(--ink-800);
+  line-height: 1.45;
+}
+
+.env-credential-callout strong {
+  color: var(--ink-950);
+}
+
+.env-credential-callout code {
+  font-family: monospace;
+  font-size: 0.82rem;
+  background: var(--bg-alt);
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+}
+
+/* Authenticated Partner Console Header & Navigation */
+.partner-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.partner-identity-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--trust-green-light);
+  border: 1px solid var(--trust-green);
+  color: var(--trust-green-ink);
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.btn-signout {
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--terracotta-dark);
+  padding: 0.4rem 0.85rem;
+  min-height: 38px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.btn-signout:hover {
+  background: #faecea;
+  border-color: var(--terracotta);
+}
+
+.nav-tabs-wrapper {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.25rem;
+  overflow-x: auto;
+}
+
+.nav-tabs-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.tab-nav-btn {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-800);
+  padding: 0.5rem 0.85rem;
+  min-height: 40px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.tab-nav-btn:hover {
+  background: var(--bg-canvas);
+  color: var(--ink-950);
+}
+
+.tab-nav-btn[aria-selected='true'] {
+  background: var(--terracotta);
+  color: #fffcf8;
+}
+
+@media (max-width: 900px) {
+  .landing-hero-grid {
+    grid-template-columns: 1fr;
+  }
+  .landing-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .onboarding-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
