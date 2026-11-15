@@ -13,9 +13,9 @@
 
 ## 1. Executive Overview
 
-In the modern urban food landscape, standard food delivery apps have prioritized hyper-growth over diner health and merchant sustainability. Diners routinely order from uninspected "ghost kitchens" with no visibility into kitchen hygiene, while facing hidden "platform fees", rain surges, and marked-up menu prices. Simultaneously, restaurant margins are decimated by 30%+ aggregator commissions, and delivery riders navigate arbitrary payouts with ambiguous tip deductions.
+In the modern urban food landscape, standard food delivery platforms have prioritized hyper-growth over diner health and merchant sustainability. Diners routinely order from uninspected "ghost kitchens" with no visibility into kitchen hygiene, while facing hidden "platform fees", rain surges, and marked-up menu prices. Simultaneously, restaurant margins are decimated by 30%+ aggregator commissions, and delivery riders navigate arbitrary payouts with ambiguous tip deductions.
 
-**BHOJORA** changes this equation. We fuse on-demand culinary convenience with an **independent, physical kitchen verification and trust transparency engine**. Every participating restaurant is physically audited across water purity, food handling, and kitchen sanitation before earning a public, tamper-evident safety rating.
+**BHOJORA** changes this equation. We fuse on-demand culinary convenience with an **independent, physical kitchen verification and trust transparency engine**. Every participating restaurant is physically audited across water purity, food handling, cold storage integrity, and kitchen sanitation before earning a public, tamper-evident safety rating.
 
 ---
 
@@ -34,113 +34,349 @@ In the modern urban food landscape, standard food delivery apps have prioritized
 
 ---
 
-## 3. How BHOJORA Works: The End-to-End Journey
+## 3. End-to-End User Journeys (How BHOJORA Works for Users)
 
-Bhojora operates through a synchronized 5-step operational workflow:
+Bhojora coordinates four distinct user personas across four synchronized journeys:
 
 ```
-[ 1. Discovery & Verification ] ──> [ 2. Transparent Cart & Quote ] ──> [ 3. Live Kitchen Display ]
-           │                                                                    │
-           ▼                                                                    ▼
-[ 5. Independent Audit Loop ]   <── [ 4. Corridor Dispatch & OTP Delivery ] <───┘
++----------------------------------------------------------------------------------------------------+
+|                                    BHOJORA PLATFORM ECOSYSTEM                                      |
++----------------------------------------------------------------------------------------------------+
+|  1. Conscious Diners      --> Browse verified kitchens, inspect hygiene, order at true prices     |
+|  2. Kitchen Partners      --> Receive live orders on KDS, seal tamper-proof packaging, track T+1   |
+|  3. Delivery Couriers     --> Single-order corridor transit, OTP handoff, direct tip payout        |
+|  4. Safety Inspectors     --> Unannounced physical audits, SHA-256 evidence, dual sign-off checks |
++----------------------------------------------------------------------------------------------------+
 ```
 
-### 1. Discovery with Verifiable Trust
+### 3.1. Diner Journey (Conscious Consumer Experience)
 
-- Diners explore verified restaurants via an interactive live map or corridor selector (e.g., Salt Lake Sector V, Park Street / Bhowanipore).
-- Every restaurant card displays a prominent **Hygiene Badge (e.g., "94/100 • Audited Oct 2026")**.
-- Diners can tap to view the full **Kitchen Trust Dossier**, inspecting photos of food preparation zones, refrigerator temperature logs, and pest-control certifications.
-
-### 2. Clean Cart & Authoritative Price Quotes
-
-- The single-outlet cart validates items in real time.
-- The server generates an authoritative price quote calculating exact items, verified restaurant GST (under Section 9(5) CGST Act), and distance-based logistics.
-- The price you see is the price you pay: zero unexpected convenience fees or platform surcharges.
-
-### 3. Kitchen Display System (KDS) & Tamper-Proof Packaging
-
-- Once paid via tokenized Indian payment gateways (Razorpay / UPI), orders stream instantly to the merchant's live kitchen operations board.
-- Kitchens prepare dishes within measured preparation windows and seal orders with tamper-evident hygiene labels.
-
-### 4. Bounded-Corridor Dispatch & OTP Delivery
-
-- Proximity-based dispatch pairs the order with a dedicated delivery partner within the 5.5–6.0 km corridor.
-- Diners track rider GPS telemetry in real-time.
-- Delivery is finalized via a secure, single-use **4-digit customer delivery OTP**, guaranteeing safe handoff and releasing rider payout.
-
-### 5. Governed Inspection & Peer-Review Loop
-
-- Independent food safety inspectors conduct periodic physical evaluations using a standardized 100-point rubric.
-- Photo and video evidence is cryptographically hashed with SHA-256 to prevent tampering.
-- **Enforced Separation of Duties:** Inspectors cannot self-approve reports; a secondary compliance officer must verify the findings before scores update publicly.
-- Critical health non-conformances trigger immediate, automated restaurant suspension.
+1. **Corridor Discovery & Zone Filtering:**
+   - Diners select their localized corridor (e.g., Salt Lake Sector V or Park Street / Bhowanipore).
+   - The platform strictly enforces a **5.5–6.0 km delivery boundary** to guarantee hot-chain food integrity and delivery in under 35 minutes.
+   - Filter restaurants by dietary preferences (Vegetarian, Non-Vegetarian, Jain, Vegan, Halal) and minimum hygiene threshold (e.g., Hygiene Rating $\ge$ 90/100).
+2. **Transparent Kitchen Inspection:**
+   - Diners tap on any restaurant card to open its public **Kitchen Trust Dossier**.
+   - Review recent inspection date, accredited inspector ID, pest-control certifications, water purity tests (TDS/bacterial analysis), and unedited kitchen preparation photos.
+3. **Cart Building with True Dine-In Prices:**
+   - Real-time stock validation ensures out-of-stock items cannot be added.
+   - Single-outlet cart structure prevents multi-restaurant batching delays.
+   - Menu prices exactly match the restaurant's in-person dine-in rates.
+4. **Upfront Quote & Secure Checkout:**
+   - Server computes an authoritative quote itemizing food subtotal, statutory restaurant GST (under Section 9(5) CGST Act), and distance-based delivery logistics.
+   - **Zero platform fees, zero surge charges, and zero surprise packaging add-ons.**
+   - Payments processed securely via tokenized UPI, net banking, or debit/credit cards.
+5. **Real-time Preparation & Courier Tracking:**
+   - Real-time WebSocket connection streams status updates: `PLACED` $\rightarrow$ `CONFIRMED` $\rightarrow$ `PREPARING` $\rightarrow$ `READY_FOR_PICKUP` $\rightarrow$ `OUT_FOR_DELIVERY`.
+   - Diners observe courier location telemetry inside the bounded delivery zone.
+6. **4-Digit Delivery OTP Handoff & Hygiene Feedback:**
+   - Secure handoff requires the customer to provide a unique, single-use 4-digit OTP to the delivery courier.
+   - Once verified, diners can rate both food quality and physical packaging seal condition.
 
 ---
 
-## 4. How BHOJORA Helps Every Stakeholder
+### 3.2. Restaurant Partner Journey (Kitchen Operations)
 
-### 🍽️ Conscious Diners
-
-- **Peace of Mind:** Know exactly what happens behind the kitchen doors before you order.
-- **Honest Value:** Save ₹50–₹120 per order by avoiding inflated menu prices and surprise platform fees.
-- **Piping Hot Meals:** Food is delivered fresh within short urban radii rather than languishing across multi-stop cross-city routes.
-
-### 🍳 Honest Restaurateurs & Cloud Kitchens
-
-- **Direct ROI on Cleanliness:** Good food and high hygiene standards directly drive top discovery ranking without spending thousands on platform ads.
-- **Healthy Margins:** Retain over 83.5% of order revenue, preserving business viability.
-- **Operational Clarity:** Real-time stock management, prep time throttling, and next-day automated escrow settlements.
-
-### 🛵 Delivery Fleet Partners
-
-- **Fair & Predictable Livelihood:** Transparent base pay per kilometer with zero unexpected deductions.
-- **Tips Belong to You:** 100% of customer tips are remitted directly to the partner's wallet.
-- **Dignity & Safety:** Accidental disability coverage and realistic delivery timeframes that do not force reckless driving.
-
-### 🏛️ Municipalities & Health Authorities
-
-- **Digital Compliance Infrastructure:** Elevates urban food safety by providing open, transparent audit trails aligned with FSSAI regulations.
-- **Rapid Outbreak Response:** Critical food safety alerts trigger automated restaurant lockdown in under 15 minutes.
+1. **Onboarding & Physical Verification:**
+   - Restaurant registers FSSAI (14 digits) and GSTIN (15 characters) licenses.
+   - An accredited food safety auditor visits the facility to execute an unannounced 100-point inspection covering food storage, refrigeration temperature ($\le 4^\circ\text{C}$), water filtration, and worker health cards.
+   - Minimum rating of 80/100 required for commercial listing.
+2. **Menu Publishing & Stock Throttling:**
+   - Kitchen managers publish menu catalogs with verified preparation times and allergy disclaimers.
+   - Out-of-stock dishes can be toggled ("86-ed") instantly from the merchant portal.
+   - Kitchens can temporarily throttle incoming orders during peak kitchen load to maintain quality standards.
+3. **Live Kitchen Display System (KDS):**
+   - Incoming orders trigger real-time visual and audible notifications.
+   - Clear display of special cooking instructions, dietary badges, and target preparation countdown timers.
+   - Kitchen clicks "Mark Ready" once food is packaged.
+4. **Tamper-Evident Packaging & Courier Handover:**
+   - Food is sealed inside tamper-evident containers with a serialized hygiene sticker.
+   - Kitchen verifies the courier's badge and hands over the package.
+5. **Settlement & Regulatory Accounting:**
+   - Automated financial ledger remits net revenue on a **T+1 daily settlement schedule** at a flat **16.5% take rate**.
+   - Clear GST reports automatically generated for Section 9(5) tax filings.
 
 ---
 
-## 5. Technology Stack & Monorepo Architecture
+### 3.3. Delivery Partner Journey (Fleet Logistics & Welfare)
 
-BHOJORA is built as an enterprise-grade modular monolith written in **100% strict TypeScript**:
+1. **Shift Check-in & Corridor Allocation:**
+   - Couriers check in within their designated 5.5–6.0 km delivery zone.
+   - Active status activates on-shift Group Personal Accident insurance.
+2. **Dedicated Algorithmic Dispatch:**
+   - Algorithmic dispatch assigns one dedicated order per courier based on proximity and kitchen prep readiness.
+   - Zero multi-restaurant order stacking or cross-city 15 km routes.
+3. **Merchant Pickup Verification:**
+   - Courier navigates to the merchant, inspects the tamper-evident packaging seal, and confirms pickup.
+4. **Calibrated Transit:**
+   - Turn-by-turn routing utilizes safe speed models rather than unrealistic delivery promises that encourage dangerous driving.
+   - Real-time GPS pings keep customer and merchant updated.
+5. **Handoff Verification & Instant Earnings:**
+   - Courier enters the customer's 4-digit OTP on the mobile app to validate completion.
+   - Payout includes guaranteed distance-based base fare plus **100% of customer tips** remitted directly to the partner's account with zero platform commission.
+
+---
+
+### 3.4. Safety Inspector Journey (Independent Audit & Governance)
+
+1. **Unannounced Field Audits:**
+   - Accredited inspectors receive scheduled or surprise audit tasks on their offline-first mobile inspection app.
+   - GPS geofencing confirms physical presence at the kitchen location.
+2. **Standardized 100-Point Inspection Rubric:**
+   - Evaluates: Water purity & ice storage (20 pts), Cold chain & raw meat segregation (25 pts), Cooking surface & utensil sanitation (25 pts), Food handler PPE & hygiene certification (15 pts), and Pest management (15 pts).
+3. **Cryptographic Proof of Audit:**
+   - High-resolution timestamped photos and swab test results are hashed with SHA-256 before upload, preventing retrospective modification.
+4. **Separation-of-Duties Peer Verification:**
+   - An independent compliance officer reviews and counter-signs the audit findings before the new rating is published on the customer app.
+5. **Automated Enforcement:**
+   - Any critical hazard (e.g., sewage leakage, pest infestation) immediately triggers an automated temporary listing suspension ($\le 15$ minutes) until re-inspection passes.
+
+---
+
+## 4. Developer Technical Workflow & System Architecture
+
+```mermaid
+flowchart TD
+    subgraph Clients["Application Clients"]
+        CW["Customer Web<br/>(React / Vite)"]
+        RW["Restaurant Web<br/>(React / Vite)"]
+        AW["Admin Governance<br/>(React / Vite)"]
+        CM["Customer Mobile<br/>(React Native / Expo)"]
+        DM["Delivery Mobile<br/>(React Native / Expo)"]
+        IM["Inspector Mobile<br/>(React Native / Expo)"]
+    end
+
+    subgraph Contracts["Shared Boundary Layer"]
+        SC["@bhojora/contracts<br/>Zod Schemas + TypeScript Contracts"]
+        DT["@bhojora/tokens<br/>Design System Tokens (Colors, Typography)"]
+    end
+
+    subgraph Gateway["API Gateway & Security Layer"]
+        SEC["Helmet + CORS + CSP Headers"]
+        RL["Redis Sliding-Window Rate Limiter"]
+        AUTH["Dual JWT Auth + Scrypt Verification"]
+        RBAC["RBAC Context Guard<br/>(Customer, Partner, Rider, Inspector, Admin)"]
+        VAL["Zod Request Validation"]
+    end
+
+    subgraph Server["Modular Monolith Backend (@bhojora/server)"]
+        ID["Identity & Auth Module"]
+        CAT["Catalog & Kitchen Module"]
+        ORD["Order & KDS State Machine"]
+        PAY["Escrow & Payment Module"]
+        DISP["Corridor Dispatch Engine"]
+        COMP["Compliance & Audit Module"]
+        PILOT["Kolkata Pilot & Kill-Switch"]
+        EXP["Expansion & Analytics Engine"]
+    end
+
+    subgraph Data["Persistence & Storage Layer"]
+        MDB[("MongoDB<br/>2dsphere Geo + Partials")]
+        REDIS[("Redis Cache<br/>Rate Limits & Idempotency")]
+        AUDIT[("Cryptographic Audit Ledger<br/>SHA-256 Hash Chain")]
+    end
+
+    CW & RW & AW & CM & DM & IM --> Contracts
+    CW & RW & AW & CM & DM & IM --> Gateway
+    Gateway --> Server
+    Server --> Data
+```
+
+### 4.1. Contract-First Monorepo Architecture
+
+Bhojora enforces strict contract-first design. All API request/response payloads, domain models, and validation rules are defined in `client/shared/contracts/` using **Zod** and exported through TypeScript types:
 
 ```
-BHOJORA/
-├── docs/                   # Architectural ADRs, PRD, security models, & compliance dossiers
-│   ├── 01-CORE-PLANNING-DESIGN/
-│   ├── 02-EXECUTION-AGENTS/
-│   ├── 03-SECURITY-QUALITY/
-│   └── CHECKPOINTS/
-├── client/                 # User interfaces and shared design systems
-│   ├── customer-web/       # Next.js / React responsive web application
-│   ├── restaurant-web/     # Next.js / React kitchen operations dashboard
-│   ├── admin-web/          # Next.js / React multi-tenant RBAC governance console
-│   ├── customer-mobile/    # React Native / Expo iOS & Android client
-│   ├── delivery-mobile/    # React Native / Expo fleet delivery app
-│   ├── inspector-mobile/   # React Native / Expo offline-first field inspection app
-│   └── shared/             # Shared contracts, Zod schemas, and design tokens
-└── server/                 # Modular monolith backend API
-    ├── src/
-    │   ├── config/         # Validated environment configuration and Winston logger
-    │   ├── database/       # MongoDB schemas, indexing scripts, and seed files
-    │   ├── middleware/     # Auth, RBAC context, rate limiting, and RFC 7807 error envelopes
-    │   └── modules/        # Domain modules (identity, catalog, orders, pilot, etc.)
-    └── tests/              # 39 Automated verification test suites
+client/shared/contracts/
+├── auth.ts          # Login, Registration, OTP, Token rotation contracts
+├── catalog.ts       # Restaurant, Menu, Item, and Category schemas
+├── order.ts         # Cart, Price Quote, Checkout, and State transition schemas
+├── audit.ts         # 100-point physical inspection schemas and hash verification
+├── compliance.ts    # FSSAI, GSTIN, DPDP, and Statutory readiness schemas
+├── pilot.ts         # Zone gating, invite cohort, and emergency kill-switch schemas
+└── expansion.ts     # Unit economics, founder approval, and city expansion schemas
 ```
 
-### Core Technologies
+- **Zero API Drift:** The server middleware validates incoming HTTP bodies against the shared Zod schema (`validateBody(schema)`).
+- **Client Type Safety:** Frontend applications import the exact inferred TypeScript interfaces (`z.infer<typeof Schema>`), guaranteeing end-to-end synchronization across web and mobile surfaces.
 
-- **Runtime:** Node.js `22.21.0` LTS with npm `11.12.1`.
-- **Languages:** TypeScript 5.x across all client, shared, and server packages.
-- **Frontend Frameworks:** React 19, Next.js 15, Vite, and Tailwind CSS calibrated with Bhojora's design tokens (Terracotta `#8D352A`, Warm Cream `#F7F1E6`, Trust Green `#344B3E`, Saffron `#E4A746`).
-- **Backend Framework:** Express 5.x, Mongoose 9.x, Zod 4.x validation schemas.
-- **Database & Cache:** MongoDB with `2dsphere` geospatial indexing and Redis for rate-limiting and idempotency replay guards.
-- **Authentication & Security:** PHC `scrypt` password hashing, dual JWT rotation with replay revocation, constant-time HMAC-SHA256 signature verification.
-- **Resilience Engineering:** Tri-state circuit breakers (`CLOSED`, `OPEN`, `HALF_OPEN`), exponential backoff retry queues with Dead Letter Queues (DLQ), and offline Haversine routing fallback.
+---
+
+### 4.2. Request Lifecycle & Security Middleware Pipeline
+
+Every HTTP request to `@bhojora/server` traverses an enterprise security pipeline before reaching domain business logic:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Client
+    participant GW as Middleware Pipeline
+    participant Mod as Domain Service
+    participant DB as MongoDB / Redis
+
+    Client->>GW: HTTP Request + Bearer JWT + X-Request-Id
+    GW->>GW: Apply Security Headers (Helmet, CSP, HSTS)
+    GW->>GW: Check Redis Rate Limit (IP & User sliding window)
+    GW->>GW: Authenticate JWT (Verify signature & check revocation blacklist)
+    GW->>GW: Resolve RBAC Context (Customer, Partner, Courier, Inspector, Admin)
+    GW->>GW: Validate Payload against Zod Contract
+    alt Validation or Auth Fails
+        GW-->>Client: RFC 7807 Error Envelope ({ type, title, status, detail, invalidParams })
+    else Pipeline Passes
+        GW->>Mod: Dispatch Request with Strongly-Typed Context
+        Mod->>DB: Execute Query / Mutation (Idempotency checked)
+        DB-->>Mod: Database Record / Transaction
+        Mod-->>Client: Unified Standard Response ({ success: true, data: { ... }, timestamp })
+    end
+```
+
+1. **Request Correlation (`requestIdMiddleware`):** Injects or extracts `X-Request-Id` for distributed traceability across structured Winston logs.
+2. **Security Headers (`helmet`):** Strict Content Security Policy (CSP), HTTP Strict Transport Security (HSTS), X-Content-Type-Options, and frameguard protections.
+3. **Sliding-Window Rate Limiting:** Enforced via Redis token bucket algorithm with IP and user tiering.
+4. **Dual JWT Authentication & Revocation:** Access tokens (15-min life) verified via HMAC-SHA256; refresh tokens (7-day life) tracked with family rotation and instant revocation on reuse.
+5. **RBAC Guard (`requireRole`):** Strictly gates sensitive endpoints (e.g., Inspector-only audit submission, Admin-only kill-switch, Partner-only KDS updates).
+6. **Zod Validation Middleware (`validateBody`, `validateQuery`, `validateParams`):** Rejects invalid payloads before touching business logic, returning structured RFC 7807 error messages.
+7. **Circuit Breaker Protection:** Protects external integrations (payment gateway, reverse geocoding, SMS gateways) with tri-state resilience (`CLOSED`, `OPEN`, `HALF_OPEN`).
+
+---
+
+### 4.3. Domain Module Structure
+
+The backend server is structured as an enterprise modular monolith in `server/src/modules/`:
+
+```
+server/src/modules/
+├── identity/       # scrypt hashing, JWT generation, user & role stores
+├── catalog/        # Kitchen profiles, menu hierarchy, 2dsphere proximity search
+├── order/          # Quote calculation, state machine, single-outlet cart
+├── dispatch/       # Corridor matching, rider assignment, Haversine fallback
+├── inspection/     # 100-point rubric evaluation, photo hash verification
+├── compliance/     # Statutory checks, FSSAI/GSTIN validation, adviser dossiers
+├── pilot/          # Zone-gated operations, cohort invites, emergency kill-switch
+├── expansion/      # Unit economics, founder approval signatures, multi-city plans
+├── performance/    # Memory telemetry, load drill harness, disaster recovery drills
+└── privacy/        # DPDP data access exports, right-to-erasure anonymization
+```
+
+Each module encapsulates its own:
+
+- `*.types.ts`: Internal domain types and service contracts.
+- `*.store.ts`: Database persistence layer (MongoDB models and in-memory test fallback).
+- `*.service.ts`: Pure business logic, transaction handling, and domain event publishing.
+- `*.routes.ts`: Express router definitions with role guards and input validators.
+
+---
+
+### 4.4. Developer Day-to-Day Workflow
+
+#### 1. Repository Setup & Clean Dependency Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/Soumyaroy428/BHOJORA.git
+cd BHOJORA
+
+# Install locked dependencies across all monorepo workspaces
+npm ci
+```
+
+#### 2. Local Environment Configuration
+
+```bash
+# Copy example environment configuration
+cp server/.env.example server/.env
+
+# Default development configuration uses local MongoDB & Redis:
+# PORT=4000
+# MONGO_URI=mongodb://localhost:27017/bhojora
+# REDIS_URL=redis://localhost:6379
+# JWT_SECRET=bhojora-dev-jwt-secret-min-32-chars-long
+```
+
+#### 3. Running Code Quality & Static Analysis Checks
+
+```bash
+# Verify code formatting (Prettier)
+npm run format:check
+
+# Fix auto-formattable code style issues
+npm run format
+
+# Run ESLint across client and server packages
+npm run lint
+
+# Verify strict TypeScript compilation across the monorepo
+npm run typecheck
+```
+
+#### 4. Running the Comprehensive Test Suite
+
+The platform includes **39 sequential verification suites** covering every subsystem:
+
+```bash
+# Run complete test suite across all 39 checkpoints
+npm run test --prefix server
+
+# Run a specific domain test suite (e.g., Compliance, Pilot, or Expansion)
+node server/tests/verify-checkpoint-36.test.js
+node server/tests/verify-checkpoint-37.test.js
+node server/tests/verify-checkpoint-38.test.js
+```
+
+#### 5. Starting Local Development Servers
+
+```bash
+# Start backend API (with hot reload via nodemon)
+npm run dev --workspace=@bhojora/server
+# API Server runs at http://localhost:4000/api/v1/health
+
+# Start Customer Web application
+npm run dev --workspace=@bhojora/customer-web
+# App runs at http://localhost:5173
+
+# Start Admin Governance Console
+npm run dev --workspace=@bhojora/admin-web
+# App runs at http://localhost:5174
+
+# Start Restaurant Partner Portal
+npm run dev --workspace=@bhojora/restaurant-web
+# App runs at http://localhost:5175
+```
+
+---
+
+### 4.5. Continuous Integration & Deployment (CI/CD)
+
+The GitHub Actions CI pipeline (`.github/workflows/ci.yml`) executes on every push and pull request across two parallel jobs:
+
+1. **Secret Scan & Dependency Audit:**
+   - Scans for exposed private keys, leaked `.env` credentials, and high-severity npm vulnerabilities.
+2. **Quality Gates & Automated Tests:**
+   - Prettier code style verification (`prettier --check .`).
+   - ESLint static analysis across all workspaces.
+   - Strict TypeScript compilation (`tsc -p tsconfig.json`).
+   - Monorepo package build verification.
+   - Complete execution of all 39 sequential automated regression test suites.
+
+**Deployment Strategy:**
+
+- Merges to `main` automatically trigger continuous deployment across Vercel staging environments for Customer, Admin, and Restaurant web applications.
+- Zero-downtime rolling updates with zero-latency emergency rollback mechanisms (`POST /api/v1/pilot/kill-switch`) available to authorized administrators.
+
+---
+
+## 5. Technology Stack Summary
+
+| Layer                   | Technology                                                   | Purpose & Standards                                                                          |
+| ----------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| **Runtime & Toolchain** | Node.js `22.21.0` LTS, npm `11.12.1`, TypeScript 5.x         | Pinned runtime for reproducible builds across local machines and CI runners.                 |
+| **Frontend Frameworks** | React 19, Next.js 15, Vite, Tailwind CSS 3.x                 | Zero-drift design system implementing Bhojora tokens (Terracotta, Cream, Trust Green).       |
+| **Mobile Applications** | React Native, Expo SDK 52                                    | Cross-platform mobile clients for Customer, Delivery Courier, and Field Inspector.           |
+| **Backend Framework**   | Express 5.x, Mongoose 9.x, Zod 4.x                           | Modular monolith architecture with strict request schema validation and RFC 7807 envelopes.  |
+| **Data & Caching**      | MongoDB 7.x, Redis 7.x                                       | `2dsphere` geospatial indexing, partial unique indexes, sliding-window rate limiters.        |
+| **Security & Identity** | PHC `scrypt` hashing, dual JWT rotation, HMAC-SHA256         | OWASP ASVS Level 2 compliance, brute-force throttling, and role-based access control (RBAC). |
+| **Resilience & Safety** | Tri-state circuit breakers, Dead Letter Queues (DLQ)         | Graceful degradation during network partitions; Haversine offline routing fallback.          |
+| **Compliance**          | DPDP Act 2023, FSSAI Licensing, GST Section 9(5), RBI Escrow | Statutory operational readiness with tamper-evident SHA-256 audit evidence.                  |
 
 ---
 
@@ -165,50 +401,7 @@ BHOJORA/
 
 ---
 
-## 7. Developer Quickstart
+## 7. Intellectual Property & Legal Notice
 
-### Prerequisites
-
-- Node.js `22.21.0` LTS (`nvm use`)
-- npm `11.12.1` or higher
-- Running MongoDB instance (or automated in-memory test fallback)
-
-### Installation & Verification
-
-```bash
-# Clone the repository
-git clone https://github.com/Soumyaroy428/BHOJORA.git
-cd BHOJORA
-
-# Install dependencies across all monorepo workspaces
-npm ci
-
-# Run static checks (Formatting, Linting, Typecheck)
-npm run format:check
-npm run lint
-npm run typecheck
-
-# Execute complete automated regression test suite
-npm run test
-
-# Build all packages
-npm run build
-```
-
-### Running the API Server Locally
-
-```bash
-# Copy development environment template
-cp server/.env.example server/.env
-
-# Start the server API
-npm run start --workspace=server
-# Health check available at: http://localhost:4000/api/v1/health
-```
-
----
-
-## 8. Intellectual Property & Legal Notice
-
-© 2026 Bhojora Platform Ltd. All rights reserved.   
+© 2026 Bhojora Platform Ltd. All rights reserved.  
 _Bhojora, the Bhojora logo, and "Food You Love. Trust You Deserve." are proprietary trademarks of Bhojora Platform Ltd._
