@@ -25,6 +25,11 @@ export function CornerLocationOutletPopover({
       return;
     }
 
+    let active = false;
+    const timer = setTimeout(() => {
+      active = true;
+    }, 150);
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose();
@@ -32,6 +37,9 @@ export function CornerLocationOutletPopover({
     };
 
     const handleClickOutside = (e: MouseEvent) => {
+      if (!active) {
+        return;
+      }
       if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
         onClose();
       }
@@ -40,6 +48,7 @@ export function CornerLocationOutletPopover({
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
+      clearTimeout(timer);
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('mousedown', handleClickOutside);
     };

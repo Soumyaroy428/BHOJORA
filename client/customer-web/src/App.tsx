@@ -425,7 +425,9 @@ export function App() {
     setSelectedQuoteLocationId('salt-lake');
     setLocationSheetOpen(false);
     // After enable location, show the 2nd pic outlet popover from corner right side
-    setCornerOutletOpen(true);
+    setTimeout(() => {
+      setCornerOutletOpen(true);
+    }, 80);
   }, []);
 
   const handleSelectSavedAddressFromSheet = useCallback((address: SavedAddressItem) => {
@@ -435,7 +437,9 @@ export function App() {
     setLocationPermissionState('granted');
     setLocationSheetOpen(false);
     // After selecting address, show the 2nd pic outlet popover from corner right side
-    setCornerOutletOpen(true);
+    setTimeout(() => {
+      setCornerOutletOpen(true);
+    }, 80);
   }, []);
 
   const handleUseMyLocationFromCorner = useCallback(() => {
