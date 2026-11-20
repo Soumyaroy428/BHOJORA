@@ -3149,3 +3149,597 @@ dialog.trust-dialog::backdrop {
   color: var(--neutral-900);
   font-weight: 700;
 }
+
+/* ==========================================================================
+   App Initial 3s Loading Splash View
+   ========================================================================== */
+.app-loading-splash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: radial-gradient(circle at center, #1e1917 0%, #111215 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  color: #f7f1e6;
+  transition:
+    opacity 0.3s ease-out,
+    visibility 0.3s ease-out;
+}
+
+.app-loading-splash-overlay.fade-out {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.splash-modal-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 440px;
+  width: 100%;
+}
+
+.splash-brand-emblem-wrap {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.splash-brand-logo {
+  position: relative;
+  z-index: 2;
+  border-radius: 50%;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.splash-pulse-ring {
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 2px solid rgba(228, 167, 70, 0.4);
+  animation: splashPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes splashPulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+}
+
+.splash-brand-title {
+  font-family: 'Manrope', system-ui, sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #f7f1e6;
+  margin: 0 0 6px 0;
+}
+
+.splash-brand-subtitle {
+  font-size: 13.5px;
+  color: #d1c7b7;
+  margin: 0 0 28px 0;
+  line-height: 1.4;
+}
+
+.splash-progress-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.splash-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #e4a746 0%, #8d352a 100%);
+  border-radius: 9999px;
+  transition: width 0.05s linear;
+}
+
+.splash-status-meta {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 12px;
+  color: #a89f91;
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   Location Permission & Saved Addresses Sheet (Picture 1)
+   ========================================================================== */
+dialog.bhojora-location-sheet-dialog {
+  border: none;
+  padding: 0;
+  background: transparent;
+  max-width: 480px;
+  width: calc(100vw - 32px);
+  color: #f9fafb;
+  margin: auto;
+}
+
+dialog.bhojora-location-sheet-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+dialog.bhojora-location-sheet-dialog:modal {
+  overscroll-behavior: contain;
+}
+
+.location-sheet-container {
+  background: #181a20;
+  border: 1px solid #2d313a;
+  border-radius: 24px;
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.7);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.location-sheet-close-bar {
+  display: flex;
+  justify-content: center;
+  padding: 14px 16px 8px;
+}
+
+.location-sheet-circle-close-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #2b2e38;
+  border: 1px solid #3d4250;
+  color: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+
+.location-sheet-circle-close-btn:hover {
+  background: #373b47;
+  transform: scale(1.05);
+}
+
+.location-permission-off-card {
+  margin: 8px 16px 16px;
+  background: #22252e;
+  border: 1px solid #333846;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.location-off-icon-wrap {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.location-off-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.location-off-title {
+  font-family: 'Manrope', system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 3px 0;
+  line-height: 1.3;
+}
+
+.location-off-subtext {
+  font-size: 12.5px;
+  color: #9ca3af;
+  margin: 0;
+  line-height: 1.35;
+}
+
+.location-enable-action-btn {
+  background: #e11d48;
+  color: #ffffff;
+  border: none;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  min-height: 44px;
+  min-width: 76px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.15s ease,
+    transform 0.1s ease;
+  flex-shrink: 0;
+}
+
+.location-enable-action-btn:hover {
+  background: #f43f5e;
+}
+
+.location-enable-action-btn:active {
+  transform: scale(0.97);
+}
+
+.saved-addresses-section {
+  padding: 0 16px 12px;
+}
+
+.saved-addresses-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.saved-addresses-heading {
+  font-family: 'Manrope', system-ui, sans-serif;
+  font-size: 17px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+}
+
+.saved-addresses-see-all-btn {
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  min-height: 36px;
+}
+
+.saved-addresses-see-all-btn:hover {
+  text-decoration: underline;
+}
+
+.saved-addresses-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.saved-address-card-btn {
+  background: #22252e;
+  border: 1px solid #2e3340;
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  text-align: left;
+  color: #f3f4f6;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+  min-height: 56px;
+}
+
+.saved-address-card-btn:hover,
+.saved-address-card-btn:focus-visible {
+  background: #292d37;
+  border-color: #4b5563;
+  outline: none;
+}
+
+.saved-address-icon-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #e5e7eb;
+  flex-shrink: 0;
+}
+
+.saved-address-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.saved-address-name {
+  font-weight: 700;
+  font-size: 14.5px;
+  color: #ffffff;
+  margin-bottom: 2px;
+}
+
+.saved-address-street {
+  font-size: 12.5px;
+  color: #9ca3af;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.saved-address-arrow {
+  color: #6b7280;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.saved-address-empty-state {
+  padding: 16px;
+  text-align: center;
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.location-sheet-search-wrap {
+  padding: 12px 16px 20px;
+  border-top: 1px solid #272a34;
+}
+
+.location-sheet-search-box {
+  background: #22252e;
+  border: 1px solid #333846;
+  border-radius: 14px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+}
+
+.search-input-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.location-sheet-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 14px;
+  outline: none;
+}
+
+.location-sheet-search-input::placeholder {
+  color: #6b7280;
+}
+
+.clear-search-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 4px 6px;
+}
+
+/* ==========================================================================
+   Corner Right Location Outlet Popover (Picture 2)
+   ========================================================================== */
+.corner-location-outlet-popover {
+  position: fixed;
+  top: 76px;
+  right: 24px;
+  z-index: 1050;
+  max-width: 360px;
+  width: calc(100vw - 32px);
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow:
+    0 20px 40px -8px rgba(0, 0, 0, 0.22),
+    0 0 0 1px rgba(0, 0, 0, 0.08);
+  padding: 24px 22px 20px;
+  animation: cornerPopoverSlide 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes cornerPopoverSlide {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.corner-popover-notch {
+  position: absolute;
+  top: -8px;
+  right: 48px;
+  width: 16px;
+  height: 16px;
+  background: #ffffff;
+  transform: rotate(45deg);
+  border-left: 1px solid rgba(0, 0, 0, 0.08);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.corner-popover-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
+}
+
+.corner-popover-close-btn:hover {
+  color: #374151;
+  background: #f3f4f6;
+}
+
+.corner-popover-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.corner-popover-heading {
+  font-family: 'Manrope', system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  color: #111827;
+  margin: 0 0 8px 0;
+}
+
+.corner-popover-subtext {
+  font-size: 13.5px;
+  color: #4b5563;
+  margin: 0 0 16px 0;
+  line-height: 1.45;
+  max-width: 290px;
+}
+
+.corner-current-zone-badge {
+  font-size: 12px;
+  color: #166534;
+  background: #dcfce7;
+  border: 1px solid #bbf7d0;
+  border-radius: 9999px;
+  padding: 4px 12px;
+  margin-bottom: 16px;
+}
+
+.corner-popover-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.corner-btn-use-location {
+  background: #16a34a;
+  color: #ffffff;
+  border: none;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 10px 18px;
+  border-radius: 9999px;
+  cursor: pointer;
+  min-height: 44px;
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.15s ease,
+    transform 0.1s ease;
+}
+
+.corner-btn-use-location:hover {
+  background: #15803d;
+}
+
+.corner-btn-use-location:active {
+  transform: scale(0.97);
+}
+
+.corner-btn-select-manually {
+  background: #ffffff;
+  color: #16a34a;
+  border: 1.5px solid #16a34a;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 10px 18px;
+  border-radius: 9999px;
+  cursor: pointer;
+  min-height: 44px;
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.15s ease,
+    transform 0.1s ease;
+}
+
+.corner-btn-select-manually:hover {
+  background: #f0fdf4;
+}
+
+.corner-btn-select-manually:active {
+  transform: scale(0.97);
+}
+
+/* Header ETA line layout */
+.location-eta-group {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  line-height: 1.15;
+}
+
+.delivery-eta-headline {
+  font-size: 13px;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -0.2px;
+}
+
+.header-location-view .location-label-text {
+  font-size: 11.5px;
+  color: #4b5563;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@media (max-width: 640px) {
+  .corner-location-outlet-popover {
+    top: 70px;
+    right: 12px;
+    width: calc(100vw - 24px);
+    padding: 20px 16px;
+  }
+  .corner-popover-notch {
+    right: 28px;
+  }
+}

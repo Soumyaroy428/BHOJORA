@@ -2,10 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 
 interface HeaderProps {
   headerZoneLabel: string;
+  deliveryEtaText?: string;
   signedInFirstName: string | null;
   cartItemCount: number;
   activeOrderCount: number;
   onOpenPilotInfo: () => void;
+  onOpenLocationSheet?: () => void;
+  onToggleCornerOutlet?: () => void;
   onOpenAuthModal: () => void;
   onOpenCartModal: () => void;
   onOpenOrdersModal: () => void;
@@ -13,10 +16,13 @@ interface HeaderProps {
 
 export function Header({
   headerZoneLabel,
+  deliveryEtaText,
   signedInFirstName,
   cartItemCount,
   activeOrderCount,
   onOpenPilotInfo,
+  onOpenLocationSheet,
+  onToggleCornerOutlet,
   onOpenAuthModal,
   onOpenCartModal,
   onOpenOrdersModal,
@@ -78,18 +84,23 @@ export function Header({
           <button
             type="button"
             className="location-pill header-location-view"
-            onClick={onOpenPilotInfo}
-            aria-label={`Current delivery zone: ${headerZoneLabel}, Kolkata. Click to view Google map and zones.`}
-            title="View Kolkata delivery zones & Google Map"
+            onClick={onToggleCornerOutlet ?? onOpenLocationSheet ?? onOpenPilotInfo}
+            aria-label={`Delivery in 27 minutes. Current delivery zone: ${headerZoneLabel}, Kolkata. Click to view or change location.`}
+            title="Select Kolkata delivery location"
           >
             <span aria-hidden="true" className="location-pin-icon">
               📍
             </span>
-            <span id="headerZoneLabel" className="location-label-text">
-              {headerZoneLabel}
-            </span>
-            <span aria-hidden="true" className="location-arrow-icon">
-              ▼
+            <span className="location-eta-group">
+              <span className="delivery-eta-headline">
+                {deliveryEtaText ?? 'Delivery in 27 minutes'}
+              </span>
+              <span id="headerZoneLabel" className="location-label-text">
+                {headerZoneLabel}
+                <span aria-hidden="true" className="location-arrow-icon">
+                  ▼
+                </span>
+              </span>
             </span>
           </button>
         </div>

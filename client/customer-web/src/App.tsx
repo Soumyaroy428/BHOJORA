@@ -21,15 +21,21 @@ import type {
   PublicCouponSummaryDto,
 } from '@bhojora/shared';
 import { formatInrFromPaise } from '@bhojora/shared';
+import { AppLoadingSplash } from './components/AppLoadingSplash';
 import { AuthDialog } from './components/AuthDialog';
 import { BengaliBanner } from './components/BengaliBanner';
 import { CartCheckoutDialog } from './components/CartCheckoutDialog';
+import { CornerLocationOutletPopover } from './components/CornerLocationOutletPopover';
 import { CustomerOrdersDialog } from './components/CustomerOrdersDialog';
 import { Footer } from './components/Footer';
 import { Header } from './components/Header';
 import { HeroSection } from './components/HeroSection';
 import { KitchenDiscovery } from './components/KitchenDiscovery';
 import { KolkataZonesSection } from './components/KolkataZonesSection';
+import {
+  LocationPermissionSheet,
+  type SavedAddressItem,
+} from './components/LocationPermissionSheet';
 import { OutletMenuDialog } from './components/OutletMenuDialog';
 import { PillarsSection } from './components/PillarsSection';
 import { PilotInfoDialog } from './components/PilotInfoDialog';
@@ -146,6 +152,10 @@ export function App() {
   const [selectedZone, setSelectedZone] = useState<KolkataZoneId>('all');
   const [locationPermissionState, setLocationPermissionState] =
     useState<LocationPermissionState>('prompt');
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [locationSheetOpen, setLocationSheetOpen] = useState(false);
+  const [cornerOutletOpen, setCornerOutletOpen] = useState(false);
+  const [activeAddressTitle, setActiveAddressTitle] = useState('Home');
   const [activeCategorySlug, setActiveCategorySlug] = useState<string | null>(null);
   const [verifiedOnly, setVerifiedOnly] = useState(true);
   const [vegOnly, setVegOnly] = useState(false);
@@ -402,6 +412,43 @@ export function App() {
     },
     [authSession],
   );
+
+  const handleLoadingSplashFinished = useCallback(() => {
+    setIsInitialLoading(false);
+    // After 3s loading finishes, automatically show the Location Permission / Saved Address Sheet (Pic 1)
+    setLocationSheetOpen(true);
+  }, []);
+
+  const handleEnableLocationFromSheet = useCallback(() => {
+    setLocationPermissionState('granted');
+    setSelectedZone('salt-lake');
+    setSelectedQuoteLocationId('salt-lake');
+    setLocationSheetOpen(false);
+    // After enable location, show the 2nd pic outlet popover from corner right side
+    setCornerOutletOpen(true);
+  }, []);
+
+  const handleSelectSavedAddressFromSheet = useCallback((address: SavedAddressItem) => {
+    setSelectedZone(address.zoneId);
+    setSelectedQuoteLocationId(address.zoneId);
+    setActiveAddressTitle(address.title);
+    setLocationPermissionState('granted');
+    setLocationSheetOpen(false);
+    // After selecting address, show the 2nd pic outlet popover from corner right side
+    setCornerOutletOpen(true);
+  }, []);
+
+  const handleUseMyLocationFromCorner = useCallback(() => {
+    setLocationPermissionState('granted');
+    setSelectedZone('salt-lake');
+    setSelectedQuoteLocationId('salt-lake');
+    setCornerOutletOpen(false);
+  }, []);
+
+  const handleSelectManuallyFromCorner = useCallback(() => {
+    setCornerOutletOpen(false);
+    setLocationSheetOpen(true);
+  }, []);
 
   const selectedZoneLabel = useMemo(() => {
     return KOLKATA_ZONE_OPTIONS.find((item) => item.id === selectedZone)?.label ?? 'All Kolkata';
@@ -1134,15 +1181,29 @@ export function App() {
         Skip to main content
       </a>
 
+      <AppLoadingSplash isLoading={isInitialLoading} onFinished={handleLoadingSplashFinished} />
+
       <Header
         headerZoneLabel={headerZoneLabel}
+        deliveryEtaText="Delivery in 27 minutes"
         signedInFirstName={signedInFirstName}
         cartItemCount={cart.itemCount}
         activeOrderCount={activeOrderCount}
         onOpenPilotInfo={() => setPilotInfoOpen(true)}
+        onOpenLocationSheet={() => setLocationSheetOpen(true)}
+        onToggleCornerOutlet={() => setCornerOutletOpen((prev) => !prev)}
         onOpenAuthModal={() => setAuthModalOpen(true)}
         onOpenCartModal={handleOpenCartModal}
         onOpenOrdersModal={handleOpenOrdersModal}
+      />
+
+      <CornerLocationOutletPopover
+        open={cornerOutletOpen}
+        currentZoneLabel={headerZoneLabel}
+        currentAddressTitle={activeAddressTitle}
+        onUseMyLocation={handleUseMyLocationFromCorner}
+        onSelectManually={handleSelectManuallyFromCorner}
+        onClose={() => setCornerOutletOpen(false)}
       />
 
       <main id="main-content" tabIndex={-1}>
@@ -1244,6 +1305,13 @@ export function App() {
         onSelectZone={setSelectedZone}
         onDetectGpsZone={handleDetectGpsZone}
         onClose={() => setPilotInfoOpen(false)}
+      />
+
+      <LocationPermissionSheet
+        open={locationSheetOpen}
+        onEnableLocation={handleEnableLocationFromSheet}
+        onSelectAddress={handleSelectSavedAddressFromSheet}
+        onClose={() => setLocationSheetOpen(false)}
       />
 
       <AuthDialog
