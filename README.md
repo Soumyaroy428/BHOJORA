@@ -382,6 +382,7 @@ The GitHub Actions CI pipeline (`.github/workflows/ci.yml`) executes on every pu
 - **Customer Web Application:** [https://customer-web-phi-ten.vercel.app](https://customer-web-phi-ten.vercel.app)
 - **Admin Governance Console:** [https://bhojora-admin.vercel.app](https://bhojora-admin.vercel.app)
 - **Restaurant Partner Portal:** [https://restaurant-web-liard-seven.vercel.app](https://restaurant-web-liard-seven.vercel.app)
+- **Delivery Partner Application:** [https://delivery-mobile.vercel.app](https://delivery-mobile.vercel.app)
 
 ### 📖 Architectural & Compliance Documentation
 
