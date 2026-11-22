@@ -136,6 +136,12 @@ export function App() {
     }
   }
 
+  function handleAutofillEnvCredentials() {
+    setIdentifier(envCreds.email);
+    setPassword(envCreds.password);
+    setLoginError(null);
+  }
+
   async function handleAdminSignIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSubmitting(true);
@@ -191,7 +197,7 @@ export function App() {
           body: JSON.stringify({
             identifier: enteredEmail,
             password: enteredPassword,
-            deviceName: 'Bhojora Control Admin',
+            deviceName: 'Bhojora CMS Control Admin',
           }),
         });
         const payload = (await response.json()) as ApiResponse<AuthSessionResponseDto>;
@@ -220,7 +226,7 @@ export function App() {
       }
     } else {
       setLoginError(
-        'Invalid administrator credentials. Please verify your email and password match the configured environment variables.',
+        'Invalid administrator credentials. Please verify your email and password match configured environment credentials.',
       );
     }
 
@@ -284,20 +290,18 @@ export function App() {
   }
 
   // ==========================================
-  // 1. UN趋THENTICATED: LANDING & LOGIN PAGE
+  // 1. UNAUTHENTICATED: DEDICATED CMS LOGIN PAGE
   // ==========================================
   if (!sessionUser) {
     return (
-      <>
+      <div className="cms-login-page">
         <header className="topbar">
           <div className="topbar-inner">
             <div className="brand">
               <img src="./logo.png" alt="BHOJORA emblem" width={40} height={40} />
               <div>
-                <p className="brand-name">BHOJORA Control</p>
-                <p className="brand-sub">
-                  Trust Governance, Segregation of Duties &amp; Audit Plane
-                </p>
+                <p className="brand-name">BHOJORA Platform CMS</p>
+                <p className="brand-sub">Central Management System &amp; Master Control Plane</p>
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -307,191 +311,134 @@ export function App() {
           </div>
         </header>
 
-        <main className="landing-shell">
-          <section className="landing-hero-grid">
-            {/* Left Column: Executive Landing Content */}
-            <div className="landing-copy">
-              <div>
-                <span className="landing-eyebrow">
-                  🛡️ Central Operations &amp; Trust Control Plane
-                </span>
-                <h1 className="landing-heading">Bhojora Control Center</h1>
-                <p className="landing-sub">
-                  The mission-control governance portal for Kolkata&apos;s independent food
-                  discovery and verified kitchen trust ecosystem. Oversee physical kitchen safety
-                  audits, bounded 5.5–6.0 km corridor dispatch, and daily T+1 financial escrow
-                  settlements.
-                </p>
+        <main className="cms-login-shell">
+          <div className="cms-login-card" aria-label="Administrator CMS Sign-In">
+            <div className="cms-login-header">
+              <div className="cms-emblem-wrap">
+                <img src="./logo.png" alt="BHOJORA emblem" width={56} height={56} />
               </div>
-
-              {/* 4 Key Platform Metric Badges */}
-              <div className="landing-metrics-grid">
-                <div className="metric-tile">
-                  <div className="metric-number">100-Pt</div>
-                  <div className="metric-label">Physical Audits</div>
-                </div>
-                <div className="metric-tile">
-                  <div className="metric-number">5.5-6.0</div>
-                  <div className="metric-label">Km Corridors</div>
-                </div>
-                <div className="metric-tile">
-                  <div className="metric-number">16.5%</div>
-                  <div className="metric-label">Flat Take Rate</div>
-                </div>
-                <div className="metric-tile">
-                  <div className="metric-number">T+1</div>
-                  <div className="metric-label">Escrow Payout</div>
-                </div>
-              </div>
-
-              {/* Operational Pillars */}
-              <div className="pillars-card">
-                <div className="pillar-item">
-                  <span className="pillar-icon">⚖️</span>
-                  <div>
-                    <h3 className="pillar-title">Strict Separation of Duties</h3>
-                    <p className="pillar-desc">
-                      Inspectors author assessments with SHA-256 photo hashes; secondary review
-                      officers must independently verify scores before public issuance.
-                    </p>
-                  </div>
-                </div>
-                <div className="pillar-item">
-                  <span className="pillar-icon">📍</span>
-                  <div>
-                    <h3 className="pillar-title">Geospatial Service Corridors</h3>
-                    <p className="pillar-desc">
-                      Manage active polygon boundaries in Salt Lake Sector V, Park Street, and
-                      Ballygunge to preserve hot-chain food integrity.
-                    </p>
-                  </div>
-                </div>
-                <div className="pillar-item">
-                  <span className="pillar-icon">💳</span>
-                  <div>
-                    <h3 className="pillar-title">Financial Escrow &amp; Statutory GST</h3>
-                    <p className="pillar-desc">
-                      Automated daily settlement ledger under Section 9(5) CGST Act with 100% tip
-                      pass-through to delivery couriers.
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <span className="pill" style={{ marginTop: '0.5rem' }}>
+                Privileged CMS Access
+              </span>
+              <h1 className="cms-login-title">Admin CMS Portal</h1>
+              <p className="cms-login-subtitle">
+                Sign in with configured administrator credentials to access the central operations
+                command center.
+              </p>
             </div>
 
-            {/* Right Column: Dedicated Admin Login Card */}
-            <aside className="login-card" aria-label="Administrator Authentication Portal">
-              <div className="login-card-header">
-                <span className="pill">Privileged Access Only</span>
-                <h2>Admin Sign In</h2>
-                <p>
-                  Enter your authorized administrator email and password to access the control
-                  plane.
-                </p>
+            <form onSubmit={handleAdminSignIn} className="cms-login-form">
+              <div className="field">
+                <label htmlFor="adminIdentifier">Admin Email Address</label>
+                <input
+                  id="adminIdentifier"
+                  name="identifier"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={identifier}
+                  onChange={(event) => setIdentifier(event.target.value)}
+                  placeholder="admin@bhojora.in"
+                />
               </div>
 
-              <form onSubmit={handleAdminSignIn}>
-                <div className="field">
-                  <label htmlFor="adminIdentifier">Admin Email Address</label>
+              <div className="field">
+                <label htmlFor="adminPassword">Admin Password</label>
+                <div className="password-input-group">
                   <input
-                    id="adminIdentifier"
-                    name="identifier"
-                    type="email"
+                    id="adminPassword"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
                     required
-                    autoComplete="email"
-                    value={identifier}
-                    onChange={(event) => setIdentifier(event.target.value)}
-                    placeholder="admin@bhojora.in"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder="••••••••••••"
                   />
-                </div>
-
-                <div className="field">
-                  <label htmlFor="adminPassword">Admin Password</label>
-                  <div className="password-input-group">
-                    <input
-                      id="adminPassword"
-                      name="password"
-                      type={showPassword ? 'text' : 'password'}
-                      required
-                      autoComplete="current-password"
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      placeholder="••••••••••••"
-                    />
-                    <button
-                      type="button"
-                      className="btn-toggle-password"
-                      onClick={() => setShowPassword((prev) => !prev)}
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    >
-                      {showPassword ? 'Hide' : 'Show'}
-                    </button>
-                  </div>
-                </div>
-
-                {loginError ? (
-                  <div
-                    className="notice-banner"
-                    style={{ borderColor: 'var(--terracotta)', background: '#faecea' }}
-                    role="alert"
+                  <button
+                    type="button"
+                    className="btn-toggle-password"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
-                    ⚠️ {loginError}
-                  </div>
-                ) : null}
-
-                <button
-                  type="submit"
-                  className="btn-primary"
-                  disabled={isSubmitting}
-                  style={{ marginTop: '0.5rem' }}
-                >
-                  {isSubmitting
-                    ? 'Authenticating Admin Session...'
-                    : 'Authenticate Admin Session →'}
-                </button>
-              </form>
-
-              {/* Environment Variable Hint Box */}
-              <div className="env-credential-callout">
-                <strong>Environment Credentials Configured:</strong>
-                <br />
-                Login validates against <code>VITE_ADMIN_EMAIL</code> &amp;{' '}
-                <code>VITE_ADMIN_PASSWORD</code>.
-                <br />
-                <span style={{ fontSize: '0.76rem', color: 'var(--ink-600)' }}>
-                  Default Admin: <code>{envCreds.email}</code>
-                </span>
+                    {showPassword ? 'Hide' : 'Show'}
+                  </button>
+                </div>
               </div>
 
-              <p className="status-note" role="status" aria-live="polite">
-                {statusMessage}
-              </p>
-            </aside>
-          </section>
+              {loginError ? (
+                <div
+                  className="notice-banner"
+                  style={{ borderColor: 'var(--terracotta)', background: '#faecea' }}
+                  role="alert"
+                >
+                  ⚠️ {loginError}
+                </div>
+              ) : null}
+
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={isSubmitting}
+                style={{ marginTop: '0.5rem' }}
+              >
+                {isSubmitting
+                  ? 'Authenticating CMS Session...'
+                  : 'Sign In to Operations Command Center →'}
+              </button>
+
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={handleAutofillEnvCredentials}
+                style={{ marginTop: '0.5rem', width: '100%' }}
+                title="Populate configured environment credentials"
+              >
+                ⚡ Autofill Configured Environment Credentials
+              </button>
+            </form>
+
+            <div className="env-credential-callout">
+              <strong>Environment Credentials Configured:</strong>
+              <br />
+              Validated against <code>VITE_ADMIN_EMAIL</code> &amp; <code>VITE_ADMIN_PASSWORD</code>
+              .
+              <br />
+              <span style={{ fontSize: '0.78rem', color: 'var(--ink-600)' }}>
+                Target Admin: <code>{envCreds.email}</code>
+              </span>
+            </div>
+
+            <p className="status-note" role="status" aria-live="polite">
+              {statusMessage}
+            </p>
+          </div>
         </main>
 
         <footer className="footer">
           <div className="topbar-inner">
-            <span>BHOJORA Control Plane — Audited Access &amp; Tenant Isolation</span>
+            <span>
+              BHOJORA Central Management System (CMS) — Audited Access &amp; Tenant Isolation
+            </span>
             <span>Kolkata Governance Grid · Version 1.0.0 Production</span>
           </div>
         </footer>
-      </>
+      </div>
     );
   }
 
   // ==========================================
-  // 2. AUTHENTICATED: CONTROL CENTER DASHBOARD
+  // 2. AUTHENTICATED: LANDING PAGE & ALL-FEATURE COMMAND CENTER
   // ==========================================
   return (
-    <>
+    <div className="cms-admin-app">
       <header className="topbar">
         <div className="topbar-inner">
           <div className="brand">
             <img src="./logo.png" alt="BHOJORA emblem" width={40} height={40} />
             <div>
-              <p className="brand-name">BHOJORA Control</p>
-              <p className="brand-sub">Trust Governance, Segregation of Duties &amp; Audit Plane</p>
+              <p className="brand-name">BHOJORA Control Center (CMS)</p>
+              <p className="brand-sub">Central Operations &amp; Trust Governance Hub</p>
             </div>
           </div>
 
@@ -501,6 +448,9 @@ export function App() {
             </span>
             <span className="pill">
               {rbacContext?.mfaVerified ? '✓ MFA Verified' : 'MFA Required'}
+            </span>
+            <span className="pill" style={{ background: '#f0fdf4', borderColor: '#16a34a' }}>
+              ● Kolkata Grid Active
             </span>
             <button
               type="button"
@@ -519,15 +469,15 @@ export function App() {
         <div className="nav-tabs-inner">
           {(
             [
-              { key: 'OVERVIEW', label: '📊 Overview' },
+              { key: 'OVERVIEW', label: '🏠 CMS Landing Hub' },
               { key: 'ONBOARDING', label: '🍳 Restaurant KYC' },
-              { key: 'COURIERS', label: '🛵 Courier Fleet' },
-              { key: 'ZONES', label: '📍 Service Zones' },
               { key: 'INSPECTIONS', label: '🔍 Audits' },
-              { key: 'SUPPORT', label: '🎫 Support SLA' },
-              { key: 'FINANCE', label: '💳 Payouts' },
-              { key: 'SYSTEM', label: '⚙️ Platform Config' },
+              { key: 'ZONES', label: '📍 Service Zones' },
+              { key: 'COURIERS', label: '🛵 Courier Fleet' },
               { key: 'AI', label: '🤖 AI Oversight' },
+              { key: 'FINANCE', label: '💳 Payouts' },
+              { key: 'SUPPORT', label: '🎫 Support SLA' },
+              { key: 'SYSTEM', label: '⚙️ Platform Config' },
               { key: 'ALL', label: '📑 All Views' },
             ] as const
           ).map((tab) => (
@@ -588,32 +538,471 @@ export function App() {
           </aside>
         ) : null}
 
-        {/* 1. OVERVIEW VIEW */}
-        {activeTab === 'OVERVIEW' || activeTab === 'ALL' ? (
-          <>
-            <section className="panel">
-              <span className="pill">Independent Trust &amp; Inspection Queue</span>
-              <h1>Enforce separation of duties across Bhojora verification</h1>
-              <p className="brand-sub">
-                Reviewers cannot self-approve authored inspections. Finance admins cannot mutate
-                hygiene scores. Trust admins cannot modify ledger settlement events.
-              </p>
-
-              <div className="filter-row" role="group" aria-label="Filter governance queue">
-                {(['ALL', 'PENDING_REVIEW', 'APPROVED', 'ACTION_REQUIRED'] as const).map((key) => (
-                  <button
-                    key={key}
-                    type="button"
-                    className="filter-btn"
-                    aria-pressed={filter === key}
-                    onClick={() => setFilter(key)}
-                  >
-                    {key.replace('_', ' ')}
-                  </button>
-                ))}
+        {/* ======================================================== */}
+        {/* 1. OVERVIEW: THE EXECUTIVE LANDING PAGE & FEATURE HUB     */}
+        {/* ======================================================== */}
+        {activeTab === 'OVERVIEW' ? (
+          <div className="admin-landing-container">
+            {/* Hero Banner */}
+            <section className="admin-landing-hero">
+              <div className="hero-content">
+                <span className="landing-eyebrow">
+                  🛡️ Executive Command Center · Kolkata Operations
+                </span>
+                <h1 className="landing-heading">Central Operations &amp; Feature Control Hub</h1>
+                <p className="landing-sub">
+                  Unified master management plane for Kolkata&apos;s verified food delivery
+                  ecosystem. Monitor real-time corridor metrics, approve restaurant KYC, govern
+                  hygiene audits, and manage finances from dedicated control sections below.
+                </p>
               </div>
 
-              <ul className="queue-list">
+              {/* 4 Core Platform Metric Badges */}
+              <div className="landing-metrics-grid">
+                <div className="metric-tile">
+                  <div className="metric-number">100-Pt</div>
+                  <div className="metric-label">Physical Audits</div>
+                  <div className="metric-sub">SHA-256 Verified</div>
+                </div>
+                <div className="metric-tile">
+                  <div className="metric-number">5.5-6.0</div>
+                  <div className="metric-label">Km Corridors</div>
+                  <div className="metric-sub">Hot-Chain Intact</div>
+                </div>
+                <div className="metric-tile">
+                  <div className="metric-number">16.5%</div>
+                  <div className="metric-label">Fair Take Rate</div>
+                  <div className="metric-sub">Zero Ad Shakedowns</div>
+                </div>
+                <div className="metric-tile">
+                  <div className="metric-number">T+1</div>
+                  <div className="metric-label">Escrow Payout</div>
+                  <div className="metric-sub">Sec 9(5) CGST</div>
+                </div>
+              </div>
+            </section>
+
+            {/* Quick Operations Control Bar */}
+            <section className="ops-control-bar">
+              <div className="ops-status-left">
+                <span className="ops-status-indicator"></span>
+                <div>
+                  <strong>All 5 Kolkata Corridors Operating Normal</strong>
+                  <div className="brand-sub">
+                    Salt Lake Sector V · Park Street · Ballygunge · New Town · Shyambazar
+                  </div>
+                </div>
+              </div>
+              <div className="ops-actions-right">
+                <button
+                  type="button"
+                  className="filter-btn"
+                  onClick={() =>
+                    setStatusMessage('Telemetry sync executed: 0 corridor SLA breaches.')
+                  }
+                >
+                  🔄 Sync Telemetry
+                </button>
+                <button
+                  type="button"
+                  className="filter-btn"
+                  onClick={() =>
+                    setStatusMessage('Audit pack generated for active Kolkata corridor instances.')
+                  }
+                >
+                  📥 Export Audit Pack
+                </button>
+              </div>
+            </section>
+
+            {/* Feature Sections Header */}
+            <div className="feature-sections-header">
+              <h2>Platform Feature Control Sections</h2>
+              <p className="brand-sub">
+                Select any operational domain to directly control and review its workflows, data,
+                and approvals.
+              </p>
+            </div>
+
+            {/* Feature Control Sections Grid */}
+            <div className="feature-control-grid">
+              {/* Feature 1: Restaurant Onboarding & KYC */}
+              <article className="feature-control-card">
+                <div className="card-top">
+                  <div className="card-icon-title">
+                    <span className="feature-icon">🍳</span>
+                    <div>
+                      <h3>Restaurant Onboarding &amp; KYC</h3>
+                      <span className="feature-badge">3 Pending Review</span>
+                    </div>
+                  </div>
+                  <p className="feature-desc">
+                    Review partner applications, verify statutory FSSAI licenses, validate GSTIN
+                    filings, and approve verified kitchen menus.
+                  </p>
+                </div>
+                <div className="card-kpi-row">
+                  <div>
+                    <span className="kpi-val">42</span>
+                    <span className="kpi-lbl">Active Kitchens</span>
+                  </div>
+                  <div>
+                    <span className="kpi-val">100%</span>
+                    <span className="kpi-lbl">FSSAI Validated</span>
+                  </div>
+                  <div>
+                    <span className="kpi-val">0</span>
+                    <span className="kpi-lbl">Overdue</span>
+                  </div>
+                </div>
+                <div className="card-actions">
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={() => setActiveTab('ONBOARDING')}
+                  >
+                    Open Restaurant KYC Queue →
+                  </button>
+                </div>
+              </article>
+
+              {/* Feature 2: 100-Point Hygiene & Inspection Audits */}
+              <article className="feature-control-card">
+                <div className="card-top">
+                  <div className="card-icon-title">
+                    <span className="feature-icon">🔍</span>
+                    <div>
+                      <h3>100-Point Hygiene Audits</h3>
+                      <span className="feature-badge">Segregation of Duties</span>
+                    </div>
+                  </div>
+                  <p className="feature-desc">
+                    Enforce separation of duties: inspectors submit photo evidence with SHA-256
+                    hashes; reviewers approve verified trust scorecards.
+                  </p>
+                </div>
+                <div className="card-kpi-row">
+                  <div>
+                    <span className="kpi-val">3</span>
+                    <span className="kpi-lbl">In Review</span>
+                  </div>
+                  <div>
+                    <span className="kpi-val">98.2%</span>
+                    <span className="kpi-lbl">Avg Pass Score</span>
+                  </div>
+                  <div>
+                    <span className="kpi-val">1</span>
+                    <span className="kpi-lbl">Action Req</span>
+                  </div>
+                </div>
+                <div className="card-actions">
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={() => setActiveTab('INSPECTIONS')}
+                  >
+                    Launch Audit Review Queue →
+                  </button>
+                </div>
+              </article>
+
+              {/* Feature 3: Service Zones & Geospatial Corridors */}
+              <article className="feature-control-card">
+                <div className="card-top">
+                  <div className="card-icon-title">
+                    <span className="feature-icon">📍</span>
+                    <div>
+                      <h3>Geospatial Service Corridors</h3>
+                      <span className="feature-badge">5.5–6.0 km Bounds</span>
+                    </div>
+                  </div>
+                  <p className="feature-desc">
+                    Manage bounded delivery polygons across Kolkata to guarantee 28–32 minute
+                    hot-chain food delivery and prevent thermal degradation.
+                  </p>
+                </div>
+                <div className="card-kpi-row">
+                  <div>
+                    <span className="kpi-val">5</span>
+                    <span className="kpi-lbl">Active Polygons</span>
+                  </div>
+                  <div>
+                    <span className="kpi-val">0</span>
+                    <span className="kpi-lbl">Boundary Breaches</span>
+                  </div>
+                  <div>
+                    <span className="kpi-val">29m</span>
+                    <span className="kpi-lbl">Avg Delivery</span>
+                  </div>
+                </div>
+                <div className="card-actions">
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={() => setActiveTab('ZONES')}
+                  >
+                    Manage Service Zones →
+                  </button>
+                </div>
+              </article>
+
+              {/* Feature 4: Delivery Fleet & Courier Operations */}
+              <article className="feature-control-card">
+                <div className="card-top">
+                  <div className="card-icon-title">
+                    <span className="feature-icon">🛵</span>
+                    <div>
+                      <h3>Delivery Fleet Governance</h3>
+                      <span className="feature-badge">100% Tips Passed</span>
+                    </div>
+                  </div>
+                  <p className="feature-desc">
+                    Rider onboarding, driving license and RC verification, active shift allocation,
+                    and zero-commission courier tip transparency.
+                  </p>
+                </div>
+                <div className="card-kpi-row">
+                  <div>
+                    <span className="kpi-val">18</span>
+                    <span className="kpi-lbl">Active Couriers</span>
+                  </div>
+                  <div>
+                    <span className="kpi-val">₹0</span>
+                    <span className="kpi-lbl">Fee Withheld</span>
+                  </div>
+                  <div>
+                    <span className="kpi-val">4.9★</span>
+                    <span className="kpi-lbl">Fleet Rating</span>
+                  </div>
+                </div>
+                <div className="card-actions">
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={() => setActiveTab('COURIERS')}
+                  >
+                    Launch Fleet Operations →
+                  </button>
+                </div>
+              </article>
+
+              {/* Feature 5: AI Vision & Safety Moderation */}
+              <article className="feature-control-card">
+                <div className="card-top">
+                  <div className="card-icon-title">
+                    <span className="feature-icon">🤖</span>
+                    <div>
+                      <h3>AI Vision &amp; Content Moderation</h3>
+                      <span className="feature-badge">Automated Audits</span>
+                    </div>
+                  </div>
+                  <p className="feature-desc">
+                    Computer vision scanning for dish authenticity, synthetic image detection,
+                    allergen tag consistency, and price markup audits.
+                  </p>
+                </div>
+                <div className="card-kpi-row">
+                  <div>
+                    <span className="kpi-val">99.4%</span>
+                    <span className="kpi-lbl">Model Accuracy</span>
+                  </div>
+                  <div>
+                    <span className="kpi-val">2</span>
+                    <span className="kpi-lbl">AI Flags</span>
+                  </div>
+                  <div>
+                    <span className="kpi-val">&lt; 1.2s</span>
+                    <span className="kpi-lbl">Scan Latency</span>
+                  </div>
+                </div>
+                <div className="card-actions">
+                  <button type="button" className="btn-primary" onClick={() => setActiveTab('AI')}>
+                    Open AI Moderation Desk →
+                  </button>
+                </div>
+              </article>
+
+              {/* Feature 6: Financial Escrow & Daily Payouts */}
+              <article className="feature-control-card">
+                <div className="card-top">
+                  <div className="card-icon-title">
+                    <span className="feature-icon">💳</span>
+                    <div>
+                      <h3>Financial Escrow &amp; Settlements</h3>
+                      <span className="feature-badge">Sec 9(5) CGST</span>
+                    </div>
+                  </div>
+                  <p className="feature-desc">
+                    Daily T+1 partner escrow disbursements, statutory Section 9(5) GST tax ledger,
+                    16.5% flat take rate, and refund approvals.
+                  </p>
+                </div>
+                <div className="card-kpi-row">
+                  <div>
+                    <span className="kpi-val">₹2.48L</span>
+                    <span className="kpi-lbl">Settled Today</span>
+                  </div>
+                  <div>
+                    <span className="kpi-val">0</span>
+                    <span className="kpi-lbl">Escrow Discrepancies</span>
+                  </div>
+                  <div>
+                    <span className="kpi-val">T+1</span>
+                    <span className="kpi-lbl">Batch Cycle</span>
+                  </div>
+                </div>
+                <div className="card-actions">
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={() => setActiveTab('FINANCE')}
+                  >
+                    Open Settlement Ledger →
+                  </button>
+                </div>
+              </article>
+
+              {/* Feature 7: Customer Support & Safety Incident SLA */}
+              <article className="feature-control-card">
+                <div className="card-top">
+                  <div className="card-icon-title">
+                    <span className="feature-icon">🎫</span>
+                    <div>
+                      <h3>Support Operations &amp; P0 Incidents</h3>
+                      <span className="feature-badge">Food Safety Desk</span>
+                    </div>
+                  </div>
+                  <p className="feature-desc">
+                    Immediate food contamination triage, customer dispute resolution, partner
+                    appeals, and Corrective Action Plan (CAP) tracking.
+                  </p>
+                </div>
+                <div className="card-kpi-row">
+                  <div>
+                    <span className="kpi-val">12</span>
+                    <span className="kpi-lbl">Open Tickets</span>
+                  </div>
+                  <div>
+                    <span className="kpi-val">4.2m</span>
+                    <span className="kpi-lbl">Avg Response SLA</span>
+                  </div>
+                  <div>
+                    <span className="kpi-val">0</span>
+                    <span className="kpi-lbl">Critical P0 Open</span>
+                  </div>
+                </div>
+                <div className="card-actions">
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={() => setActiveTab('SUPPORT')}
+                  >
+                    Open Support Desk →
+                  </button>
+                </div>
+              </article>
+
+              {/* Feature 8: Platform Security, RBAC & DPDP Compliance */}
+              <article className="feature-control-card">
+                <div className="card-top">
+                  <div className="card-icon-title">
+                    <span className="feature-icon">⚙️</span>
+                    <div>
+                      <h3>Security, RBAC &amp; DPDP Governance</h3>
+                      <span className="feature-badge">CERT-In Aligned</span>
+                    </div>
+                  </div>
+                  <p className="feature-desc">
+                    8 shared contract roles, step-up MFA challenge policies, DPDP Act data erasure
+                    requests (DSR), and immutable security audit logs.
+                  </p>
+                </div>
+                <div className="card-kpi-row">
+                  <div>
+                    <span className="kpi-val">8</span>
+                    <span className="kpi-lbl">Platform Roles</span>
+                  </div>
+                  <div>
+                    <span className="kpi-val">100%</span>
+                    <span className="kpi-lbl">MFA Enforced</span>
+                  </div>
+                  <div>
+                    <span className="kpi-val">0</span>
+                    <span className="kpi-lbl">Security Alerts</span>
+                  </div>
+                </div>
+                <div className="card-actions">
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={() => setActiveTab('SYSTEM')}
+                  >
+                    Access System Governance →
+                  </button>
+                </div>
+              </article>
+
+              {/* Feature 9: Master Multi-Panel Console */}
+              <article className="feature-control-card" style={{ gridColumn: 'span 2' }}>
+                <div className="card-top">
+                  <div className="card-icon-title">
+                    <span className="feature-icon">📑</span>
+                    <div>
+                      <h3>Unified Platform Master Console</h3>
+                      <span className="feature-badge">Continuous Multi-Panel View</span>
+                    </div>
+                  </div>
+                  <p className="feature-desc">
+                    Inspect all 8 platform operational queues simultaneously in a master continuous
+                    dashboard for real-time corridor monitoring and incident triage.
+                  </p>
+                </div>
+                <div className="card-actions" style={{ marginTop: '0.75rem' }}>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    style={{ width: '100%' }}
+                    onClick={() => setActiveTab('ALL')}
+                  >
+                    Open Master Multi-Panel View →
+                  </button>
+                </div>
+              </article>
+            </div>
+
+            {/* Quick Summary of Active Governance Queue & Roles */}
+            <section className="panel" style={{ marginTop: '1.5rem' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '0.5rem',
+                }}
+              >
+                <div>
+                  <span className="pill">Independent Trust &amp; Inspection Queue</span>
+                  <h3 style={{ margin: '0.35rem 0' }}>Segregation of Duties Verification</h3>
+                </div>
+                <div className="filter-row" role="group" aria-label="Filter governance queue">
+                  {(['ALL', 'PENDING_REVIEW', 'APPROVED', 'ACTION_REQUIRED'] as const).map(
+                    (key) => (
+                      <button
+                        key={key}
+                        type="button"
+                        className="filter-btn"
+                        aria-pressed={filter === key}
+                        onClick={() => setFilter(key)}
+                      >
+                        {key.replace('_', ' ')}
+                      </button>
+                    ),
+                  )}
+                </div>
+              </div>
+
+              <ul className="queue-list" style={{ marginTop: '0.75rem' }}>
                 {visibleItems.map((item) => (
                   <li key={item.id} className="queue-item">
                     <div>
@@ -632,8 +1021,12 @@ export function App() {
               </ul>
             </section>
 
+            {/* Platform Role Matrix */}
             <section className="panel">
-              <h2>Platform Role Matrix ({USER_ROLES.length} Shared Contract Roles)</h2>
+              <span className="pill">Role-Based Access Control</span>
+              <h3 style={{ margin: '0.35rem 0 0.75rem' }}>
+                Platform Role Matrix ({USER_ROLES.length} Contract Roles)
+              </h3>
               <div className="role-grid">
                 {USER_ROLES.map((role) => {
                   const requiresMfa = (PRIVILEGED_MFA_ROLES as readonly string[]).includes(role);
@@ -646,7 +1039,23 @@ export function App() {
                 })}
               </div>
             </section>
-          </>
+          </div>
+        ) : null}
+
+        {/* Feature Sub-View Return Header (for when non-OVERVIEW tab is selected) */}
+        {activeTab !== 'OVERVIEW' ? (
+          <div className="sub-view-return-bar">
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => setActiveTab('OVERVIEW')}
+            >
+              ← Back to CMS Landing Hub &amp; Feature Control
+            </button>
+            <span className="brand-sub">
+              Active Control Section: <strong>{activeTab}</strong>
+            </span>
+          </div>
         ) : null}
 
         {/* 2. ONBOARDING VIEW */}
@@ -659,9 +1068,9 @@ export function App() {
           />
         ) : null}
 
-        {/* 3. COURIERS VIEW */}
-        {activeTab === 'COURIERS' || activeTab === 'ALL' ? (
-          <DeliveryPartnerReviewQueue
+        {/* 3. INSPECTIONS VIEW */}
+        {activeTab === 'INSPECTIONS' || activeTab === 'ALL' ? (
+          <InspectionReviewerQueue
             apiBase={getApiBase()}
             accessToken={accessToken}
             mfaVerified={Boolean(rbacContext?.mfaVerified)}
@@ -679,9 +1088,9 @@ export function App() {
           />
         ) : null}
 
-        {/* 5. INSPECTIONS VIEW */}
-        {activeTab === 'INSPECTIONS' || activeTab === 'ALL' ? (
-          <InspectionReviewerQueue
+        {/* 5. COURIERS VIEW */}
+        {activeTab === 'COURIERS' || activeTab === 'ALL' ? (
+          <DeliveryPartnerReviewQueue
             apiBase={getApiBase()}
             accessToken={accessToken}
             mfaVerified={Boolean(rbacContext?.mfaVerified)}
@@ -689,9 +1098,9 @@ export function App() {
           />
         ) : null}
 
-        {/* 6. SUPPORT VIEW */}
-        {activeTab === 'SUPPORT' || activeTab === 'ALL' ? (
-          <SupportOperationsDashboard
+        {/* 6. AI VIEW */}
+        {activeTab === 'AI' || activeTab === 'ALL' ? (
+          <AiReviewDashboard
             apiBase={getApiBase()}
             accessToken={accessToken}
             mfaVerified={Boolean(rbacContext?.mfaVerified)}
@@ -709,9 +1118,9 @@ export function App() {
           />
         ) : null}
 
-        {/* 8. SYSTEM CONFIG VIEW */}
-        {activeTab === 'SYSTEM' || activeTab === 'ALL' ? (
-          <AdminGovernanceDashboard
+        {/* 8. SUPPORT VIEW */}
+        {activeTab === 'SUPPORT' || activeTab === 'ALL' ? (
+          <SupportOperationsDashboard
             apiBase={getApiBase()}
             accessToken={accessToken}
             mfaVerified={Boolean(rbacContext?.mfaVerified)}
@@ -719,9 +1128,9 @@ export function App() {
           />
         ) : null}
 
-        {/* 9. AI VIEW */}
-        {activeTab === 'AI' || activeTab === 'ALL' ? (
-          <AiReviewDashboard
+        {/* 9. SYSTEM CONFIG VIEW */}
+        {activeTab === 'SYSTEM' || activeTab === 'ALL' ? (
+          <AdminGovernanceDashboard
             apiBase={getApiBase()}
             accessToken={accessToken}
             mfaVerified={Boolean(rbacContext?.mfaVerified)}
@@ -736,6 +1145,6 @@ export function App() {
           <span>Kolkata Governance Grid · Session Active</span>
         </div>
       </footer>
-    </>
+    </div>
   );
 }
