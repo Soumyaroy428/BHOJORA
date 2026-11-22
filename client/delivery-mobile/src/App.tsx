@@ -166,6 +166,7 @@ export function App() {
   const [incidentReported, setIncidentReported] = useState<string | null>(null);
   const [sosTriggered, setSosTriggered] = useState(false);
   const [cashoutNotice, setCashoutNotice] = useState<string | null>(null);
+  const [activeFleetPolicyDrawer, setActiveFleetPolicyDrawer] = useState<string | null>(null);
 
   // Offer Countdown Timer Effect
   useEffect(() => {
@@ -574,217 +575,6 @@ export function App() {
             </div>
           </section>
 
-          {/* Policy 1: Transparent Earning Formula & 100% Tips */}
-          <section className="fleet-policy-card">
-            <div className="fleet-policy-header">
-              <span className="fleet-policy-icon">💵</span>
-              <h3 className="fleet-policy-title">
-                Transparent Earning Formula &amp; 100% Direct Tips
-              </h3>
-            </div>
-            <p className="fleet-policy-desc">
-              Every single rupee you earn is calculated with complete transparency. We never take
-              commissions on your tips or hide arbitrary deductions.
-            </p>
-            <table className="earning-formula-table" aria-label="Earning formula rate card">
-              <thead>
-                <tr>
-                  <th>Earning Component</th>
-                  <th>Kolkata Fleet Rate</th>
-                  <th>Settlement Schedule</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Base Pickup &amp; Delivery</td>
-                  <td className="rate-highlight">₹40.00 / trip</td>
-                  <td>Covers first 2.0 km corridor</td>
-                </tr>
-                <tr>
-                  <td>Distance Fare (Beyond 2 km)</td>
-                  <td className="rate-highlight">₹12.00 / km</td>
-                  <td>Strict 5.5–6.0 km bounds</td>
-                </tr>
-                <tr>
-                  <td>Peak Hour Surge Bonus</td>
-                  <td className="rate-highlight">+₹20.00 / trip</td>
-                  <td>Lunch 12:30–15:00 &amp; Dinner 19:30–23:00</td>
-                </tr>
-                <tr>
-                  <td>Kitchen Wait Time (After 10m)</td>
-                  <td className="rate-highlight">₹1.00 / min</td>
-                  <td>Automatic GPS geofence timer</td>
-                </tr>
-                <tr>
-                  <td>Diner Tips Pass-Through</td>
-                  <td className="rate-highlight">100% Direct</td>
-                  <td>Zero platform commission cut</td>
-                </tr>
-                <tr>
-                  <td>Payout Settlement Cycle</td>
-                  <td className="rate-highlight">Daily T+1 / Instant</td>
-                  <td>Midnight bank transfer or 1-tap UPI cashout</td>
-                </tr>
-              </tbody>
-            </table>
-          </section>
-
-          {/* Policy 2: Strict Geographical Bounds Policy */}
-          <section className="fleet-policy-card">
-            <div className="fleet-policy-header">
-              <span className="fleet-policy-icon">🧭</span>
-              <h3 className="fleet-policy-title">Strict 5.5–6.0 km Corridor Policy</h3>
-            </div>
-            <p className="fleet-policy-desc">
-              We respect your safety and vehicle fuel. You are never assigned exhausting 15–20 km
-              cross-city trips. Deliveries remain strictly bounded within your selected Kolkata
-              cluster to preserve food heat and reduce rider fatigue.
-            </p>
-            <div className="corridor-pills-row" style={{ marginTop: '8px' }}>
-              <span className="corridor-pill">📍 Salt Lake (Sector I - V)</span>
-              <span className="corridor-pill">📍 Park Street &amp; Esplanade</span>
-              <span className="corridor-pill">📍 South Kolkata (Ballygunge / Jadavpur)</span>
-              <span className="corridor-pill">📍 New Town (Action Area I - III)</span>
-              <span className="corridor-pill">📍 North Kolkata (Shyambazar / Dum Dum)</span>
-            </div>
-          </section>
-
-          {/* Policy 3: Cashless Health & Accidental Hospital Insurance Policy */}
-          <section className="fleet-policy-card">
-            <div className="fleet-policy-header">
-              <span className="fleet-policy-icon">🏥</span>
-              <h3 className="fleet-policy-title">
-                ₹5,00,000 Cashless Hospital &amp; Accidental Insurance
-              </h3>
-            </div>
-            <p className="fleet-policy-desc">
-              From the exact moment you toggle your shift to <strong>ONLINE</strong>, you are
-              covered under our comprehensive cashless accidental, hospitalization, and emergency
-              medical policy with zero out-of-pocket hospital deposits.
-            </p>
-            <div className="hospital-pills-row">
-              <span className="hospital-pill">🏥 Apollo Gleneagles (EM Bypass)</span>
-              <span className="hospital-pill">🏥 AMRI Hospitals (Dhakuria &amp; Salt Lake)</span>
-              <span className="hospital-pill">🏥 Woodlands Multispeciality (Alipore)</span>
-              <span className="hospital-pill">🏥 Fortis Hospital (Anandapur)</span>
-            </div>
-          </section>
-
-          {/* Policy 4: Weather & Fair Work Gig Protection Policy */}
-          <section className="fleet-policy-card">
-            <div className="fleet-policy-header">
-              <span className="fleet-policy-icon">⛈️</span>
-              <h3 className="fleet-policy-title">Weather Protection &amp; Fair Work Policy</h3>
-            </div>
-            <div className="weather-banner">
-              🌧️ <strong>Monsoon &amp; Heatwave Surge:</strong> Automatic extra pay during Kolkata
-              downpours and severe summer heat. You can pause shifts during extreme weather with{' '}
-              <strong>zero acceptance rate penalties</strong>.
-            </div>
-            <p className="fleet-policy-desc" style={{ marginTop: '8px' }}>
-              <strong>Zero Algorithmic De-platforming:</strong> No automated bot can suspend your
-              courier account. Any customer report requires human ombudsman verification, evidence
-              review, and a guaranteed 24-hour right to explain before action is taken.
-            </p>
-          </section>
-
-          {/* Policy 5: Food Safety, Thermal Bag & Handover OTP Protocol */}
-          <section className="fleet-policy-card">
-            <div className="fleet-policy-header">
-              <span className="fleet-policy-icon">🛡️</span>
-              <h3 className="fleet-policy-title">
-                Food Hygiene &amp; 4-Digit Handover OTP Protocol
-              </h3>
-            </div>
-            <p className="fleet-policy-desc">
-              Maintain culinary integrity: Meals are transported in sanitized thermal hot-chain bags
-              with unbroken restaurant tamper-evident seals. To complete any drop-off, the customer
-              provides a unique 4-digit OTP, ensuring orders are never misdelivered.
-            </p>
-          </section>
-
-          {/* Policy 6: DPDP Act 2023 & Courier Data Privacy */}
-          <section className="fleet-policy-card">
-            <div className="fleet-policy-header">
-              <span className="fleet-policy-icon">🔒</span>
-              <h3 className="fleet-policy-title">DPDP Act 2023 &amp; Private Document Vault</h3>
-            </div>
-            <p className="fleet-policy-desc">
-              Your personal data and documents are protected under India&apos;s Digital Personal
-              Data Protection Act. Driving License, RC, and PAN numbers are encrypted with
-              HMAC-SHA256 and masked (e.g. XXXXXXXXXXX2345). Phone calls with customers use virtual
-              masking so your personal number is never revealed.
-            </p>
-          </section>
-
-          {/* Policy 7: Safety SOS Protocol */}
-          <section className="fleet-policy-card">
-            <div className="fleet-policy-header">
-              <span className="fleet-policy-icon">🚨</span>
-              <h3 className="fleet-policy-title">
-                Emergency SOS &amp; Kolkata Police 112 Dispatch
-              </h3>
-            </div>
-            <p className="fleet-policy-desc">
-              Your safety comes first. A 1-tap SOS trigger is embedded in your live dispatch
-              console. Pressing it immediately broadcasts your live telemetry coordinates to Kolkata
-              Police Control (112) and our 24x7 Bhojora Safety Desk hotline (+91 33 2244 8800).
-            </p>
-          </section>
-
-          {/* Policy 8: Kolkata Fleet Hub Locations */}
-          <section className="fleet-policy-card">
-            <div className="fleet-policy-header">
-              <span className="fleet-policy-icon">🏢</span>
-              <h3 className="fleet-policy-title">Kolkata Fleet Hubs &amp; Support Centers</h3>
-            </div>
-            <div className="hub-list">
-              <div className="hub-item">
-                <strong>Salt Lake Hub:</strong> Ground Floor, Webel IT Park, Sector V, Bidhannagar
-              </div>
-              <div className="hub-item">
-                <strong>Central Kolkata Hub:</strong> 14B Park Street (Near Mullick Bazar Crossing)
-              </div>
-              <div className="hub-item">
-                <strong>South Kolkata Hub:</strong> 88 Prince Anwar Shah Road, Jadavpur
-              </div>
-            </div>
-          </section>
-
-          {/* Policy 9: Courier FAQs */}
-          <section className="fleet-policy-card">
-            <div className="fleet-policy-header">
-              <span className="fleet-policy-icon">❓</span>
-              <h3 className="fleet-policy-title">Delivery Partner Frequently Asked Questions</h3>
-            </div>
-            <div className="fleet-faq-list">
-              <div className="fleet-faq-item">
-                <div className="fleet-faq-q">How much can I realistically earn per month?</div>
-                <div className="fleet-faq-a">
-                  Active couriers doing 16–22 deliveries per day typically take home ₹28,000 to
-                  ₹36,000 per month, plus 100% of their customer tips and peak hour surges.
-                </div>
-              </div>
-              <div className="fleet-faq-item">
-                <div className="fleet-faq-q">
-                  Can I deliver on a bicycle or electric scooter (EV)?
-                </div>
-                <div className="fleet-faq-a">
-                  Yes! We welcome petrol motorcycles, scooters, electric scooters (EVs), and
-                  bicycles. Bicycle couriers receive hyper-local trips bounded under 3.5 km.
-                </div>
-              </div>
-              <div className="fleet-faq-item">
-                <div className="fleet-faq-q">How do I receive the thermal hot-chain bag?</div>
-                <div className="fleet-faq-a">
-                  Once your online application is verified (typically within 2 hours), visit any of
-                  our 3 Kolkata fleet hubs to pick up your sanitized thermal bag and reflective
-                  safety vest.
-                </div>
-              </div>
-            </div>
-          </section>
-
           {/* How to Join Steps */}
           <section className="section-card">
             <div className="section-title">How to Get Started</div>
@@ -827,16 +617,481 @@ export function App() {
               </div>
             </div>
 
-            <button
-              type="button"
-              className="btn-primary"
-              style={{ width: '100%', marginTop: '8px' }}
-              onClick={() => setAuthMode('ONBOARD')}
+            <div
+              style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '14px' }}
             >
-              Start 4-Step Application →
-            </button>
+              <button
+                type="button"
+                className="btn-primary"
+                style={{ width: '100%' }}
+                onClick={() => setAuthMode('ONBOARD')}
+              >
+                Start 4-Step Application →
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                style={{ width: '100%' }}
+                onClick={() => setAuthMode('LOGIN')}
+              >
+                Existing Partner Sign In 🔑
+              </button>
+            </div>
           </section>
         </main>
+
+        {/* =========================================================================
+            FLEET FOOTER: ALL COURIER POLICIES, RATES, INSURANCE & HUBS
+            ========================================================================= */}
+        <footer className="fleet-footer" id="fleet-policies-footer">
+          <div className="fleet-footer-inner">
+            <div className="fleet-footer-brand-row">
+              <div className="fleet-footer-brand-left">
+                <img src={logoUrl} alt="Bhojora Fleet emblem" width={36} height={36} />
+                <div>
+                  <div className="fleet-footer-brand-title">BHOJORA FLEET NETWORK</div>
+                  <div className="fleet-footer-brand-subtitle">
+                    Kolkata Courier Operations &amp; Partner Welfare Alliance
+                  </div>
+                </div>
+              </div>
+              <div className="fleet-footer-hotline">
+                📞 24x7 Safety &amp; Ops Desk: <strong>+91 33 2244 8800</strong>
+              </div>
+            </div>
+
+            {/* Interactive Policy Drawer */}
+            {activeFleetPolicyDrawer && (
+              <div className="fleet-footer-drawer" id="fleet-policy-drawer-view">
+                <div className="fleet-footer-drawer-header">
+                  <h4 className="fleet-footer-drawer-title">
+                    {activeFleetPolicyDrawer === 'RATES' &&
+                      'Transparent Earning Formula & 100% Direct Tips'}
+                    {activeFleetPolicyDrawer === 'CORRIDORS' && 'Strict 5.5–6.0 km Corridor Policy'}
+                    {activeFleetPolicyDrawer === 'INSURANCE' &&
+                      '₹5,00,000 Cashless Hospital & Accidental Insurance'}
+                    {activeFleetPolicyDrawer === 'WEATHER' && 'Monsoon & Weather Protection Policy'}
+                    {activeFleetPolicyDrawer === 'SAFETY' &&
+                      'Food Hygiene, Thermal Bag & Handover OTP Protocol'}
+                    {activeFleetPolicyDrawer === 'PRIVACY' &&
+                      'DPDP Act 2023 & Courier Data Protection Vault'}
+                    {activeFleetPolicyDrawer === 'HUBS' &&
+                      'Kolkata Physical Fleet Hubs & Support Centers'}
+                    {activeFleetPolicyDrawer === 'FAQS' &&
+                      'Delivery Partner Frequently Asked Questions'}
+                  </h4>
+                  <button
+                    type="button"
+                    className="btn-close-fleet-drawer"
+                    onClick={() => setActiveFleetPolicyDrawer(null)}
+                  >
+                    ✕ Close
+                  </button>
+                </div>
+
+                {activeFleetPolicyDrawer === 'RATES' && (
+                  <div>
+                    <p className="fleet-policy-desc">
+                      Every single rupee you earn is calculated with complete transparency. We never
+                      take commissions on your tips or hide arbitrary deductions.
+                    </p>
+                    <table className="earning-formula-table" aria-label="Earning formula rate card">
+                      <thead>
+                        <tr>
+                          <th>Earning Component</th>
+                          <th>Kolkata Fleet Rate</th>
+                          <th>Settlement Schedule</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>Base Pickup &amp; Delivery</td>
+                          <td className="rate-highlight">₹40.00 / trip</td>
+                          <td>Covers first 2.0 km corridor</td>
+                        </tr>
+                        <tr>
+                          <td>Distance Fare (Beyond 2 km)</td>
+                          <td className="rate-highlight">₹12.00 / km</td>
+                          <td>Strict 5.5–6.0 km bounds</td>
+                        </tr>
+                        <tr>
+                          <td>Peak Hour Surge Bonus</td>
+                          <td className="rate-highlight">+₹20.00 / trip</td>
+                          <td>Lunch 12:30–15:00 &amp; Dinner 19:30–23:00</td>
+                        </tr>
+                        <tr>
+                          <td>Kitchen Wait Time (After 10m)</td>
+                          <td className="rate-highlight">₹1.00 / min</td>
+                          <td>Automatic GPS geofence timer</td>
+                        </tr>
+                        <tr>
+                          <td>Diner Tips Pass-Through</td>
+                          <td className="rate-highlight">100% Direct</td>
+                          <td>Zero platform commission cut</td>
+                        </tr>
+                        <tr>
+                          <td>Payout Settlement Cycle</td>
+                          <td className="rate-highlight">Daily T+1 / Instant</td>
+                          <td>Midnight bank transfer or 1-tap UPI cashout</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {activeFleetPolicyDrawer === 'CORRIDORS' && (
+                  <div>
+                    <p className="fleet-policy-desc">
+                      We respect your safety and vehicle fuel. You are never assigned exhausting
+                      15–20 km cross-city trips. Deliveries remain strictly bounded within your
+                      selected Kolkata cluster to preserve food heat and reduce rider fatigue.
+                    </p>
+                    <div className="corridor-pills-row" style={{ marginTop: '8px' }}>
+                      <span className="corridor-pill">📍 Salt Lake (Sector I - V)</span>
+                      <span className="corridor-pill">📍 Park Street &amp; Esplanade</span>
+                      <span className="corridor-pill">
+                        📍 South Kolkata (Ballygunge / Jadavpur)
+                      </span>
+                      <span className="corridor-pill">📍 New Town (Action Area I - III)</span>
+                      <span className="corridor-pill">📍 North Kolkata (Shyambazar / Dum Dum)</span>
+                    </div>
+                  </div>
+                )}
+
+                {activeFleetPolicyDrawer === 'INSURANCE' && (
+                  <div>
+                    <p className="fleet-policy-desc">
+                      From the exact moment you toggle your shift to <strong>ONLINE</strong>, you
+                      are covered under our comprehensive cashless accidental, hospitalization, and
+                      emergency medical policy with zero out-of-pocket hospital deposits.
+                    </p>
+                    <div className="hospital-pills-row">
+                      <span className="hospital-pill">🏥 Apollo Gleneagles (EM Bypass)</span>
+                      <span className="hospital-pill">
+                        🏥 AMRI Hospitals (Dhakuria &amp; Salt Lake)
+                      </span>
+                      <span className="hospital-pill">🏥 Woodlands Multispeciality (Alipore)</span>
+                      <span className="hospital-pill">🏥 Fortis Hospital (Anandapur)</span>
+                    </div>
+                  </div>
+                )}
+
+                {activeFleetPolicyDrawer === 'WEATHER' && (
+                  <div>
+                    <div className="weather-banner">
+                      🌧️ <strong>Monsoon &amp; Heatwave Surge:</strong> Automatic extra pay during
+                      Kolkata downpours and severe summer heat. You can pause shifts during extreme
+                      weather with <strong>zero acceptance rate penalties</strong>.
+                    </div>
+                    <p className="fleet-policy-desc" style={{ marginTop: '8px' }}>
+                      <strong>Zero Algorithmic De-platforming:</strong> No automated bot can suspend
+                      your courier account. Any customer report requires human ombudsman
+                      verification, evidence review, and a guaranteed 24-hour right to explain
+                      before action is taken.
+                    </p>
+                  </div>
+                )}
+
+                {activeFleetPolicyDrawer === 'SAFETY' && (
+                  <div>
+                    <p className="fleet-policy-desc">
+                      <strong>Food Hygiene &amp; OTP:</strong> Meals are transported in sanitized
+                      thermal hot-chain bags with unbroken restaurant tamper-evident seals. The
+                      customer provides a unique 4-digit OTP at delivery to confirm successful
+                      handover.
+                    </p>
+                    <p className="fleet-policy-desc" style={{ marginTop: '8px' }}>
+                      <strong>Emergency SOS:</strong> A 1-tap SOS trigger is embedded in your live
+                      dispatch console. Pressing it broadcasts live telemetry coordinates to Kolkata
+                      Police Control (112) and our 24x7 Safety Desk hotline (+91 33 2244 8800).
+                    </p>
+                  </div>
+                )}
+
+                {activeFleetPolicyDrawer === 'PRIVACY' && (
+                  <div>
+                    <p className="fleet-policy-desc">
+                      Your personal data and documents are protected under India&apos;s Digital
+                      Personal Data Protection Act (DPDP) 2023. Driving License, RC, and PAN numbers
+                      are encrypted with HMAC-SHA256 and masked. Phone calls with customers use
+                      virtual masking so your personal number is never revealed.
+                    </p>
+                  </div>
+                )}
+
+                {activeFleetPolicyDrawer === 'HUBS' && (
+                  <div>
+                    <div className="hub-list">
+                      <div className="hub-item">
+                        <strong>Salt Lake Hub:</strong> Ground Floor, Webel IT Park, Sector V,
+                        Bidhannagar
+                      </div>
+                      <div className="hub-item">
+                        <strong>Central Kolkata Hub:</strong> 14B Park Street (Near Mullick Bazar
+                        Crossing)
+                      </div>
+                      <div className="hub-item">
+                        <strong>South Kolkata Hub:</strong> 88 Prince Anwar Shah Road, Jadavpur
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeFleetPolicyDrawer === 'FAQS' && (
+                  <div>
+                    <div className="fleet-faq-list">
+                      <div className="fleet-faq-item">
+                        <div className="fleet-faq-q">
+                          How much can I realistically earn per month?
+                        </div>
+                        <div className="fleet-faq-a">
+                          Active couriers doing 16–22 deliveries per day typically take home ₹28,000
+                          to ₹36,000 per month, plus 100% of their customer tips and peak hour
+                          surges.
+                        </div>
+                      </div>
+                      <div className="fleet-faq-item">
+                        <div className="fleet-faq-q">
+                          Can I deliver on a bicycle or electric scooter (EV)?
+                        </div>
+                        <div className="fleet-faq-a">
+                          Yes! We welcome petrol motorcycles, scooters, electric scooters (EVs), and
+                          bicycles. Bicycle couriers receive hyper-local trips bounded under 3.5 km.
+                        </div>
+                      </div>
+                      <div className="fleet-faq-item">
+                        <div className="fleet-faq-q">
+                          How do I receive the thermal hot-chain bag?
+                        </div>
+                        <div className="fleet-faq-a">
+                          Once your online application is verified (typically within 2 hours), visit
+                          any of our 3 Kolkata fleet hubs to pick up your sanitized thermal bag and
+                          reflective safety vest.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 4-Column Policy Grid */}
+            <div className="fleet-footer-grid">
+              <div className="fleet-footer-col">
+                <div className="fleet-footer-title">Rates &amp; Payouts</div>
+                <button
+                  type="button"
+                  className="fleet-footer-btn"
+                  onClick={() => {
+                    setActiveFleetPolicyDrawer('RATES');
+                    setTimeout(
+                      () =>
+                        document
+                          .getElementById('fleet-policy-drawer-view')
+                          ?.scrollIntoView({ behavior: 'smooth' }),
+                      50,
+                    );
+                  }}
+                >
+                  • Earning Formula Rate Card
+                </button>
+                <button
+                  type="button"
+                  className="fleet-footer-btn"
+                  onClick={() => {
+                    setActiveFleetPolicyDrawer('RATES');
+                    setTimeout(
+                      () =>
+                        document
+                          .getElementById('fleet-policy-drawer-view')
+                          ?.scrollIntoView({ behavior: 'smooth' }),
+                      50,
+                    );
+                  }}
+                >
+                  • 100% Direct Tips Pass-Through
+                </button>
+                <button
+                  type="button"
+                  className="fleet-footer-btn"
+                  onClick={() => {
+                    setActiveFleetPolicyDrawer('RATES');
+                    setTimeout(
+                      () =>
+                        document
+                          .getElementById('fleet-policy-drawer-view')
+                          ?.scrollIntoView({ behavior: 'smooth' }),
+                      50,
+                    );
+                  }}
+                >
+                  • Instant UPI &amp; Daily T+1 Cashout
+                </button>
+              </div>
+
+              <div className="fleet-footer-col">
+                <div className="fleet-footer-title">Welfare &amp; Insurance</div>
+                <button
+                  type="button"
+                  className="fleet-footer-btn"
+                  onClick={() => {
+                    setActiveFleetPolicyDrawer('INSURANCE');
+                    setTimeout(
+                      () =>
+                        document
+                          .getElementById('fleet-policy-drawer-view')
+                          ?.scrollIntoView({ behavior: 'smooth' }),
+                      50,
+                    );
+                  }}
+                >
+                  • ₹5,00,000 Cashless Health Cover
+                </button>
+                <button
+                  type="button"
+                  className="fleet-footer-btn"
+                  onClick={() => {
+                    setActiveFleetPolicyDrawer('INSURANCE');
+                    setTimeout(
+                      () =>
+                        document
+                          .getElementById('fleet-policy-drawer-view')
+                          ?.scrollIntoView({ behavior: 'smooth' }),
+                      50,
+                    );
+                  }}
+                >
+                  • Network Hospitals (Apollo, AMRI)
+                </button>
+                <button
+                  type="button"
+                  className="fleet-footer-btn"
+                  onClick={() => {
+                    setActiveFleetPolicyDrawer('WEATHER');
+                    setTimeout(
+                      () =>
+                        document
+                          .getElementById('fleet-policy-drawer-view')
+                          ?.scrollIntoView({ behavior: 'smooth' }),
+                      50,
+                    );
+                  }}
+                >
+                  • Monsoon Surge &amp; Zero Penalties
+                </button>
+              </div>
+
+              <div className="fleet-footer-col">
+                <div className="fleet-footer-title">Corridors &amp; Safety</div>
+                <button
+                  type="button"
+                  className="fleet-footer-btn"
+                  onClick={() => {
+                    setActiveFleetPolicyDrawer('CORRIDORS');
+                    setTimeout(
+                      () =>
+                        document
+                          .getElementById('fleet-policy-drawer-view')
+                          ?.scrollIntoView({ behavior: 'smooth' }),
+                      50,
+                    );
+                  }}
+                >
+                  • Strict 5.5–6.0 km Bounds
+                </button>
+                <button
+                  type="button"
+                  className="fleet-footer-btn"
+                  onClick={() => {
+                    setActiveFleetPolicyDrawer('SAFETY');
+                    setTimeout(
+                      () =>
+                        document
+                          .getElementById('fleet-policy-drawer-view')
+                          ?.scrollIntoView({ behavior: 'smooth' }),
+                      50,
+                    );
+                  }}
+                >
+                  • 1-Tap SOS + Kolkata Police 112
+                </button>
+                <button
+                  type="button"
+                  className="fleet-footer-btn"
+                  onClick={() => {
+                    setActiveFleetPolicyDrawer('SAFETY');
+                    setTimeout(
+                      () =>
+                        document
+                          .getElementById('fleet-policy-drawer-view')
+                          ?.scrollIntoView({ behavior: 'smooth' }),
+                      50,
+                    );
+                  }}
+                >
+                  • Thermal Bag &amp; 4-Digit OTP
+                </button>
+              </div>
+
+              <div className="fleet-footer-col">
+                <div className="fleet-footer-title">Privacy, Hubs &amp; FAQ</div>
+                <button
+                  type="button"
+                  className="fleet-footer-btn"
+                  onClick={() => {
+                    setActiveFleetPolicyDrawer('PRIVACY');
+                    setTimeout(
+                      () =>
+                        document
+                          .getElementById('fleet-policy-drawer-view')
+                          ?.scrollIntoView({ behavior: 'smooth' }),
+                      50,
+                    );
+                  }}
+                >
+                  • DPDP Act Private Vault
+                </button>
+                <button
+                  type="button"
+                  className="fleet-footer-btn"
+                  onClick={() => {
+                    setActiveFleetPolicyDrawer('HUBS');
+                    setTimeout(
+                      () =>
+                        document
+                          .getElementById('fleet-policy-drawer-view')
+                          ?.scrollIntoView({ behavior: 'smooth' }),
+                      50,
+                    );
+                  }}
+                >
+                  • Kolkata Fleet Hub Centers
+                </button>
+                <button
+                  type="button"
+                  className="fleet-footer-btn"
+                  onClick={() => {
+                    setActiveFleetPolicyDrawer('FAQS');
+                    setTimeout(
+                      () =>
+                        document
+                          .getElementById('fleet-policy-drawer-view')
+                          ?.scrollIntoView({ behavior: 'smooth' }),
+                      50,
+                    );
+                  }}
+                >
+                  • Delivery Partner FAQs
+                </button>
+              </div>
+            </div>
+
+            <div className="fleet-footer-bottom">
+              <div>Bhojora Fleet Technologies Pvt. Ltd. · Salt Lake Sector V, Kolkata 700091</div>
+              <div>DPDP Act 2023 Compliant · Grievance Redressal: grievance-fleet@bhojora.in</div>
+            </div>
+          </div>
+        </footer>
       </div>
     );
   }

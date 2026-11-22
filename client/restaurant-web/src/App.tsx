@@ -115,6 +115,7 @@ export function App() {
   const [cuisine, setCuisine] = useState('Mughlai & Biryani');
   const [agreeAudit, setAgreeAudit] = useState(true);
   const [calcMonthlyGmv, setCalcMonthlyGmv] = useState<number>(500000);
+  const [activePolicyDrawer, setActivePolicyDrawer] = useState<string | null>(null);
 
   // Session State
   const [sessionUser, setSessionUser] = useState<UserProfileDto | null>(null);
@@ -895,91 +896,8 @@ export function App() {
             </aside>
           </section>
 
-          {/* Section 1: Commercial Policy & Aggregator Comparison */}
-          <section id="economics" className="policy-section">
-            <div className="policy-section-header">
-              <span className="policy-section-eyebrow">Fair Commercial Economics</span>
-              <h2 className="policy-section-title">
-                Bhojora Partner Network vs Predatory Aggregator Monopolies
-              </h2>
-              <p className="policy-section-desc">
-                We replace exorbitant 30%+ commissions, hidden fees, and forced discount cartels
-                with a sustainable 16.5% flat take rate, true dine-in price parity, and daily T+1
-                bank settlements.
-              </p>
-            </div>
-
-            <div className="comparison-table-wrapper">
-              <table className="comparison-table" aria-label="Commercial policy comparison">
-                <thead>
-                  <tr>
-                    <th>Commercial Feature</th>
-                    <th className="highlight-col">✨ BHOJORA Partner Network</th>
-                    <th>Legacy Aggregators (Zomato / Swiggy)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>
-                      <strong>Platform Take Rate</strong>
-                    </td>
-                    <td className="highlight-col">
-                      <strong>16.5% Flat</strong> (Zero hidden surcharges)
-                    </td>
-                    <td>28% – 35% + payment gateway + packaging surcharges</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <strong>Menu Pricing Policy</strong>
-                    </td>
-                    <td className="highlight-col">
-                      <strong>Dine-In Price Parity</strong> (No forced inflation)
-                    </td>
-                    <td>20% – 40% artificial markup forced to offset commissions</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <strong>Promotions &amp; Discounts</strong>
-                    </td>
-                    <td className="highlight-col">
-                      <strong>100% Voluntary</strong> (Restaurateur controls discounts)
-                    </td>
-                    <td>Co-funded deep discounts (e.g., 50% off) mandated for visibility</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <strong>Settlement Cycle</strong>
-                    </td>
-                    <td className="highlight-col">
-                      <strong>Automated Daily T+1</strong> via RBI Escrow
-                    </td>
-                    <td>Weekly or bi-weekly (T+7 to T+14) with arbitrary holdbacks</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <strong>Discovery &amp; Search Placement</strong>
-                    </td>
-                    <td className="highlight-col">
-                      <strong>100% Meritocratic</strong> (Based on hygiene audit &amp; SLA)
-                    </td>
-                    <td>Sponsored ad auctions where deep pockets outbid great food</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <strong>Customer Data &amp; Privacy</strong>
-                    </td>
-                    <td className="highlight-col">
-                      <strong>Dedicated Tenant Scope</strong> (Zero poaching)
-                    </td>
-                    <td>Your best-selling dishes copied to launch private cloud kitchens</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          {/* Section 2: Interactive Margin & Revenue Savings Calculator */}
-          <section className="policy-section">
+          {/* Interactive Margin & Revenue Savings Calculator */}
+          <section className="policy-section" style={{ margin: '2rem 0 1rem' }}>
             <div className="calculator-card">
               <div style={{ textAlign: 'center' }}>
                 <span className="policy-section-eyebrow">Interactive Profit Estimator</span>
@@ -1039,339 +957,705 @@ export function App() {
               </div>
             </div>
           </section>
-
-          {/* Section 3: Kitchen Hygiene & Accreditation Policy */}
-          <section id="hygiene" className="policy-section">
-            <div className="policy-section-header">
-              <span className="policy-section-eyebrow">Safety &amp; Compliance Contract</span>
-              <h2 className="policy-section-title">
-                100-Point Physical Hygiene Accreditation &amp; FSSAI Standards
-              </h2>
-              <p className="policy-section-desc">
-                Bhojora is built on consumer trust. Every partner kitchen undergoes a rigorous
-                physical inspection by accredited food safety auditors before going live, with
-                unannounced quarterly re-audits.
-              </p>
-            </div>
-
-            <div className="policy-grid-3">
-              <div className="policy-card">
-                <div className="policy-card-icon">❄️</div>
-                <h3 className="policy-card-title">Cold Storage &amp; Food Temperature CCPs</h3>
-                <p className="policy-card-desc">
-                  Critical control points enforced daily. Walk-in chillers calibrated to ≤ 4°C and
-                  deep freezers to ≤ -18°C with digital temperature logs.
-                </p>
-                <ul className="policy-feature-list">
-                  <li>✓ Digital probe thermometer logging</li>
-                  <li>✓ First-In, First-Out (FIFO) ingredient rotation</li>
-                  <li>✓ Sealed food-grade cambro storage containers</li>
-                </ul>
-              </div>
-
-              <div className="policy-card">
-                <div className="policy-card-icon">🚰</div>
-                <h3 className="policy-card-title">RO Potable Water &amp; Surface Sterilization</h3>
-                <p className="policy-card-desc">
-                  Zero tap-water cooking. All cooking, washing, and ice preparation must utilize
-                  3-stage RO treated water tested monthly for microbial purity.
-                </p>
-                <ul className="policy-feature-list">
-                  <li>✓ Monthly NABL water purity testing</li>
-                  <li>✓ SS-304 food-grade preparation surfaces</li>
-                  <li>✓ Color-coded boards (Green: Veg, Red: Meat)</li>
-                </ul>
-              </div>
-
-              <div className="policy-card">
-                <div className="policy-card-icon">🧼</div>
-                <h3 className="policy-card-title">Staff Hygiene, Medicals &amp; Vector Control</h3>
-                <p className="policy-card-desc">
-                  Kitchen personnel must wear clean aprons, hairnets, beard guards, and nitrile
-                  gloves with certified bi-monthly vector extermination.
-                </p>
-                <ul className="policy-feature-list">
-                  <li>✓ Annual staff typhoid &amp; health clearance</li>
-                  <li>✓ Hands-free soap &amp; sanitizer wash stations</li>
-                  <li>✓ Pedal-operated wet/dry segregated bins</li>
-                </ul>
-              </div>
-            </div>
-          </section>
-
-          {/* Section 4: Daily Payout & RBI Escrow Settlement Policy */}
-          <section id="payouts" className="policy-section">
-            <div className="policy-section-header">
-              <span className="policy-section-eyebrow">Financial Security &amp; Transparency</span>
-              <h2 className="policy-section-title">
-                Automated T+1 Escrow Daily Payouts (RBI Nodal Governance)
-              </h2>
-              <p className="policy-section-desc">
-                Your hard-earned cash never sits in our operational float. Customer payments are
-                held in an independent RBI-compliant escrow account and disbursed daily.
-              </p>
-            </div>
-
-            <div className="policy-grid-2">
-              <div className="policy-card">
-                <div className="policy-card-icon">🏦</div>
-                <h3 className="policy-card-title">Daily T+1 Automated Bank Transfer</h3>
-                <p className="policy-card-desc">
-                  Orders completed up to 23:59:59 are settled into your verified Indian bank account
-                  by 11:00 AM next business day via automated NEFT/RTGS with complete UTR tracking.
-                </p>
-                <ul className="policy-feature-list">
-                  <li>✓ No 7-day or 14-day cashflow lockups</li>
-                  <li>✓ Real-time ledger view in partner console</li>
-                  <li>✓ 1-click ledger export for accountant filing</li>
-                </ul>
-              </div>
-
-              <div className="policy-card">
-                <div className="policy-card-icon">📑</div>
-                <h3 className="policy-card-title">Section 9(5) GST &amp; Tax Compliance</h3>
-                <p className="policy-card-desc">
-                  Bhojora handles statutory GST collection and remittance under Section 9(5) of the
-                  CGST Act, issuing automated monthly tax statements and Form 16A TDS certificates.
-                </p>
-                <ul className="policy-feature-list">
-                  <li>✓ Transparent itemized GST invoice per order</li>
-                  <li>✓ Zero unexpected penalty holdbacks</li>
-                  <li>✓ Direct integration with GST portal filings</li>
-                </ul>
-              </div>
-            </div>
-          </section>
-
-          {/* Section 5: DPDP Act 2023 & Data Protection Policy */}
-          <section id="dpdp-privacy" className="policy-section">
-            <div className="policy-section-header">
-              <span className="policy-section-eyebrow">Privacy &amp; Data Security</span>
-              <h2 className="policy-section-title">
-                DPDP Act 2023 Compliance &amp; Protected Tenant Isolation
-              </h2>
-              <p className="policy-section-desc">
-                We believe your business data belongs to you alone. We strictly adhere to
-                India&apos;s Digital Personal Data Protection Act (DPDP) 2023.
-              </p>
-            </div>
-
-            <div className="policy-grid-2">
-              <div className="policy-card">
-                <div className="policy-card-icon">🔒</div>
-                <h3 className="policy-card-title">Customer Telephone Virtual Masking</h3>
-                <p className="policy-card-desc">
-                  Customer contact numbers are strictly virtualized with temporary session tokens.
-                  Couriers and kitchen staff communicate through encrypted in-app channels,
-                  eliminating diner harassment and privacy leakage.
-                </p>
-              </div>
-
-              <div className="policy-card">
-                <div className="policy-card-icon">🛡️</div>
-                <h3 className="policy-card-title">Encrypted KYC Document Vault</h3>
-                <p className="policy-card-desc">
-                  Your FSSAI certificates, GSTIN, PAN, and bank proof documents are encrypted with
-                  HMAC-SHA256 and stored in zero-knowledge private cloud vaults. Only authorized
-                  compliance officers can access KYC records.
-                </p>
-              </div>
-            </div>
-          </section>
-
-          {/* Section 6: Order Cancellation, Food Wastage & Dispute Policy */}
-          <section id="cancellation-policy" className="policy-section">
-            <div className="policy-section-header">
-              <span className="policy-section-eyebrow">Fair Operating Standards</span>
-              <h2 className="policy-section-title">
-                Kitchen Protection &amp; Food Wastage Compensation Policy
-              </h2>
-              <p className="policy-section-desc">
-                Restaurateurs should never bear the cost of customer cancellations after food is in
-                the wok or oven.
-              </p>
-            </div>
-
-            <div className="policy-grid-3">
-              <div className="policy-card">
-                <div className="policy-card-icon">🍲</div>
-                <h3 className="policy-card-title">100% Prepared Order Reimbursement</h3>
-                <p className="policy-card-desc">
-                  If a customer cancels after your kitchen accepts and transitions the ticket to
-                  &quot;PREPARING&quot;, Bhojora reimburses 100% of your menu price automatically.
-                </p>
-              </div>
-
-              <div className="policy-card">
-                <div className="policy-card-icon">⏱️</div>
-                <h3 className="policy-card-title">Synchronized Courier Arrival</h3>
-                <p className="policy-card-desc">
-                  Couriers are dispatched in strict 5.5–6.0 km bounds based on your prep timer. No
-                  crowding at your pickup counter or cold food waiting for delayed riders.
-                </p>
-              </div>
-
-              <div className="policy-card">
-                <div className="policy-card-icon">📞</div>
-                <h3 className="policy-card-title">2-Hour Kitchen Dispute SLA</h3>
-                <p className="policy-card-desc">
-                  Direct hotline (+91 33 2244 8800) to our Kolkata Partner Support desk. Dedicated
-                  human case managers resolve order disputes or rider issues within 2 hours.
-                </p>
-              </div>
-            </div>
-          </section>
-
-          {/* Section 7: 5-Step Onboarding Requirements Checklist */}
-          <section id="checklist" className="policy-section">
-            <div className="policy-section-header">
-              <span className="policy-section-eyebrow">Joining Prerequisites</span>
-              <h2 className="policy-section-title">
-                What You Need to Onboard (Go Live in Under 24 Hours)
-              </h2>
-              <p className="policy-section-desc">
-                Keep the following statutory documents ready for a seamless onboarding experience:
-              </p>
-            </div>
-
-            <div className="checklist-grid">
-              <div className="checklist-step-card">
-                <span className="step-badge">1</span>
-                <strong style={{ fontSize: '0.92rem', color: 'var(--ink-950)' }}>
-                  14-Digit FSSAI License
-                </strong>
-                <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--ink-600)' }}>
-                  Active state or central registration certificate matching your kitchen address.
-                </p>
-              </div>
-
-              <div className="checklist-step-card">
-                <span className="step-badge">2</span>
-                <strong style={{ fontSize: '0.92rem', color: 'var(--ink-950)' }}>
-                  GSTIN &amp; PAN Card
-                </strong>
-                <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--ink-600)' }}>
-                  Business or proprietor PAN. GSTIN required for taxable entities (optional for
-                  composite).
-                </p>
-              </div>
-
-              <div className="checklist-step-card">
-                <span className="step-badge">3</span>
-                <strong style={{ fontSize: '0.92rem', color: 'var(--ink-950)' }}>
-                  Bank Account / Cheque
-                </strong>
-                <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--ink-600)' }}>
-                  Account number and IFSC code for automated daily T+1 escrow payouts.
-                </p>
-              </div>
-
-              <div className="checklist-step-card">
-                <span className="step-badge">4</span>
-                <strong style={{ fontSize: '0.92rem', color: 'var(--ink-950)' }}>
-                  Menu &amp; Allergen Labels
-                </strong>
-                <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--ink-600)' }}>
-                  Itemized dishes with integer-paise pricing, veg/non-veg tags, and allergen
-                  declarations.
-                </p>
-              </div>
-            </div>
-          </section>
-
-          {/* Section 8: Comprehensive Partner FAQ Directory */}
-          <section id="faqs" className="policy-section">
-            <div className="policy-section-header">
-              <span className="policy-section-eyebrow">Frequently Asked Questions</span>
-              <h2 className="policy-section-title">Everything Restaurateurs Ask About Bhojora</h2>
-            </div>
-
-            <div className="faq-grid">
-              <div className="faq-card">
-                <h4>How does Bhojora offer a flat 16.5% take rate when others take 30%?</h4>
-                <p>
-                  We operate with extreme lean efficiency, algorithmic corridor dispatch (5.5–6.0 km
-                  bounds), and zero bloated advertising overhead. We treat kitchens as long-term
-                  partners, not revenue extraction victims.
-                </p>
-              </div>
-
-              <div className="faq-card">
-                <h4>Can I adjust my menu pricing or mark items out-of-stock (86)?</h4>
-                <p>
-                  Yes! Your partner console provides instant real-time toggles to 86 out-of-stock
-                  ingredients, modify preparation times, or adjust integer-paise item rates at any
-                  time.
-                </p>
-              </div>
-
-              <div className="faq-card">
-                <h4>What happens if our kitchen fails the initial 100-point hygiene audit?</h4>
-                <p>
-                  Our accredited auditor provides an actionable rectification checklist with a free
-                  re-inspection scheduled within 72 hours. We help you achieve compliance, not
-                  penalize you.
-                </p>
-              </div>
-
-              <div className="faq-card">
-                <h4>What hardware do we need in the kitchen?</h4>
-                <p>
-                  Any standard smartphone, Android tablet, iPad, or POS computer with a modern web
-                  browser. Our web-based KDS console features loud audio order chimes and
-                  touch-ready ticket buttons.
-                </p>
-              </div>
-            </div>
-          </section>
-
-          {/* Section 9: Partner CTA Banner */}
-          <section className="partner-cta-banner">
-            <h2>Ready to Join Kolkata&apos;s Cleanest, Most Profitable Food Network?</h2>
-            <p>
-              Onboard your restaurant or cloud kitchen today. Enjoy 16.5% flat take rates, daily T+1
-              bank payouts, and customers who appreciate hygienic, honest cooking.
-            </p>
-            <div className="partner-cta-actions">
-              <button
-                type="button"
-                className="btn-primary"
-                style={{ fontSize: '1rem', padding: '14px 28px' }}
-                onClick={() => {
-                  setAuthMode('ONBOARDING');
-                  document
-                    .getElementById('auth-portal-section')
-                    ?.scrollIntoView({ behavior: 'smooth' });
-                }}
-              >
-                Onboard Your Kitchen 🚀
-              </button>
-              <button
-                type="button"
-                className="btn-secondary"
-                style={{
-                  fontSize: '1rem',
-                  padding: '14px 24px',
-                  background: 'rgba(255,255,255,0.15)',
-                  color: '#fff',
-                }}
-                onClick={() => {
-                  setAuthMode('SIGNIN');
-                  document
-                    .getElementById('auth-portal-section')
-                    ?.scrollIntoView({ behavior: 'smooth' });
-                }}
-              >
-                Existing Partner Sign In 🔑
-              </button>
-            </div>
-          </section>
         </main>
 
-        <footer className="footer">
-          <div className="topbar-inner">
-            <span>BHOJORA Partner Operations — Independent Kitchen Verification Network</span>
-            <span>Kolkata Launch Grid · Version 1.0.0 Production</span>
+        {/* =========================================================================
+            MEGA FOOTER: ALL STATUTORY & OPERATING POLICIES
+            ========================================================================= */}
+        <footer className="mega-footer" id="partner-policies-footer">
+          <div className="mega-footer-inner">
+            <div className="footer-brand-row">
+              <div className="brand">
+                <img src="./logo.png" alt="BHOJORA emblem" width={44} height={44} />
+                <div>
+                  <p className="brand-name">BHOJORA Partner Network</p>
+                  <p className="brand-sub">
+                    Kolkata Restaurant &amp; Cloud Kitchen Operating Alliance
+                  </p>
+                </div>
+              </div>
+              <div className="footer-quick-actions">
+                <button
+                  type="button"
+                  className="btn-header-signin"
+                  onClick={() => {
+                    setAuthMode('SIGNIN');
+                    document
+                      .getElementById('auth-portal-section')
+                      ?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                >
+                  Partner Sign In 🔑
+                </button>
+                <button
+                  type="button"
+                  className="btn-header-onboard"
+                  onClick={() => {
+                    setAuthMode('ONBOARDING');
+                    document
+                      .getElementById('auth-portal-section')
+                      ?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                >
+                  Onboard Kitchen 🚀
+                </button>
+              </div>
+            </div>
+
+            {/* Interactive Policy Detail Drawer */}
+            {activePolicyDrawer && (
+              <div className="footer-policy-drawer" id="footer-policy-detail-view">
+                <div className="footer-policy-drawer-header">
+                  <h3 className="footer-policy-drawer-title">
+                    {activePolicyDrawer === 'COMMERCIAL' &&
+                      'Fair Commercial Economics & 16.5% Take Rate Policy'}
+                    {activePolicyDrawer === 'HYGIENE' &&
+                      '100-Point Physical Hygiene Accreditation & FSSAI Standards'}
+                    {activePolicyDrawer === 'SETTLEMENT' &&
+                      'Automated Daily T+1 Escrow Settlements (RBI Nodal Governance)'}
+                    {activePolicyDrawer === 'DPDP_PRIVACY' &&
+                      'DPDP Act 2023 Compliance & Partner Data Privacy'}
+                    {activePolicyDrawer === 'CANCELLATION' &&
+                      'Kitchen Protection & Food Wastage Compensation Policy'}
+                    {activePolicyDrawer === 'CHECKLIST' &&
+                      'What You Need to Onboard (Go Live in Under 24 Hours)'}
+                    {activePolicyDrawer === 'FAQS' &&
+                      'Restaurant Partner Frequently Asked Questions'}
+                  </h3>
+                  <button
+                    type="button"
+                    className="btn-close-drawer"
+                    onClick={() => setActivePolicyDrawer(null)}
+                  >
+                    ✕ Close Details
+                  </button>
+                </div>
+
+                {activePolicyDrawer === 'COMMERCIAL' && (
+                  <div className="policy-drawer-content">
+                    <p style={{ margin: '0 0 1rem', fontSize: '0.88rem', color: '#c7bfb7' }}>
+                      Bhojora replaces predatory aggregator commissions with an honest 16.5% flat
+                      take rate, true dine-in price parity, and daily settlements.
+                    </p>
+                    <div className="comparison-table-wrapper">
+                      <table className="comparison-table" aria-label="Commercial policy comparison">
+                        <thead>
+                          <tr>
+                            <th>Commercial Feature</th>
+                            <th className="highlight-col">✨ BHOJORA Partner Network</th>
+                            <th>Legacy Aggregators (Zomato / Swiggy)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>
+                              <strong>Platform Take Rate</strong>
+                            </td>
+                            <td className="highlight-col">
+                              <strong>16.5% Flat</strong> (Zero hidden surcharges)
+                            </td>
+                            <td>28% – 35% + payment gateway + packaging surcharges</td>
+                          </tr>
+                          <tr>
+                            <td>
+                              <strong>Menu Pricing Policy</strong>
+                            </td>
+                            <td className="highlight-col">
+                              <strong>Dine-In Price Parity</strong> (No forced inflation)
+                            </td>
+                            <td>20% – 40% artificial markup forced to offset commissions</td>
+                          </tr>
+                          <tr>
+                            <td>
+                              <strong>Promotions &amp; Discounts</strong>
+                            </td>
+                            <td className="highlight-col">
+                              <strong>100% Voluntary</strong> (Restaurateur controls discounts)
+                            </td>
+                            <td>
+                              Co-funded deep discounts (e.g., 50% off) mandated for visibility
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>
+                              <strong>Settlement Cycle</strong>
+                            </td>
+                            <td className="highlight-col">
+                              <strong>Automated Daily T+1</strong> via RBI Escrow
+                            </td>
+                            <td>Weekly or bi-weekly (T+7 to T+14) with arbitrary holdbacks</td>
+                          </tr>
+                          <tr>
+                            <td>
+                              <strong>Discovery &amp; Search Placement</strong>
+                            </td>
+                            <td className="highlight-col">
+                              <strong>100% Meritocratic</strong> (Hygiene audit &amp; SLA driven)
+                            </td>
+                            <td>Sponsored ad auctions where deep pockets outbid great food</td>
+                          </tr>
+                          <tr>
+                            <td>
+                              <strong>Customer Data &amp; Privacy</strong>
+                            </td>
+                            <td className="highlight-col">
+                              <strong>Dedicated Tenant Scope</strong> (Zero poaching)
+                            </td>
+                            <td>Best-selling dishes copied to launch private cloud kitchens</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {activePolicyDrawer === 'HYGIENE' && (
+                  <div className="policy-drawer-content">
+                    <p style={{ margin: '0 0 1rem', fontSize: '0.88rem', color: '#c7bfb7' }}>
+                      Every kitchen undergoes a physical inspection by accredited food safety
+                      auditors before going live, with unannounced quarterly audits.
+                    </p>
+                    <div className="policy-grid-3">
+                      <div className="policy-card" style={{ background: '#1c1917' }}>
+                        <div className="policy-card-icon">❄️</div>
+                        <h4 className="policy-card-title">Cold Storage &amp; Temperature CCPs</h4>
+                        <p className="policy-card-desc">
+                          Walk-in chillers calibrated to ≤ 4°C and deep freezers to ≤ -18°C with
+                          digital logs.
+                        </p>
+                        <ul className="policy-feature-list">
+                          <li>✓ Digital probe thermometer logging</li>
+                          <li>✓ First-In, First-Out (FIFO) ingredient rotation</li>
+                          <li>✓ Sealed food-grade cambro storage containers</li>
+                        </ul>
+                      </div>
+                      <div className="policy-card" style={{ background: '#1c1917' }}>
+                        <div className="policy-card-icon">🚰</div>
+                        <h4 className="policy-card-title">RO Potable Water &amp; Sterilization</h4>
+                        <p className="policy-card-desc">
+                          Zero tap-water cooking. All cooking and washing utilizes 3-stage RO
+                          treated water tested monthly.
+                        </p>
+                        <ul className="policy-feature-list">
+                          <li>✓ Monthly NABL water purity testing</li>
+                          <li>✓ SS-304 food-grade preparation surfaces</li>
+                          <li>✓ Color-coded boards (Green: Veg, Red: Meat)</li>
+                        </ul>
+                      </div>
+                      <div className="policy-card" style={{ background: '#1c1917' }}>
+                        <div className="policy-card-icon">🧼</div>
+                        <h4 className="policy-card-title">Staff Hygiene &amp; Vector Control</h4>
+                        <p className="policy-card-desc">
+                          Clean aprons, hairnets, beard guards, and nitrile gloves with bi-monthly
+                          vector extermination.
+                        </p>
+                        <ul className="policy-feature-list">
+                          <li>✓ Annual staff typhoid &amp; health clearance</li>
+                          <li>✓ Hands-free soap &amp; sanitizer wash stations</li>
+                          <li>✓ Pedal-operated wet/dry segregated bins</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activePolicyDrawer === 'SETTLEMENT' && (
+                  <div className="policy-drawer-content">
+                    <div className="policy-grid-2">
+                      <div className="policy-card" style={{ background: '#1c1917' }}>
+                        <div className="policy-card-icon">🏦</div>
+                        <h4 className="policy-card-title">Daily T+1 Automated Bank Transfer</h4>
+                        <p className="policy-card-desc">
+                          Orders completed up to 23:59:59 are settled into your verified Indian bank
+                          account by 11:00 AM next business day via automated NEFT/RTGS with
+                          complete UTR tracking. Zero 7-day or 14-day cashflow lockups.
+                        </p>
+                      </div>
+                      <div className="policy-card" style={{ background: '#1c1917' }}>
+                        <div className="policy-card-icon">📑</div>
+                        <h4 className="policy-card-title">Section 9(5) GST Compliance</h4>
+                        <p className="policy-card-desc">
+                          Bhojora handles statutory GST collection and remittance under Section 9(5)
+                          of the CGST Act, issuing automated monthly tax statements and Form 16A TDS
+                          certificates. Transparent itemized invoice per order.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activePolicyDrawer === 'DPDP_PRIVACY' && (
+                  <div className="policy-drawer-content">
+                    <div className="policy-grid-2">
+                      <div className="policy-card" style={{ background: '#1c1917' }}>
+                        <div className="policy-card-icon">🔒</div>
+                        <h4 className="policy-card-title">Customer Telephone Virtual Masking</h4>
+                        <p className="policy-card-desc">
+                          Customer contact numbers are strictly virtualized with temporary session
+                          tokens. Couriers and kitchen staff communicate through encrypted in-app
+                          channels, eliminating diner harassment and privacy leakage.
+                        </p>
+                      </div>
+                      <div className="policy-card" style={{ background: '#1c1917' }}>
+                        <div className="policy-card-icon">🛡️</div>
+                        <h4 className="policy-card-title">Encrypted KYC Document Vault</h4>
+                        <p className="policy-card-desc">
+                          Your FSSAI certificates, GSTIN, PAN, and bank proof documents are
+                          encrypted with HMAC-SHA256 and stored in zero-knowledge private cloud
+                          vaults. Only authorized compliance officers can access KYC records.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activePolicyDrawer === 'CANCELLATION' && (
+                  <div className="policy-drawer-content">
+                    <div className="policy-grid-3">
+                      <div className="policy-card" style={{ background: '#1c1917' }}>
+                        <div className="policy-card-icon">🍲</div>
+                        <h4 className="policy-card-title">100% Prepared Order Reimbursement</h4>
+                        <p className="policy-card-desc">
+                          If a customer cancels after your kitchen accepts and transitions the
+                          ticket to &quot;PREPARING&quot;, Bhojora reimburses 100% of your menu
+                          price automatically.
+                        </p>
+                      </div>
+                      <div className="policy-card" style={{ background: '#1c1917' }}>
+                        <div className="policy-card-icon">⏱️</div>
+                        <h4 className="policy-card-title">Synchronized Courier Arrival</h4>
+                        <p className="policy-card-desc">
+                          Couriers are dispatched in strict 5.5–6.0 km bounds based on your prep
+                          timer. No counter crowding or cold food waiting for delayed riders.
+                        </p>
+                      </div>
+                      <div className="policy-card" style={{ background: '#1c1917' }}>
+                        <div className="policy-card-icon">📞</div>
+                        <h4 className="policy-card-title">2-Hour Kitchen Dispute SLA</h4>
+                        <p className="policy-card-desc">
+                          Direct hotline (+91 33 2244 8800) to our Kolkata Partner Support desk.
+                          Dedicated human case managers resolve order disputes or rider issues
+                          within 2 hours.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activePolicyDrawer === 'CHECKLIST' && (
+                  <div className="policy-drawer-content">
+                    <div className="checklist-grid">
+                      <div className="checklist-step-card" style={{ background: '#1c1917' }}>
+                        <span className="step-badge">1</span>
+                        <strong style={{ fontSize: '0.92rem', color: '#fff' }}>
+                          14-Digit FSSAI License
+                        </strong>
+                        <p style={{ margin: 0, fontSize: '0.82rem', color: '#b3aba3' }}>
+                          Active state or central registration certificate matching your kitchen
+                          address.
+                        </p>
+                      </div>
+                      <div className="checklist-step-card" style={{ background: '#1c1917' }}>
+                        <span className="step-badge">2</span>
+                        <strong style={{ fontSize: '0.92rem', color: '#fff' }}>
+                          GSTIN &amp; PAN Card
+                        </strong>
+                        <p style={{ margin: 0, fontSize: '0.82rem', color: '#b3aba3' }}>
+                          Business or proprietor PAN. GSTIN required for taxable entities.
+                        </p>
+                      </div>
+                      <div className="checklist-step-card" style={{ background: '#1c1917' }}>
+                        <span className="step-badge">3</span>
+                        <strong style={{ fontSize: '0.92rem', color: '#fff' }}>
+                          Bank Account / Cheque
+                        </strong>
+                        <p style={{ margin: 0, fontSize: '0.82rem', color: '#b3aba3' }}>
+                          Account number and IFSC code for automated daily T+1 escrow payouts.
+                        </p>
+                      </div>
+                      <div className="checklist-step-card" style={{ background: '#1c1917' }}>
+                        <span className="step-badge">4</span>
+                        <strong style={{ fontSize: '0.92rem', color: '#fff' }}>
+                          Menu &amp; Allergen Labels
+                        </strong>
+                        <p style={{ margin: 0, fontSize: '0.82rem', color: '#b3aba3' }}>
+                          Itemized dishes with integer-paise pricing, veg/non-veg tags, and
+                          allergens.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activePolicyDrawer === 'FAQS' && (
+                  <div className="policy-drawer-content">
+                    <div className="faq-grid">
+                      <div className="faq-card" style={{ background: '#1c1917' }}>
+                        <h4 style={{ color: '#fff' }}>
+                          How does Bhojora offer a flat 16.5% take rate when others take 30%?
+                        </h4>
+                        <p style={{ color: '#b3aba3' }}>
+                          We operate with extreme lean efficiency, algorithmic corridor dispatch
+                          (5.5–6.0 km bounds), and zero bloated advertising overhead.
+                        </p>
+                      </div>
+                      <div className="faq-card" style={{ background: '#1c1917' }}>
+                        <h4 style={{ color: '#fff' }}>
+                          Can I adjust my menu pricing or mark items out-of-stock (86)?
+                        </h4>
+                        <p style={{ color: '#b3aba3' }}>
+                          Yes! Your partner console provides instant real-time toggles to 86
+                          out-of-stock ingredients, modify preparation times, or adjust
+                          integer-paise item rates.
+                        </p>
+                      </div>
+                      <div className="faq-card" style={{ background: '#1c1917' }}>
+                        <h4 style={{ color: '#fff' }}>
+                          What happens if our kitchen fails the initial 100-point hygiene audit?
+                        </h4>
+                        <p style={{ color: '#b3aba3' }}>
+                          Our accredited auditor provides an actionable rectification checklist with
+                          a free re-inspection scheduled within 72 hours.
+                        </p>
+                      </div>
+                      <div className="faq-card" style={{ background: '#1c1917' }}>
+                        <h4 style={{ color: '#fff' }}>What hardware do we need in the kitchen?</h4>
+                        <p style={{ color: '#b3aba3' }}>
+                          Any standard smartphone, Android tablet, iPad, or POS computer with a
+                          modern web browser.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* The 4-Column Mega Policy Grid */}
+            <div className="footer-policy-grid">
+              <div className="footer-policy-col">
+                <h4 className="footer-col-title">Commercial &amp; Rates</h4>
+                <ul className="footer-policy-list">
+                  <li>
+                    <button
+                      type="button"
+                      className="footer-policy-item-btn"
+                      onClick={() => {
+                        setActivePolicyDrawer('COMMERCIAL');
+                        setTimeout(
+                          () =>
+                            document
+                              .getElementById('footer-policy-detail-view')
+                              ?.scrollIntoView({ behavior: 'smooth' }),
+                          50,
+                        );
+                      }}
+                    >
+                      • 16.5% Flat Take Rate vs 35%
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      className="footer-policy-item-btn"
+                      onClick={() => {
+                        setActivePolicyDrawer('COMMERCIAL');
+                        setTimeout(
+                          () =>
+                            document
+                              .getElementById('footer-policy-detail-view')
+                              ?.scrollIntoView({ behavior: 'smooth' }),
+                          50,
+                        );
+                      }}
+                    >
+                      • Dine-In Price Parity Mandate
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      className="footer-policy-item-btn"
+                      onClick={() => {
+                        setActivePolicyDrawer('SETTLEMENT');
+                        setTimeout(
+                          () =>
+                            document
+                              .getElementById('footer-policy-detail-view')
+                              ?.scrollIntoView({ behavior: 'smooth' }),
+                          50,
+                        );
+                      }}
+                    >
+                      • Daily T+1 Escrow Settlements
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      className="footer-policy-item-btn"
+                      onClick={() => {
+                        setActivePolicyDrawer('SETTLEMENT');
+                        setTimeout(
+                          () =>
+                            document
+                              .getElementById('footer-policy-detail-view')
+                              ?.scrollIntoView({ behavior: 'smooth' }),
+                          50,
+                        );
+                      }}
+                    >
+                      • Section 9(5) CGST Sched. Compliance
+                    </button>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="footer-policy-col">
+                <h4 className="footer-col-title">Hygiene &amp; Quality</h4>
+                <ul className="footer-policy-list">
+                  <li>
+                    <button
+                      type="button"
+                      className="footer-policy-item-btn"
+                      onClick={() => {
+                        setActivePolicyDrawer('HYGIENE');
+                        setTimeout(
+                          () =>
+                            document
+                              .getElementById('footer-policy-detail-view')
+                              ?.scrollIntoView({ behavior: 'smooth' }),
+                          50,
+                        );
+                      }}
+                    >
+                      • 100-Point FSSAI Audit Checklist
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      className="footer-policy-item-btn"
+                      onClick={() => {
+                        setActivePolicyDrawer('HYGIENE');
+                        setTimeout(
+                          () =>
+                            document
+                              .getElementById('footer-policy-detail-view')
+                              ?.scrollIntoView({ behavior: 'smooth' }),
+                          50,
+                        );
+                      }}
+                    >
+                      • Cold Storage &amp; Food CCPs
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      className="footer-policy-item-btn"
+                      onClick={() => {
+                        setActivePolicyDrawer('HYGIENE');
+                        setTimeout(
+                          () =>
+                            document
+                              .getElementById('footer-policy-detail-view')
+                              ?.scrollIntoView({ behavior: 'smooth' }),
+                          50,
+                        );
+                      }}
+                    >
+                      • RO Water Purity &amp; Sterilization
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      className="footer-policy-item-btn"
+                      onClick={() => {
+                        setActivePolicyDrawer('HYGIENE');
+                        setTimeout(
+                          () =>
+                            document
+                              .getElementById('footer-policy-detail-view')
+                              ?.scrollIntoView({ behavior: 'smooth' }),
+                          50,
+                        );
+                      }}
+                    >
+                      • Unannounced Surprise Re-Audits
+                    </button>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="footer-policy-col">
+                <h4 className="footer-col-title">Protection &amp; SLAs</h4>
+                <ul className="footer-policy-list">
+                  <li>
+                    <button
+                      type="button"
+                      className="footer-policy-item-btn"
+                      onClick={() => {
+                        setActivePolicyDrawer('CANCELLATION');
+                        setTimeout(
+                          () =>
+                            document
+                              .getElementById('footer-policy-detail-view')
+                              ?.scrollIntoView({ behavior: 'smooth' }),
+                          50,
+                        );
+                      }}
+                    >
+                      • 100% Prepared Food Reimbursement
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      className="footer-policy-item-btn"
+                      onClick={() => {
+                        setActivePolicyDrawer('CANCELLATION');
+                        setTimeout(
+                          () =>
+                            document
+                              .getElementById('footer-policy-detail-view')
+                              ?.scrollIntoView({ behavior: 'smooth' }),
+                          50,
+                        );
+                      }}
+                    >
+                      • Rider Dispatch &amp; Arrival Sync
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      className="footer-policy-item-btn"
+                      onClick={() => {
+                        setActivePolicyDrawer('CANCELLATION');
+                        setTimeout(
+                          () =>
+                            document
+                              .getElementById('footer-policy-detail-view')
+                              ?.scrollIntoView({ behavior: 'smooth' }),
+                          50,
+                        );
+                      }}
+                    >
+                      • 2-Hour Grievance Resolution SLA
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      className="footer-policy-item-btn"
+                      onClick={() => {
+                        setActivePolicyDrawer('DPDP_PRIVACY');
+                        setTimeout(
+                          () =>
+                            document
+                              .getElementById('footer-policy-detail-view')
+                              ?.scrollIntoView({ behavior: 'smooth' }),
+                          50,
+                        );
+                      }}
+                    >
+                      • Zero Cloud-Kitchen Self-Competition
+                    </button>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="footer-policy-col">
+                <h4 className="footer-col-title">Legal, DPDP &amp; FAQ</h4>
+                <ul className="footer-policy-list">
+                  <li>
+                    <button
+                      type="button"
+                      className="footer-policy-item-btn"
+                      onClick={() => {
+                        setActivePolicyDrawer('DPDP_PRIVACY');
+                        setTimeout(
+                          () =>
+                            document
+                              .getElementById('footer-policy-detail-view')
+                              ?.scrollIntoView({ behavior: 'smooth' }),
+                          50,
+                        );
+                      }}
+                    >
+                      • DPDP Act 2023 Data Privacy
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      className="footer-policy-item-btn"
+                      onClick={() => {
+                        setActivePolicyDrawer('DPDP_PRIVACY');
+                        setTimeout(
+                          () =>
+                            document
+                              .getElementById('footer-policy-detail-view')
+                              ?.scrollIntoView({ behavior: 'smooth' }),
+                          50,
+                        );
+                      }}
+                    >
+                      • Virtual Caller Phone Masking
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      className="footer-policy-item-btn"
+                      onClick={() => {
+                        setActivePolicyDrawer('CHECKLIST');
+                        setTimeout(
+                          () =>
+                            document
+                              .getElementById('footer-policy-detail-view')
+                              ?.scrollIntoView({ behavior: 'smooth' }),
+                          50,
+                        );
+                      }}
+                    >
+                      • Onboarding KYC Document Checklist
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      className="footer-policy-item-btn"
+                      onClick={() => {
+                        setActivePolicyDrawer('FAQS');
+                        setTimeout(
+                          () =>
+                            document
+                              .getElementById('footer-policy-detail-view')
+                              ?.scrollIntoView({ behavior: 'smooth' }),
+                          50,
+                        );
+                      }}
+                    >
+                      • Restaurant Partner FAQs
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="footer-statutory-row">
+              <div>
+                <strong>Bhojora Technologies Pvt. Ltd.</strong> · Registered Office: Ground Floor,
+                Webel IT Park, Sector V, Bidhannagar, Kolkata 700091, WB.
+              </div>
+              <div>
+                FSSAI Central Lic. No: <strong>12826001000123</strong> · Grievance Officer:
+                grievances@bhojora.in
+              </div>
+            </div>
           </div>
         </footer>
       </>

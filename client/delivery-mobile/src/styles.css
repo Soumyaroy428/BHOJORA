@@ -1154,3 +1154,146 @@ body {
   color: var(--text-secondary);
   line-height: 1.45;
 }
+
+/* ==========================================================================
+   FLEET FOOTER & POLICY MEGA DRAWER (Standard App Layout)
+   ========================================================================== */
+.fleet-footer {
+  background-color: #0b0f17;
+  border-top: 1px solid var(--border-subtle);
+  padding: 28px 16px 20px;
+  margin-top: 24px;
+}
+
+.fleet-footer-inner {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.fleet-footer-brand-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 20px;
+}
+
+.fleet-footer-brand-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fleet-footer-brand-title {
+  font-weight: 800;
+  font-size: 1rem;
+  color: #fff;
+  letter-spacing: 0.03em;
+}
+
+.fleet-footer-brand-subtitle {
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+
+.fleet-footer-hotline {
+  font-size: 0.8rem;
+  color: var(--brand-accent);
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.fleet-footer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.fleet-footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fleet-footer-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.fleet-footer-btn {
+  background: none;
+  border: none;
+  padding: 3px 0;
+  text-align: left;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1.4;
+}
+
+.fleet-footer-btn:hover {
+  color: var(--brand-accent);
+  padding-left: 4px;
+}
+
+.fleet-footer-drawer {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.fleet-footer-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.fleet-footer-drawer-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.btn-close-fleet-drawer {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-close-fleet-drawer:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.fleet-footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 0.74rem;
+  color: #64748b;
+}
