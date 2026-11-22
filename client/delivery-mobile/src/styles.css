@@ -621,3 +621,351 @@ body {
 .btn-accept:hover {
   transform: translateY(-1px);
 }
+
+/* =========================================================================
+   BHOJORA FLEET: LANDING, AUTH, TABS, EARNINGS & SAFETY STYLES
+   ========================================================================= */
+
+.fleet-shell {
+  max-width: 560px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-main);
+  position: relative;
+  border-left: 1px solid var(--border-subtle);
+  border-right: 1px solid var(--border-subtle);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.4);
+}
+
+/* Landing Page Hero & Benefits */
+.fleet-landing-hero {
+  background: linear-gradient(160deg, var(--bg-surface) 0%, var(--bg-card) 100%);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.fleet-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  background-color: var(--brand-accent-subtle);
+  color: var(--brand-accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  width: fit-content;
+  border: 1px solid oklch(0.68 0.17 55 / 0.3);
+}
+
+.fleet-hero-heading {
+  font-size: clamp(1.4rem, 4vw, 1.85rem);
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.fleet-hero-sub {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.fleet-hero-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.fleet-benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.fleet-benefit-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.fleet-benefit-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--brand-accent);
+}
+
+.benefit-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.fleet-benefit-card h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.fleet-benefit-card p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* Corridors Row */
+.corridor-pills-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.corridor-pill {
+  padding: 6px 12px;
+  border-radius: 9999px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* Join Steps List */
+.join-steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 4px 0 10px;
+}
+
+.join-step-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.join-step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: var(--brand-accent);
+  color: #000;
+  font-weight: 800;
+  font-size: 0.82rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.step-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Login Card Icon Wrap */
+.login-icon-wrap {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: var(--brand-accent-subtle);
+  border: 1px solid var(--brand-accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+}
+
+/* Navigation Tabs Bar */
+.fleet-nav-tabs {
+  position: sticky;
+  top: 69px;
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 6px 12px;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  z-index: 45;
+  scrollbar-width: none;
+}
+
+.fleet-nav-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.fleet-tab-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.fleet-tab-btn:hover {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.fleet-tab-btn.active {
+  background-color: var(--brand-accent);
+  color: #0b0f14;
+  font-weight: 700;
+}
+
+/* Earnings Breakdown & Payout Styles */
+.earnings-breakdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+}
+
+.earnings-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.88rem;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--border-subtle);
+}
+
+.earnings-item-row:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.payout-status-box {
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.88rem;
+}
+
+/* Badges Showcase */
+.badge-pills-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.badge-pill {
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Emergency Safety SOS Styles */
+.sos-banner {
+  background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
+  border: 1px solid #ef4444;
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  box-shadow: 0 4px 20px rgba(185, 28, 28, 0.35);
+}
+
+.sos-button {
+  width: 100%;
+  background-color: #ef4444;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 1rem;
+  letter-spacing: 0.03em;
+  padding: 16px 20px;
+  border-radius: var(--radius-md);
+  border: 2px solid #b91c1c;
+  cursor: pointer;
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.5);
+  transition:
+    transform 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.sos-button:hover {
+  background-color: #dc2626;
+  transform: translateY(-2px);
+}
+
+.support-contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 0.88rem;
+}
+
+.support-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+}
+
+.hub-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+
+.hub-item {
+  padding: 8px 10px;
+  background-color: var(--bg-input);
+  border-radius: 6px;
+  color: var(--text-secondary);
+}
+
+.hub-item strong {
+  color: var(--text-primary);
+}
+
+@media (max-width: 480px) {
+  .fleet-benefits-grid {
+    grid-template-columns: 1fr;
+  }
+}
