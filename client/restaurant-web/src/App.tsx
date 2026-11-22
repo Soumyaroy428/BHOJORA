@@ -114,6 +114,7 @@ export function App() {
   const [addressLine, setAddressLine] = useState('');
   const [cuisine, setCuisine] = useState('Mughlai & Biryani');
   const [agreeAudit, setAgreeAudit] = useState(true);
+  const [calcMonthlyGmv, setCalcMonthlyGmv] = useState<number>(500000);
 
   // Session State
   const [sessionUser, setSessionUser] = useState<UserProfileDto | null>(null);
@@ -440,10 +441,70 @@ export function App() {
                 <p className="brand-sub">Kolkata Kitchen Discovery &amp; Verification Network</p>
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <span className="badge">16.5% Flat Take Rate</span>
-              <span className="badge badge-warn">Zero Forced Discounts</span>
-            </div>
+
+            <nav className="topbar-nav" aria-label="Partner Landing Navigation">
+              <ul className="topbar-nav-links">
+                <li>
+                  <a href="#economics" className="topbar-nav-link">
+                    Economics
+                  </a>
+                </li>
+                <li>
+                  <a href="#hygiene" className="topbar-nav-link">
+                    Hygiene Standard
+                  </a>
+                </li>
+                <li>
+                  <a href="#payouts" className="topbar-nav-link">
+                    T+1 Escrow
+                  </a>
+                </li>
+                <li>
+                  <a href="#dpdp-privacy" className="topbar-nav-link">
+                    DPDP Privacy
+                  </a>
+                </li>
+                <li>
+                  <a href="#checklist" className="topbar-nav-link">
+                    Checklist
+                  </a>
+                </li>
+                <li>
+                  <a href="#faqs" className="topbar-nav-link">
+                    FAQ
+                  </a>
+                </li>
+              </ul>
+
+              <div className="topbar-action-btns">
+                <button
+                  type="button"
+                  className="btn-header-signin"
+                  onClick={() => {
+                    setAuthMode('SIGNIN');
+                    document
+                      .getElementById('auth-portal-section')
+                      ?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  title="Sign in with existing partner credentials"
+                >
+                  🔑 Partner Sign In
+                </button>
+                <button
+                  type="button"
+                  className="btn-header-onboard"
+                  onClick={() => {
+                    setAuthMode('ONBOARDING');
+                    document
+                      .getElementById('auth-portal-section')
+                      ?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  title="Register a new restaurant or cloud kitchen"
+                >
+                  📝 Onboard Kitchen
+                </button>
+              </div>
+            </nav>
           </div>
         </header>
 
@@ -523,7 +584,11 @@ export function App() {
             </div>
 
             {/* Right Column: Dedicated Partner Authentication / Onboarding Portal Card */}
-            <aside className="auth-portal-card" aria-label="Partner Sign In and Onboarding Portal">
+            <aside
+              id="auth-portal-section"
+              className="auth-portal-card"
+              aria-label="Partner Sign In and Onboarding Portal"
+            >
               {/* Mode Toggle Switcher */}
               <div className="auth-mode-selector" role="tablist">
                 <button
@@ -828,6 +893,478 @@ export function App() {
                 {statusMessage}
               </p>
             </aside>
+          </section>
+
+          {/* Section 1: Commercial Policy & Aggregator Comparison */}
+          <section id="economics" className="policy-section">
+            <div className="policy-section-header">
+              <span className="policy-section-eyebrow">Fair Commercial Economics</span>
+              <h2 className="policy-section-title">
+                Bhojora Partner Network vs Predatory Aggregator Monopolies
+              </h2>
+              <p className="policy-section-desc">
+                We replace exorbitant 30%+ commissions, hidden fees, and forced discount cartels
+                with a sustainable 16.5% flat take rate, true dine-in price parity, and daily T+1
+                bank settlements.
+              </p>
+            </div>
+
+            <div className="comparison-table-wrapper">
+              <table className="comparison-table" aria-label="Commercial policy comparison">
+                <thead>
+                  <tr>
+                    <th>Commercial Feature</th>
+                    <th className="highlight-col">✨ BHOJORA Partner Network</th>
+                    <th>Legacy Aggregators (Zomato / Swiggy)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <strong>Platform Take Rate</strong>
+                    </td>
+                    <td className="highlight-col">
+                      <strong>16.5% Flat</strong> (Zero hidden surcharges)
+                    </td>
+                    <td>28% – 35% + payment gateway + packaging surcharges</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <strong>Menu Pricing Policy</strong>
+                    </td>
+                    <td className="highlight-col">
+                      <strong>Dine-In Price Parity</strong> (No forced inflation)
+                    </td>
+                    <td>20% – 40% artificial markup forced to offset commissions</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <strong>Promotions &amp; Discounts</strong>
+                    </td>
+                    <td className="highlight-col">
+                      <strong>100% Voluntary</strong> (Restaurateur controls discounts)
+                    </td>
+                    <td>Co-funded deep discounts (e.g., 50% off) mandated for visibility</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <strong>Settlement Cycle</strong>
+                    </td>
+                    <td className="highlight-col">
+                      <strong>Automated Daily T+1</strong> via RBI Escrow
+                    </td>
+                    <td>Weekly or bi-weekly (T+7 to T+14) with arbitrary holdbacks</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <strong>Discovery &amp; Search Placement</strong>
+                    </td>
+                    <td className="highlight-col">
+                      <strong>100% Meritocratic</strong> (Based on hygiene audit &amp; SLA)
+                    </td>
+                    <td>Sponsored ad auctions where deep pockets outbid great food</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <strong>Customer Data &amp; Privacy</strong>
+                    </td>
+                    <td className="highlight-col">
+                      <strong>Dedicated Tenant Scope</strong> (Zero poaching)
+                    </td>
+                    <td>Your best-selling dishes copied to launch private cloud kitchens</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          {/* Section 2: Interactive Margin & Revenue Savings Calculator */}
+          <section className="policy-section">
+            <div className="calculator-card">
+              <div style={{ textAlign: 'center' }}>
+                <span className="policy-section-eyebrow">Interactive Profit Estimator</span>
+                <h3
+                  className="policy-section-title"
+                  style={{ fontSize: '1.5rem', margin: '0.25rem 0' }}
+                >
+                  How Much Does Your Kitchen Save Each Month?
+                </h3>
+                <p className="policy-section-desc" style={{ fontSize: '0.88rem' }}>
+                  Select your expected monthly order revenue on delivery to see your retained
+                  margin:
+                </p>
+              </div>
+
+              <div
+                className="calculator-tier-selector"
+                role="group"
+                aria-label="Monthly GMV Selector"
+                style={{ justifyContent: 'center' }}
+              >
+                {[250000, 500000, 1000000, 2000000].map((tier) => (
+                  <button
+                    key={tier}
+                    type="button"
+                    className="calculator-tier-btn"
+                    aria-pressed={calcMonthlyGmv === tier}
+                    onClick={() => setCalcMonthlyGmv(tier)}
+                  >
+                    ₹{(tier / 100000).toFixed(1)} Lakh / Month
+                  </button>
+                ))}
+              </div>
+
+              <div className="calculator-results-grid">
+                <div className="calc-tile">
+                  <div className="calc-num">
+                    ₹{Math.round(calcMonthlyGmv * 0.3).toLocaleString('en-IN')}
+                  </div>
+                  <div className="calc-lbl">Legacy Aggregator Fee (30%)</div>
+                </div>
+                <div className="calc-tile">
+                  <div className="calc-num">
+                    ₹{Math.round(calcMonthlyGmv * 0.165).toLocaleString('en-IN')}
+                  </div>
+                  <div className="calc-lbl">Bhojora Flat Fee (16.5%)</div>
+                </div>
+                <div className="calc-tile calc-highlight">
+                  <div className="calc-num calc-green">
+                    ₹{Math.round(calcMonthlyGmv * 0.135).toLocaleString('en-IN')} / mo
+                  </div>
+                  <div className="calc-lbl">
+                    ✨ Your Monthly Extra Profit (₹
+                    {Math.round(calcMonthlyGmv * 0.135 * 12).toLocaleString('en-IN')}/yr)
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Section 3: Kitchen Hygiene & Accreditation Policy */}
+          <section id="hygiene" className="policy-section">
+            <div className="policy-section-header">
+              <span className="policy-section-eyebrow">Safety &amp; Compliance Contract</span>
+              <h2 className="policy-section-title">
+                100-Point Physical Hygiene Accreditation &amp; FSSAI Standards
+              </h2>
+              <p className="policy-section-desc">
+                Bhojora is built on consumer trust. Every partner kitchen undergoes a rigorous
+                physical inspection by accredited food safety auditors before going live, with
+                unannounced quarterly re-audits.
+              </p>
+            </div>
+
+            <div className="policy-grid-3">
+              <div className="policy-card">
+                <div className="policy-card-icon">❄️</div>
+                <h3 className="policy-card-title">Cold Storage &amp; Food Temperature CCPs</h3>
+                <p className="policy-card-desc">
+                  Critical control points enforced daily. Walk-in chillers calibrated to ≤ 4°C and
+                  deep freezers to ≤ -18°C with digital temperature logs.
+                </p>
+                <ul className="policy-feature-list">
+                  <li>✓ Digital probe thermometer logging</li>
+                  <li>✓ First-In, First-Out (FIFO) ingredient rotation</li>
+                  <li>✓ Sealed food-grade cambro storage containers</li>
+                </ul>
+              </div>
+
+              <div className="policy-card">
+                <div className="policy-card-icon">🚰</div>
+                <h3 className="policy-card-title">RO Potable Water &amp; Surface Sterilization</h3>
+                <p className="policy-card-desc">
+                  Zero tap-water cooking. All cooking, washing, and ice preparation must utilize
+                  3-stage RO treated water tested monthly for microbial purity.
+                </p>
+                <ul className="policy-feature-list">
+                  <li>✓ Monthly NABL water purity testing</li>
+                  <li>✓ SS-304 food-grade preparation surfaces</li>
+                  <li>✓ Color-coded boards (Green: Veg, Red: Meat)</li>
+                </ul>
+              </div>
+
+              <div className="policy-card">
+                <div className="policy-card-icon">🧼</div>
+                <h3 className="policy-card-title">Staff Hygiene, Medicals &amp; Vector Control</h3>
+                <p className="policy-card-desc">
+                  Kitchen personnel must wear clean aprons, hairnets, beard guards, and nitrile
+                  gloves with certified bi-monthly vector extermination.
+                </p>
+                <ul className="policy-feature-list">
+                  <li>✓ Annual staff typhoid &amp; health clearance</li>
+                  <li>✓ Hands-free soap &amp; sanitizer wash stations</li>
+                  <li>✓ Pedal-operated wet/dry segregated bins</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          {/* Section 4: Daily Payout & RBI Escrow Settlement Policy */}
+          <section id="payouts" className="policy-section">
+            <div className="policy-section-header">
+              <span className="policy-section-eyebrow">Financial Security &amp; Transparency</span>
+              <h2 className="policy-section-title">
+                Automated T+1 Escrow Daily Payouts (RBI Nodal Governance)
+              </h2>
+              <p className="policy-section-desc">
+                Your hard-earned cash never sits in our operational float. Customer payments are
+                held in an independent RBI-compliant escrow account and disbursed daily.
+              </p>
+            </div>
+
+            <div className="policy-grid-2">
+              <div className="policy-card">
+                <div className="policy-card-icon">🏦</div>
+                <h3 className="policy-card-title">Daily T+1 Automated Bank Transfer</h3>
+                <p className="policy-card-desc">
+                  Orders completed up to 23:59:59 are settled into your verified Indian bank account
+                  by 11:00 AM next business day via automated NEFT/RTGS with complete UTR tracking.
+                </p>
+                <ul className="policy-feature-list">
+                  <li>✓ No 7-day or 14-day cashflow lockups</li>
+                  <li>✓ Real-time ledger view in partner console</li>
+                  <li>✓ 1-click ledger export for accountant filing</li>
+                </ul>
+              </div>
+
+              <div className="policy-card">
+                <div className="policy-card-icon">📑</div>
+                <h3 className="policy-card-title">Section 9(5) GST &amp; Tax Compliance</h3>
+                <p className="policy-card-desc">
+                  Bhojora handles statutory GST collection and remittance under Section 9(5) of the
+                  CGST Act, issuing automated monthly tax statements and Form 16A TDS certificates.
+                </p>
+                <ul className="policy-feature-list">
+                  <li>✓ Transparent itemized GST invoice per order</li>
+                  <li>✓ Zero unexpected penalty holdbacks</li>
+                  <li>✓ Direct integration with GST portal filings</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          {/* Section 5: DPDP Act 2023 & Data Protection Policy */}
+          <section id="dpdp-privacy" className="policy-section">
+            <div className="policy-section-header">
+              <span className="policy-section-eyebrow">Privacy &amp; Data Security</span>
+              <h2 className="policy-section-title">
+                DPDP Act 2023 Compliance &amp; Protected Tenant Isolation
+              </h2>
+              <p className="policy-section-desc">
+                We believe your business data belongs to you alone. We strictly adhere to
+                India&apos;s Digital Personal Data Protection Act (DPDP) 2023.
+              </p>
+            </div>
+
+            <div className="policy-grid-2">
+              <div className="policy-card">
+                <div className="policy-card-icon">🔒</div>
+                <h3 className="policy-card-title">Customer Telephone Virtual Masking</h3>
+                <p className="policy-card-desc">
+                  Customer contact numbers are strictly virtualized with temporary session tokens.
+                  Couriers and kitchen staff communicate through encrypted in-app channels,
+                  eliminating diner harassment and privacy leakage.
+                </p>
+              </div>
+
+              <div className="policy-card">
+                <div className="policy-card-icon">🛡️</div>
+                <h3 className="policy-card-title">Encrypted KYC Document Vault</h3>
+                <p className="policy-card-desc">
+                  Your FSSAI certificates, GSTIN, PAN, and bank proof documents are encrypted with
+                  HMAC-SHA256 and stored in zero-knowledge private cloud vaults. Only authorized
+                  compliance officers can access KYC records.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Section 6: Order Cancellation, Food Wastage & Dispute Policy */}
+          <section id="cancellation-policy" className="policy-section">
+            <div className="policy-section-header">
+              <span className="policy-section-eyebrow">Fair Operating Standards</span>
+              <h2 className="policy-section-title">
+                Kitchen Protection &amp; Food Wastage Compensation Policy
+              </h2>
+              <p className="policy-section-desc">
+                Restaurateurs should never bear the cost of customer cancellations after food is in
+                the wok or oven.
+              </p>
+            </div>
+
+            <div className="policy-grid-3">
+              <div className="policy-card">
+                <div className="policy-card-icon">🍲</div>
+                <h3 className="policy-card-title">100% Prepared Order Reimbursement</h3>
+                <p className="policy-card-desc">
+                  If a customer cancels after your kitchen accepts and transitions the ticket to
+                  &quot;PREPARING&quot;, Bhojora reimburses 100% of your menu price automatically.
+                </p>
+              </div>
+
+              <div className="policy-card">
+                <div className="policy-card-icon">⏱️</div>
+                <h3 className="policy-card-title">Synchronized Courier Arrival</h3>
+                <p className="policy-card-desc">
+                  Couriers are dispatched in strict 5.5–6.0 km bounds based on your prep timer. No
+                  crowding at your pickup counter or cold food waiting for delayed riders.
+                </p>
+              </div>
+
+              <div className="policy-card">
+                <div className="policy-card-icon">📞</div>
+                <h3 className="policy-card-title">2-Hour Kitchen Dispute SLA</h3>
+                <p className="policy-card-desc">
+                  Direct hotline (+91 33 2244 8800) to our Kolkata Partner Support desk. Dedicated
+                  human case managers resolve order disputes or rider issues within 2 hours.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Section 7: 5-Step Onboarding Requirements Checklist */}
+          <section id="checklist" className="policy-section">
+            <div className="policy-section-header">
+              <span className="policy-section-eyebrow">Joining Prerequisites</span>
+              <h2 className="policy-section-title">
+                What You Need to Onboard (Go Live in Under 24 Hours)
+              </h2>
+              <p className="policy-section-desc">
+                Keep the following statutory documents ready for a seamless onboarding experience:
+              </p>
+            </div>
+
+            <div className="checklist-grid">
+              <div className="checklist-step-card">
+                <span className="step-badge">1</span>
+                <strong style={{ fontSize: '0.92rem', color: 'var(--ink-950)' }}>
+                  14-Digit FSSAI License
+                </strong>
+                <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--ink-600)' }}>
+                  Active state or central registration certificate matching your kitchen address.
+                </p>
+              </div>
+
+              <div className="checklist-step-card">
+                <span className="step-badge">2</span>
+                <strong style={{ fontSize: '0.92rem', color: 'var(--ink-950)' }}>
+                  GSTIN &amp; PAN Card
+                </strong>
+                <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--ink-600)' }}>
+                  Business or proprietor PAN. GSTIN required for taxable entities (optional for
+                  composite).
+                </p>
+              </div>
+
+              <div className="checklist-step-card">
+                <span className="step-badge">3</span>
+                <strong style={{ fontSize: '0.92rem', color: 'var(--ink-950)' }}>
+                  Bank Account / Cheque
+                </strong>
+                <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--ink-600)' }}>
+                  Account number and IFSC code for automated daily T+1 escrow payouts.
+                </p>
+              </div>
+
+              <div className="checklist-step-card">
+                <span className="step-badge">4</span>
+                <strong style={{ fontSize: '0.92rem', color: 'var(--ink-950)' }}>
+                  Menu &amp; Allergen Labels
+                </strong>
+                <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--ink-600)' }}>
+                  Itemized dishes with integer-paise pricing, veg/non-veg tags, and allergen
+                  declarations.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Section 8: Comprehensive Partner FAQ Directory */}
+          <section id="faqs" className="policy-section">
+            <div className="policy-section-header">
+              <span className="policy-section-eyebrow">Frequently Asked Questions</span>
+              <h2 className="policy-section-title">Everything Restaurateurs Ask About Bhojora</h2>
+            </div>
+
+            <div className="faq-grid">
+              <div className="faq-card">
+                <h4>How does Bhojora offer a flat 16.5% take rate when others take 30%?</h4>
+                <p>
+                  We operate with extreme lean efficiency, algorithmic corridor dispatch (5.5–6.0 km
+                  bounds), and zero bloated advertising overhead. We treat kitchens as long-term
+                  partners, not revenue extraction victims.
+                </p>
+              </div>
+
+              <div className="faq-card">
+                <h4>Can I adjust my menu pricing or mark items out-of-stock (86)?</h4>
+                <p>
+                  Yes! Your partner console provides instant real-time toggles to 86 out-of-stock
+                  ingredients, modify preparation times, or adjust integer-paise item rates at any
+                  time.
+                </p>
+              </div>
+
+              <div className="faq-card">
+                <h4>What happens if our kitchen fails the initial 100-point hygiene audit?</h4>
+                <p>
+                  Our accredited auditor provides an actionable rectification checklist with a free
+                  re-inspection scheduled within 72 hours. We help you achieve compliance, not
+                  penalize you.
+                </p>
+              </div>
+
+              <div className="faq-card">
+                <h4>What hardware do we need in the kitchen?</h4>
+                <p>
+                  Any standard smartphone, Android tablet, iPad, or POS computer with a modern web
+                  browser. Our web-based KDS console features loud audio order chimes and
+                  touch-ready ticket buttons.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Section 9: Partner CTA Banner */}
+          <section className="partner-cta-banner">
+            <h2>Ready to Join Kolkata&apos;s Cleanest, Most Profitable Food Network?</h2>
+            <p>
+              Onboard your restaurant or cloud kitchen today. Enjoy 16.5% flat take rates, daily T+1
+              bank payouts, and customers who appreciate hygienic, honest cooking.
+            </p>
+            <div className="partner-cta-actions">
+              <button
+                type="button"
+                className="btn-primary"
+                style={{ fontSize: '1rem', padding: '14px 28px' }}
+                onClick={() => {
+                  setAuthMode('ONBOARDING');
+                  document
+                    .getElementById('auth-portal-section')
+                    ?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                Onboard Your Kitchen 🚀
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                style={{
+                  fontSize: '1rem',
+                  padding: '14px 24px',
+                  background: 'rgba(255,255,255,0.15)',
+                  color: '#fff',
+                }}
+                onClick={() => {
+                  setAuthMode('SIGNIN');
+                  document
+                    .getElementById('auth-portal-section')
+                    ?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                Existing Partner Sign In 🔑
+              </button>
+            </div>
           </section>
         </main>
 

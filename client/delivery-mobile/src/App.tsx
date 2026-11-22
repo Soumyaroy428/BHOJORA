@@ -467,22 +467,20 @@ export function App() {
               <div className="brand-subtitle">Kolkata Delivery Courier Portal</div>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div className="header-auth-actions">
             <button
               type="button"
-              className="btn-secondary"
-              style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+              className="btn-header-signin"
               onClick={() => setAuthMode('LOGIN')}
             >
-              Sign In
+              🔑 Sign In
             </button>
             <button
               type="button"
-              className="btn-primary"
-              style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+              className="btn-header-apply"
               onClick={() => setAuthMode('ONBOARD')}
             >
-              Apply →
+              🚀 Apply
             </button>
           </div>
         </header>
@@ -576,6 +574,217 @@ export function App() {
             </div>
           </section>
 
+          {/* Policy 1: Transparent Earning Formula & 100% Tips */}
+          <section className="fleet-policy-card">
+            <div className="fleet-policy-header">
+              <span className="fleet-policy-icon">💵</span>
+              <h3 className="fleet-policy-title">
+                Transparent Earning Formula &amp; 100% Direct Tips
+              </h3>
+            </div>
+            <p className="fleet-policy-desc">
+              Every single rupee you earn is calculated with complete transparency. We never take
+              commissions on your tips or hide arbitrary deductions.
+            </p>
+            <table className="earning-formula-table" aria-label="Earning formula rate card">
+              <thead>
+                <tr>
+                  <th>Earning Component</th>
+                  <th>Kolkata Fleet Rate</th>
+                  <th>Settlement Schedule</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Base Pickup &amp; Delivery</td>
+                  <td className="rate-highlight">₹40.00 / trip</td>
+                  <td>Covers first 2.0 km corridor</td>
+                </tr>
+                <tr>
+                  <td>Distance Fare (Beyond 2 km)</td>
+                  <td className="rate-highlight">₹12.00 / km</td>
+                  <td>Strict 5.5–6.0 km bounds</td>
+                </tr>
+                <tr>
+                  <td>Peak Hour Surge Bonus</td>
+                  <td className="rate-highlight">+₹20.00 / trip</td>
+                  <td>Lunch 12:30–15:00 &amp; Dinner 19:30–23:00</td>
+                </tr>
+                <tr>
+                  <td>Kitchen Wait Time (After 10m)</td>
+                  <td className="rate-highlight">₹1.00 / min</td>
+                  <td>Automatic GPS geofence timer</td>
+                </tr>
+                <tr>
+                  <td>Diner Tips Pass-Through</td>
+                  <td className="rate-highlight">100% Direct</td>
+                  <td>Zero platform commission cut</td>
+                </tr>
+                <tr>
+                  <td>Payout Settlement Cycle</td>
+                  <td className="rate-highlight">Daily T+1 / Instant</td>
+                  <td>Midnight bank transfer or 1-tap UPI cashout</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          {/* Policy 2: Strict Geographical Bounds Policy */}
+          <section className="fleet-policy-card">
+            <div className="fleet-policy-header">
+              <span className="fleet-policy-icon">🧭</span>
+              <h3 className="fleet-policy-title">Strict 5.5–6.0 km Corridor Policy</h3>
+            </div>
+            <p className="fleet-policy-desc">
+              We respect your safety and vehicle fuel. You are never assigned exhausting 15–20 km
+              cross-city trips. Deliveries remain strictly bounded within your selected Kolkata
+              cluster to preserve food heat and reduce rider fatigue.
+            </p>
+            <div className="corridor-pills-row" style={{ marginTop: '8px' }}>
+              <span className="corridor-pill">📍 Salt Lake (Sector I - V)</span>
+              <span className="corridor-pill">📍 Park Street &amp; Esplanade</span>
+              <span className="corridor-pill">📍 South Kolkata (Ballygunge / Jadavpur)</span>
+              <span className="corridor-pill">📍 New Town (Action Area I - III)</span>
+              <span className="corridor-pill">📍 North Kolkata (Shyambazar / Dum Dum)</span>
+            </div>
+          </section>
+
+          {/* Policy 3: Cashless Health & Accidental Hospital Insurance Policy */}
+          <section className="fleet-policy-card">
+            <div className="fleet-policy-header">
+              <span className="fleet-policy-icon">🏥</span>
+              <h3 className="fleet-policy-title">
+                ₹5,00,000 Cashless Hospital &amp; Accidental Insurance
+              </h3>
+            </div>
+            <p className="fleet-policy-desc">
+              From the exact moment you toggle your shift to <strong>ONLINE</strong>, you are
+              covered under our comprehensive cashless accidental, hospitalization, and emergency
+              medical policy with zero out-of-pocket hospital deposits.
+            </p>
+            <div className="hospital-pills-row">
+              <span className="hospital-pill">🏥 Apollo Gleneagles (EM Bypass)</span>
+              <span className="hospital-pill">🏥 AMRI Hospitals (Dhakuria &amp; Salt Lake)</span>
+              <span className="hospital-pill">🏥 Woodlands Multispeciality (Alipore)</span>
+              <span className="hospital-pill">🏥 Fortis Hospital (Anandapur)</span>
+            </div>
+          </section>
+
+          {/* Policy 4: Weather & Fair Work Gig Protection Policy */}
+          <section className="fleet-policy-card">
+            <div className="fleet-policy-header">
+              <span className="fleet-policy-icon">⛈️</span>
+              <h3 className="fleet-policy-title">Weather Protection &amp; Fair Work Policy</h3>
+            </div>
+            <div className="weather-banner">
+              🌧️ <strong>Monsoon &amp; Heatwave Surge:</strong> Automatic extra pay during Kolkata
+              downpours and severe summer heat. You can pause shifts during extreme weather with{' '}
+              <strong>zero acceptance rate penalties</strong>.
+            </div>
+            <p className="fleet-policy-desc" style={{ marginTop: '8px' }}>
+              <strong>Zero Algorithmic De-platforming:</strong> No automated bot can suspend your
+              courier account. Any customer report requires human ombudsman verification, evidence
+              review, and a guaranteed 24-hour right to explain before action is taken.
+            </p>
+          </section>
+
+          {/* Policy 5: Food Safety, Thermal Bag & Handover OTP Protocol */}
+          <section className="fleet-policy-card">
+            <div className="fleet-policy-header">
+              <span className="fleet-policy-icon">🛡️</span>
+              <h3 className="fleet-policy-title">
+                Food Hygiene &amp; 4-Digit Handover OTP Protocol
+              </h3>
+            </div>
+            <p className="fleet-policy-desc">
+              Maintain culinary integrity: Meals are transported in sanitized thermal hot-chain bags
+              with unbroken restaurant tamper-evident seals. To complete any drop-off, the customer
+              provides a unique 4-digit OTP, ensuring orders are never misdelivered.
+            </p>
+          </section>
+
+          {/* Policy 6: DPDP Act 2023 & Courier Data Privacy */}
+          <section className="fleet-policy-card">
+            <div className="fleet-policy-header">
+              <span className="fleet-policy-icon">🔒</span>
+              <h3 className="fleet-policy-title">DPDP Act 2023 &amp; Private Document Vault</h3>
+            </div>
+            <p className="fleet-policy-desc">
+              Your personal data and documents are protected under India&apos;s Digital Personal
+              Data Protection Act. Driving License, RC, and PAN numbers are encrypted with
+              HMAC-SHA256 and masked (e.g. XXXXXXXXXXX2345). Phone calls with customers use virtual
+              masking so your personal number is never revealed.
+            </p>
+          </section>
+
+          {/* Policy 7: Safety SOS Protocol */}
+          <section className="fleet-policy-card">
+            <div className="fleet-policy-header">
+              <span className="fleet-policy-icon">🚨</span>
+              <h3 className="fleet-policy-title">
+                Emergency SOS &amp; Kolkata Police 112 Dispatch
+              </h3>
+            </div>
+            <p className="fleet-policy-desc">
+              Your safety comes first. A 1-tap SOS trigger is embedded in your live dispatch
+              console. Pressing it immediately broadcasts your live telemetry coordinates to Kolkata
+              Police Control (112) and our 24x7 Bhojora Safety Desk hotline (+91 33 2244 8800).
+            </p>
+          </section>
+
+          {/* Policy 8: Kolkata Fleet Hub Locations */}
+          <section className="fleet-policy-card">
+            <div className="fleet-policy-header">
+              <span className="fleet-policy-icon">🏢</span>
+              <h3 className="fleet-policy-title">Kolkata Fleet Hubs &amp; Support Centers</h3>
+            </div>
+            <div className="hub-list">
+              <div className="hub-item">
+                <strong>Salt Lake Hub:</strong> Ground Floor, Webel IT Park, Sector V, Bidhannagar
+              </div>
+              <div className="hub-item">
+                <strong>Central Kolkata Hub:</strong> 14B Park Street (Near Mullick Bazar Crossing)
+              </div>
+              <div className="hub-item">
+                <strong>South Kolkata Hub:</strong> 88 Prince Anwar Shah Road, Jadavpur
+              </div>
+            </div>
+          </section>
+
+          {/* Policy 9: Courier FAQs */}
+          <section className="fleet-policy-card">
+            <div className="fleet-policy-header">
+              <span className="fleet-policy-icon">❓</span>
+              <h3 className="fleet-policy-title">Delivery Partner Frequently Asked Questions</h3>
+            </div>
+            <div className="fleet-faq-list">
+              <div className="fleet-faq-item">
+                <div className="fleet-faq-q">How much can I realistically earn per month?</div>
+                <div className="fleet-faq-a">
+                  Active couriers doing 16–22 deliveries per day typically take home ₹28,000 to
+                  ₹36,000 per month, plus 100% of their customer tips and peak hour surges.
+                </div>
+              </div>
+              <div className="fleet-faq-item">
+                <div className="fleet-faq-q">
+                  Can I deliver on a bicycle or electric scooter (EV)?
+                </div>
+                <div className="fleet-faq-a">
+                  Yes! We welcome petrol motorcycles, scooters, electric scooters (EVs), and
+                  bicycles. Bicycle couriers receive hyper-local trips bounded under 3.5 km.
+                </div>
+              </div>
+              <div className="fleet-faq-item">
+                <div className="fleet-faq-q">How do I receive the thermal hot-chain bag?</div>
+                <div className="fleet-faq-a">
+                  Once your online application is verified (typically within 2 hours), visit any of
+                  our 3 Kolkata fleet hubs to pick up your sanitized thermal bag and reflective
+                  safety vest.
+                </div>
+              </div>
+            </div>
+          </section>
+
           {/* How to Join Steps */}
           <section className="section-card">
             <div className="section-title">How to Get Started</div>
@@ -646,14 +855,22 @@ export function App() {
               <div className="brand-subtitle">Partner Sign In</div>
             </div>
           </div>
-          <button
-            type="button"
-            className="btn-secondary"
-            style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-            onClick={() => setAuthMode('LANDING')}
-          >
-            ← Home
-          </button>
+          <div className="header-auth-actions">
+            <button
+              type="button"
+              className="btn-header-back"
+              onClick={() => setAuthMode('LANDING')}
+            >
+              ← Home
+            </button>
+            <button
+              type="button"
+              className="btn-header-apply"
+              onClick={() => setAuthMode('ONBOARD')}
+            >
+              📝 Apply
+            </button>
+          </div>
         </header>
 
         <main className="mobile-content">
@@ -786,7 +1003,16 @@ export function App() {
                 <div className="brand-subtitle">Application Status</div>
               </div>
             </div>
-            <div className="status-badge badge-under_review">UNDER REVIEW</div>
+            <div className="header-auth-actions">
+              <div className="status-badge badge-under_review">UNDER REVIEW</div>
+              <button
+                type="button"
+                className="btn-header-back"
+                onClick={() => setAuthMode('LANDING')}
+              >
+                🏠 Home
+              </button>
+            </div>
           </header>
 
           <main className="mobile-content">
@@ -868,14 +1094,22 @@ export function App() {
               <div className="brand-subtitle">Rider Application</div>
             </div>
           </div>
-          <button
-            type="button"
-            className="btn-secondary"
-            style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-            onClick={() => setAuthMode('LOGIN')}
-          >
-            Sign In
-          </button>
+          <div className="header-auth-actions">
+            <button
+              type="button"
+              className="btn-header-back"
+              onClick={() => setAuthMode('LANDING')}
+            >
+              ← Home
+            </button>
+            <button
+              type="button"
+              className="btn-header-signin"
+              onClick={() => setAuthMode('LOGIN')}
+            >
+              🔑 Sign In
+            </button>
+          </div>
         </header>
 
         <main className="mobile-content">

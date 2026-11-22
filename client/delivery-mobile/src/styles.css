@@ -969,3 +969,188 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* -------------------------------------------------------------
+   Comprehensive Fleet Partner Landing Page & Policy Styles
+   ------------------------------------------------------------- */
+.header-auth-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-header-signin {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.btn-header-signin:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--brand-accent);
+}
+
+.btn-header-apply {
+  background: var(--brand-accent);
+  border: 1px solid var(--brand-accent);
+  color: #0b0f14;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.btn-header-apply:hover {
+  background: var(--brand-accent-hover);
+}
+
+.btn-header-back {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-header-back:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.fleet-policy-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.fleet-policy-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fleet-policy-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fleet-policy-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.fleet-policy-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.fleet-policy-desc {
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.earning-formula-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+  margin-top: 6px;
+}
+
+.earning-formula-table th {
+  text-align: left;
+  padding: 8px 10px;
+  background-color: var(--bg-input);
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+  font-weight: 600;
+}
+
+.earning-formula-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.earning-formula-table td.rate-highlight {
+  color: var(--brand-accent);
+  font-weight: 700;
+}
+
+.hospital-pills-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.hospital-pill {
+  font-size: 0.78rem;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.weather-banner {
+  background-color: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  font-size: 0.84rem;
+  color: #bae6fd;
+  line-height: 1.45;
+}
+
+.fleet-faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fleet-faq-item {
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.fleet-faq-q {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.fleet-faq-a {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
