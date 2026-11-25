@@ -1349,6 +1349,7 @@ export function App() {
             setSelectedZone(zone);
             setOfflinePageLimit(DEFAULT_OFFLINE_PAGE_SIZE);
           }}
+          onOpenPilotInfo={() => setPilotInfoOpen(true)}
         />
 
         <KitchenDiscovery

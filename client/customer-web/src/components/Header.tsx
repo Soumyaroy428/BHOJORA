@@ -120,19 +120,6 @@ export function Header({
             </button>
           </nav>
 
-          {/* "Get Bhojora App" in Header for Mobile & Tablet view (hidden on mobile <= 640px) */}
-          <button
-            type="button"
-            className="btn btn-primary header-get-app-btn mobile-tablet-header-btn"
-            aria-label="Get Bhojora App for mobile"
-            onClick={onOpenPilotInfo}
-          >
-            <span aria-hidden="true" style={{ marginRight: '4px' }}>
-              📱
-            </span>
-            <span className="app-btn-text">Get App</span>
-          </button>
-
           {/* Cart Button in Header (always visible in header across all screen sizes) */}
           <button
             type="button"

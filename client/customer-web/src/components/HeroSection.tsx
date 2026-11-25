@@ -10,6 +10,7 @@ interface HeroSectionProps {
   onSubmitSearch: (queryOverride?: string) => void;
   onClearRecentSearches: () => void;
   onSelectZone: (zone: KolkataZoneId) => void;
+  onOpenPilotInfo: () => void;
 }
 
 export function HeroSection({
@@ -20,6 +21,7 @@ export function HeroSection({
   onSubmitSearch,
   onClearRecentSearches,
   onSelectZone,
+  onOpenPilotInfo,
 }: HeroSectionProps) {
   function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key !== 'Enter') {
@@ -89,6 +91,18 @@ export function HeroSection({
             </button>
           </form>
         </search>
+
+        <div className="mobile-hero-get-app-wrap">
+          <button
+            type="button"
+            className="btn btn-primary mobile-hero-get-app-btn"
+            aria-label="Get Bhojora App for mobile"
+            onClick={onOpenPilotInfo}
+          >
+            <span aria-hidden="true">📱</span>
+            <span>Get App</span>
+          </button>
+        </div>
 
         {recentSearches.length > 0 ? (
           <div className="recent-searches-bar" aria-label="Recent searches">
