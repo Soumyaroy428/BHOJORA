@@ -2342,6 +2342,38 @@ dialog.trust-dialog::backdrop {
     padding: 6px 10px;
   }
 
+  .site-header .brand-logo {
+    max-width: 180px;
+    opacity: 1;
+    overflow: hidden;
+    transition:
+      max-width 0.2s ease,
+      opacity 0.16s ease;
+  }
+
+  .site-header.is-scrolled .navbar-brand-group {
+    gap: 0;
+  }
+
+  .site-header.is-scrolled .brand-logo {
+    max-width: 0;
+    opacity: 0;
+    visibility: hidden;
+    margin: 0;
+    padding: 0;
+    pointer-events: none;
+  }
+
+  .site-header.is-scrolled .header-location-view {
+    max-width: 100%;
+    flex: 0 1 auto;
+    padding: 4px 10px;
+  }
+
+  .site-header.is-scrolled .location-arrow-icon {
+    display: inline-block;
+  }
+
   .cart-header-btn {
     min-height: 44px;
     padding: 6px 10px;
@@ -2565,8 +2597,14 @@ dialog.trust-dialog::backdrop {
 }
 
 @media (max-width: 360px) {
-  .header-location-view {
+  .site-header:not(.is-scrolled) .header-location-view {
     max-width: 118px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-header .brand-logo {
+    transition: none;
   }
 }
 

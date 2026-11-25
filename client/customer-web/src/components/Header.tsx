@@ -28,8 +28,28 @@ export function Header({
   onOpenOrdersModal,
 }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const toggleBtnRef = useRef<HTMLButtonElement | null>(null);
+
+  // Hide Bhojora logo and wordmark on mobile scroll down so delivery location expands cleanly
+  useEffect(() => {
+    const handleScroll = () => {
+      const y = window.scrollY;
+      setIsScrolled((prev) => {
+        if (!prev && y > 48) {
+          return true;
+        }
+        if (prev && y < 16) {
+          return false;
+        }
+        return prev;
+      });
+    };
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Close dropdown on click outside or Escape key press
   useEffect(() => {
@@ -70,7 +90,7 @@ export function Header({
   };
 
   return (
-    <header className="site-header">
+    <header className={isScrolled ? 'site-header is-scrolled' : 'site-header'}>
       <div className="container navbar">
         <div className="navbar-brand-group">
           <a href="/" className="brand-logo" aria-label="BHOJORA Home">
