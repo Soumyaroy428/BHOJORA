@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <title>BHOJORA — No Internet Connection</title>
+    <style>
+      :root {
+        --cream: #f7f1e6;
+        --neutral-950: #171412;
+        --neutral-800: #3a3430;
+        --neutral-600: #635b55;
+        --terracotta: #8d352a;
+        --terracotta-dark: #6d271e;
+        --trust-green: #344b3e;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background-color: var(--cream);
+        color: var(--neutral-800);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 24px;
+        text-align: center;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      .offline-card {
+        background: #fffcf8;
+        border: 1px solid #ddd5cd;
+        border-radius: 20px;
+        padding: 36px 28px;
+        max-width: 400px;
+        width: 100%;
+        box-shadow: 0 10px 25px -5px rgba(23, 20, 18, 0.08);
+      }
+      .brand-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(141, 53, 42, 0.08);
+        color: var(--terracotta);
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        margin-bottom: 24px;
+      }
+      .icon-wrapper {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 20px;
+        background: #fbefef;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--terracotta);
+      }
+      .icon-wrapper svg {
+        width: 40px;
+        height: 40px;
+        stroke: currentColor;
+        stroke-width: 2;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      h1 {
+        font-size: 1.45rem;
+        font-weight: 800;
+        color: var(--neutral-950);
+        margin-bottom: 10px;
+        letter-spacing: -0.01em;
+      }
+      p {
+        font-size: 0.92rem;
+        color: var(--neutral-600);
+        line-height: 1.5;
+        margin-bottom: 28px;
+      }
+      .btn-retry {
+        display: block;
+        width: 100%;
+        background-color: var(--terracotta);
+        color: #ffffff;
+        border: none;
+        border-radius: 12px;
+        padding: 14px 20px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition:
+          background-color 0.2s,
+          transform 0.1s;
+        box-shadow: 0 4px 12px rgba(141, 53, 42, 0.25);
+      }
+      .btn-retry:active {
+        background-color: var(--terracotta-dark);
+        transform: scale(0.98);
+      }
+      .hint {
+        margin-top: 20px;
+        font-size: 0.78rem;
+        color: #9e938b;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="offline-card">
+      <div class="brand-badge">BHOJORA Platform</div>
+      <div class="icon-wrapper">
+        <svg viewBox="0 0 24 24">
+          <line x1="1" y1="1" x2="23" y2="23"></line>
+          <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+          <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+          <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
+          <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+          <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+          <line x1="12" y1="20" x2="12.01" y2="20"></line>
+        </svg>
+      </div>
+      <h1>No Internet Connection</h1>
+      <p>
+        BHOJORA needs an active connection to verify live kitchen hygiene and process your order.
+        Please check your mobile data or Wi-Fi.
+      </p>
+      <button class="btn-retry" id="retryBtn" onclick="handleRetry()">Retry Connection</button>
+      <div class="hint">The app will automatically reconnect once your signal returns.</div>
+    </div>
+
+    <script>
+      const TARGET_URL = 'https://customer-web-phi-ten.vercel.app';
+
+      function handleRetry() {
+        const btn = document.getElementById('retryBtn');
+        btn.textContent = 'Checking connection...';
+        btn.disabled = true;
+
+        if (navigator.onLine) {
+          window.location.href = TARGET_URL;
+        } else {
+          setTimeout(() => {
+            btn.textContent = 'Retry Connection';
+            btn.disabled = false;
+          }, 800);
+        }
+      }
+
+      window.addEventListener('online', () => {
+        window.location.href = TARGET_URL;
+      });
+    </script>
+  </body>
+</html>

@@ -12,6 +12,7 @@ export default tseslint.config(
       '**/.vercel/**',
       '**/out/**',
       '**/coverage/**',
+      '**/android/**',
       'client/public/**',
       '.git/**',
     ],

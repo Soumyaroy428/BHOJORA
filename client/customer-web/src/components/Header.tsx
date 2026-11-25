@@ -120,11 +120,10 @@ export function Header({
             </button>
           </nav>
 
-          {/* "Get Bhojora App" in Header for Mobile & Tablet view */}
+          {/* "Get Bhojora App" in Header for Mobile & Tablet view (hidden on mobile <= 640px) */}
           <button
             type="button"
             className="btn btn-primary header-get-app-btn mobile-tablet-header-btn"
-            style={{ minHeight: '44px', padding: '6px 12px' }}
             aria-label="Get Bhojora App for mobile"
             onClick={onOpenPilotInfo}
           >
@@ -139,7 +138,6 @@ export function Header({
             type="button"
             id="openCartModalBtn"
             className="btn btn-outline cart-header-btn"
-            style={{ minHeight: '44px', padding: '8px 12px' }}
             aria-label={`Open cart, ${cartItemCount} items`}
             onClick={onOpenCartModal}
           >
@@ -158,7 +156,10 @@ export function Header({
               <path d="M3 6h18" />
               <path d="M16 10a4 4 0 0 1-8 0" />
             </svg>
-            <span className="cart-text">Cart ({cartItemCount})</span>
+            <span className="cart-text">
+              <span className="cart-label-word">Cart </span>
+              <span className="cart-count-badge">({cartItemCount})</span>
+            </span>
           </button>
 
           {/* Desktop-only Orders & Sign In buttons (moved into dropdown on mobile/tablet) */}
@@ -167,7 +168,6 @@ export function Header({
               type="button"
               id="openOrdersModalBtn"
               className="btn btn-outline"
-              style={{ minHeight: '44px', padding: '8px 14px' }}
               aria-label={`Open orders, ${activeOrderCount} active`}
               onClick={onOpenOrdersModal}
             >
@@ -177,7 +177,6 @@ export function Header({
               type="button"
               id="openAuthModalBtn"
               className="btn btn-outline"
-              style={{ minHeight: '44px', padding: '8px 14px' }}
               onClick={onOpenAuthModal}
             >
               {signedInFirstName ?? 'Sign In'}
@@ -189,7 +188,6 @@ export function Header({
             ref={toggleBtnRef}
             type="button"
             className="btn btn-outline mobile-menu-toggle-btn mobile-tablet-header-btn"
-            style={{ minHeight: '44px', minWidth: '44px', padding: '8px' }}
             aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'}
             aria-expanded={menuOpen}
             aria-controls="mobileNavDropdown"
@@ -277,6 +275,21 @@ export function Header({
                 <div className="dropdown-link-body">
                   <strong>Kolkata Zones &amp; Live Map</strong>
                   <span>Interactive Google Map &amp; corridor boundaries</span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                className="mobile-dropdown-link as-button highlight-get-app"
+                role="menuitem"
+                onClick={() => handleDropdownItemSelect(onOpenPilotInfo)}
+              >
+                <span className="dropdown-link-icon" aria-hidden="true">
+                  📱
+                </span>
+                <div className="dropdown-link-body">
+                  <strong>Get Bhojora App</strong>
+                  <span>Download our mobile app for fastest deliveries</span>
                 </div>
               </button>
             </div>

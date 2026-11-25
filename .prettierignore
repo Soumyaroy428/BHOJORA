@@ -10,3 +10,4 @@ client/public/
 *.png
 *.jpg
 package-lock.json
+**/android/

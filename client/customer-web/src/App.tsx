@@ -42,6 +42,7 @@ import { PilotInfoDialog } from './components/PilotInfoDialog';
 import { TrustProfileDialog } from './components/TrustProfileDialog';
 import { KOLKATA_ZONE_OPTIONS, VERIFIED_KOLKATA_KITCHENS } from './data/kitchens';
 import { apiRequest } from './lib/apiClient';
+import { initNativeStatusBar, setupNativeBackButton } from './lib/capacitorNative';
 import {
   applyPreviewCartAddition,
   buildPreviewCheckoutQuote,
@@ -1179,11 +1180,134 @@ export function App() {
     [liveResults],
   );
 
+  // Native Android & Capacitor Polish
+  const [isOffline, setIsOffline] = useState(() =>
+    typeof navigator !== 'undefined' ? !navigator.onLine : false,
+  );
+
+  useEffect(() => {
+    void initNativeStatusBar();
+  }, []);
+
+  useEffect(() => {
+    const handleOffline = () => setIsOffline(true);
+    const handleOnline = () => setIsOffline(false);
+
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('online', handleOnline);
+
+    return () => {
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', handleOnline);
+    };
+  }, []);
+
+  const handleCloseTopModal = useCallback(() => {
+    if (selectedMenuKitchen) {
+      setSelectedMenuKitchen(null);
+    } else if (selectedTrustKitchen) {
+      setSelectedTrustKitchen(null);
+    } else if (cartModalOpen) {
+      setCartModalOpen(false);
+    } else if (ordersModalOpen) {
+      setOrdersModalOpen(false);
+    } else if (authModalOpen) {
+      setAuthModalOpen(false);
+    } else if (pilotInfoOpen) {
+      setPilotInfoOpen(false);
+    } else if (locationSheetOpen) {
+      setLocationSheetOpen(false);
+    } else if (cornerOutletOpen) {
+      setCornerOutletOpen(false);
+    }
+  }, [
+    selectedMenuKitchen,
+    selectedTrustKitchen,
+    cartModalOpen,
+    ordersModalOpen,
+    authModalOpen,
+    pilotInfoOpen,
+    locationSheetOpen,
+    cornerOutletOpen,
+  ]);
+
+  useEffect(() => {
+    const hasOpenModal = Boolean(
+      selectedMenuKitchen ||
+      selectedTrustKitchen ||
+      cartModalOpen ||
+      ordersModalOpen ||
+      authModalOpen ||
+      pilotInfoOpen ||
+      locationSheetOpen ||
+      cornerOutletOpen,
+    );
+
+    return setupNativeBackButton(() => ({
+      hasOpenModal,
+      onCloseModal: handleCloseTopModal,
+    }));
+  }, [
+    selectedMenuKitchen,
+    selectedTrustKitchen,
+    cartModalOpen,
+    ordersModalOpen,
+    authModalOpen,
+    pilotInfoOpen,
+    locationSheetOpen,
+    cornerOutletOpen,
+    handleCloseTopModal,
+  ]);
+
   return (
     <>
       <a href="#main-content" className="skip-link visually-hidden">
         Skip to main content
       </a>
+
+      {isOffline && (
+        <div
+          role="alert"
+          style={{
+            backgroundColor: 'var(--terracotta, #8d352a)',
+            color: '#ffffff',
+            padding: '10px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            fontSize: '0.84rem',
+            fontWeight: 600,
+            position: 'sticky',
+            top: 0,
+            zIndex: 99999,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+          }}
+        >
+          <span>⚠️ No Internet Connection — Showing offline kitchen cache</span>
+          <button
+            type="button"
+            onClick={() => {
+              if (navigator.onLine) {
+                setIsOffline(false);
+                window.location.reload();
+              }
+            }}
+            style={{
+              background: '#ffffff',
+              color: 'var(--terracotta, #8d352a)',
+              border: 'none',
+              borderRadius: '6px',
+              padding: '4px 10px',
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            Retry ⟳
+          </button>
+        </div>
+      )}
 
       <AppLoadingSplash isLoading={isInitialLoading} onFinished={handleLoadingSplashFinished} />
 
