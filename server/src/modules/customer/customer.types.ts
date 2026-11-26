@@ -67,6 +67,8 @@ export interface SavedAddressRecord {
     coordinates: [number, number];
   };
   isDefault: boolean;
+  selectionCount: number;
+  lastSelectedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -146,6 +148,11 @@ export interface CustomerStore {
     now: Date,
   ): Promise<SavedAddressRecord | null>;
   setDefaultAddressForUser(
+    addressId: string,
+    userId: string,
+    now: Date,
+  ): Promise<SavedAddressRecord | null>;
+  recordAddressSelectionForUser(
     addressId: string,
     userId: string,
     now: Date,

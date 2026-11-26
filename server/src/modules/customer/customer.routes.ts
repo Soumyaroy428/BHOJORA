@@ -132,6 +132,22 @@ export function createCustomerRouter(params: {
     }),
   );
 
+  router.post(
+    '/addresses/:addressId/select',
+    requireAuth,
+    requirePerm('address:own:manage'),
+    wrapAsync(async (req, res) => {
+      const ctx = getRbacContext(res);
+      const address = await customerService.selectAddress(
+        paramString(req.params['addressId']),
+        ctx.userId,
+        ctx.activeRole,
+        getRequestIdFromResponse(res),
+      );
+      sendSuccess(res, 200, { address });
+    }),
+  );
+
   router.delete(
     '/addresses/:addressId',
     requireAuth,

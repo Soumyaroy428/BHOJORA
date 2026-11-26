@@ -3758,6 +3758,11 @@ dialog.bhojora-location-sheet-dialog:modal {
   outline: none;
 }
 
+.saved-address-card-btn.is-selected {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+}
+
 .saved-address-icon-wrap {
   width: 36px;
   height: 36px;
@@ -3775,19 +3780,85 @@ dialog.bhojora-location-sheet-dialog:modal {
   min-width: 0;
 }
 
+.saved-address-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
 .saved-address-name {
   font-weight: 700;
   font-size: 14.5px;
   color: #ffffff;
-  margin-bottom: 2px;
+}
+
+.saved-address-history-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.14);
+  border: 1px solid rgba(239, 68, 68, 0.28);
+  padding: 1px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
 }
 
 .saved-address-street {
   font-size: 12.5px;
   color: #9ca3af;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.35;
+}
+
+.saved-address-add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #22252e;
+  border: 1px solid #333846;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.saved-address-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.saved-address-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #d1d5db;
+  min-width: 0;
+}
+
+.saved-address-form-field input,
+.saved-address-form-field select {
+  background: #14161c;
+  border: 1px solid #3d4250;
+  border-radius: 9px;
+  padding: 9px 10px;
+  color: #f9fafb;
+  font-size: 13px;
+  min-width: 0;
+  width: 100%;
+}
+
+.saved-address-form-error {
+  font-size: 12.5px;
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.14);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 8px;
+  padding: 8px 10px;
 }
 
 .saved-address-arrow {

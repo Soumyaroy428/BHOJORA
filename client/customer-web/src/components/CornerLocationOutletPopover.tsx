@@ -4,6 +4,7 @@ interface CornerLocationOutletPopoverProps {
   open: boolean;
   currentZoneLabel: string;
   currentAddressTitle?: string;
+  currentAddressSummary?: string;
   onUseMyLocation: () => void;
   onSelectManually: () => void;
   onClose: () => void;
@@ -13,6 +14,7 @@ export function CornerLocationOutletPopover({
   open,
   currentZoneLabel,
   currentAddressTitle,
+  currentAddressSummary,
   onUseMyLocation,
   onSelectManually,
   onClose,
@@ -99,10 +101,14 @@ export function CornerLocationOutletPopover({
           We need your location to show you curated assortment from your nearest store
         </p>
 
-        {currentZoneLabel && (
+        {(currentAddressSummary || currentZoneLabel) && (
           <div className="corner-current-zone-badge">
             <span aria-hidden="true">📍</span>{' '}
-            {currentAddressTitle ? (
+            {currentAddressTitle && currentAddressSummary ? (
+              <>
+                <strong>{currentAddressTitle}</strong> · {currentAddressSummary}
+              </>
+            ) : currentAddressTitle ? (
               <>
                 <strong>{currentAddressTitle}</strong> · {currentZoneLabel}
               </>

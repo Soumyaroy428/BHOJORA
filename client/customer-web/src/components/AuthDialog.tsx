@@ -8,6 +8,7 @@ import type {
   KolkataZoneId,
   LanguagePreference,
   LocationPermissionState,
+  SavedAddressView,
 } from '../types/domain';
 import { CustomerAccountPanel } from './CustomerAccountPanel';
 
@@ -19,6 +20,7 @@ interface AuthDialogProps {
   onSessionChange: (session: AuthSessionState | null) => void;
   onSelectZone: (zone: KolkataZoneId) => void;
   onLocationPermissionChange: (state: LocationPermissionState) => void;
+  onAddressesChange?: (addresses: SavedAddressView[]) => void;
   onClose: () => void;
 }
 
@@ -121,6 +123,7 @@ export function AuthDialog({
   onSessionChange,
   onSelectZone,
   onLocationPermissionChange,
+  onAddressesChange,
   onClose,
 }: AuthDialogProps) {
   const dialogRef = useRef<HTMLDialogElement | null>(null);
@@ -1119,6 +1122,7 @@ export function AuthDialog({
               onSessionUpdate={onSessionChange}
               onZoneSelect={onSelectZone}
               onLocationPermissionChange={onLocationPermissionChange}
+              onAddressesChange={onAddressesChange}
               onStatusMessage={setBanner}
             />
           </>

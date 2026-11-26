@@ -166,6 +166,8 @@ function formatSavedAddressDto(record: SavedAddressRecord) {
       coordinates: [...record.location.coordinates] as [number, number],
     },
     isDefault: record.isDefault,
+    selectionCount: record.selectionCount,
+    lastSelectedAt: record.lastSelectedAt ? record.lastSelectedAt.toISOString() : null,
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
   };
@@ -529,6 +531,43 @@ export class CustomerService {
     if (!updated) {
       throw new AppError(404, 'NOT_FOUND', 'Saved address not found');
     }
+    return formatSavedAddressDto(updated);
+  }
+
+  async selectAddress(
+    addressId: string,
+    actorUserId: string,
+    actorRole: UserRole,
+    requestId?: string,
+  ) {
+    await this.resolveOwnedAddress(addressId, actorUserId, actorRole, requestId);
+    const now = this.clock.now();
+    const updated = await this.options.customerStore.recordAddressSelectionForUser(
+      addressId,
+      actorUserId,
+      now,
+    );
+    if (!updated) {
+      throw new AppError(404, 'NOT_FOUND', 'Saved address not found');
+    }
+
+    const summaryLabel = `${updated.streetAddress}, ${updated.locality}`.slice(0, 120);
+    await this.options.customerStore.updateCustomerProfile(
+      actorUserId,
+      {
+        ...(updated.zoneId ? { savedDeliveryZoneId: updated.zoneId } : {}),
+        locationPermissionState: 'granted',
+        lastKnownLocalityLabel: summaryLabel,
+      },
+      now,
+    );
+
+    this.options.logger.info('customer.address.selected', {
+      requestId,
+      userId: actorUserId,
+      addressId: updated.addressId,
+      selectionCount: updated.selectionCount,
+    });
     return formatSavedAddressDto(updated);
   }
 

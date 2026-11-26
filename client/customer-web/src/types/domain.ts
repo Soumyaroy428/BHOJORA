@@ -126,6 +126,8 @@ export interface SavedAddressView {
     coordinates: [number, number];
   };
   isDefault: boolean;
+  selectionCount?: number;
+  lastSelectedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

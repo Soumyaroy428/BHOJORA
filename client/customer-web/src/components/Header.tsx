@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 interface HeaderProps {
   headerZoneLabel: string;
+  headerAddressTitle?: string;
   deliveryEtaText?: string;
   signedInFirstName: string | null;
   cartItemCount: number;
@@ -16,6 +17,7 @@ interface HeaderProps {
 
 export function Header({
   headerZoneLabel,
+  headerAddressTitle,
   deliveryEtaText,
   signedInFirstName,
   cartItemCount,
@@ -105,8 +107,8 @@ export function Header({
             type="button"
             className="location-pill header-location-view"
             onClick={onToggleCornerOutlet ?? onOpenLocationSheet ?? onOpenPilotInfo}
-            aria-label={`Delivery in 27 minutes. Current delivery zone: ${headerZoneLabel}, Kolkata. Click to view or change location.`}
-            title="Select Kolkata delivery location"
+            aria-label={`Delivery in 27 minutes. Current delivery address: ${headerAddressTitle ?? headerZoneLabel}. Click to view or change address.`}
+            title={headerAddressTitle ?? 'Select delivery address'}
           >
             <span aria-hidden="true" className="location-pin-icon">
               📍

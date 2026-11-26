@@ -100,6 +100,8 @@ const savedAddressSchema = applyBaseSchemaConventions(
     deliveryInstructions: { type: String, required: false, default: null, maxlength: 200 },
     location: { type: createGeoPointSubSchema(), required: true },
     isDefault: { type: Boolean, required: true, default: false },
+    selectionCount: { type: Number, required: true, default: 0, min: 0 },
+    lastSelectedAt: { type: Date, required: false, default: null },
   }),
 );
 
@@ -213,6 +215,11 @@ function toSavedAddressRecord(
       coordinates: [Number(coords[0]), Number(coords[1])],
     },
     isDefault: Boolean(raw['isDefault']),
+    selectionCount:
+      typeof raw['selectionCount'] === 'number' && Number.isFinite(raw['selectionCount'])
+        ? raw['selectionCount']
+        : 0,
+    lastSelectedAt: raw['lastSelectedAt'] instanceof Date ? raw['lastSelectedAt'] : null,
     createdAt: raw['createdAt'] instanceof Date ? raw['createdAt'] : new Date(),
     updatedAt: raw['updatedAt'] instanceof Date ? raw['updatedAt'] : new Date(),
   };
@@ -326,6 +333,8 @@ export class MongooseCustomerStore implements CustomerStore {
 
   async listAddressesForUser(userId: string): Promise<SavedAddressRecord[]> {
     const docs = await this.models.SavedAddress.find({ userId }).sort({
+      selectionCount: -1,
+      lastSelectedAt: -1,
       isDefault: -1,
       updatedAt: -1,
     });
@@ -442,6 +451,19 @@ export class MongooseCustomerStore implements CustomerStore {
   ): Promise<SavedAddressRecord | null> {
     return this.updateAddressForUser(addressId, userId, { isDefault: true }, now);
   }
+
+  async recordAddressSelectionForUser(
+    addressId: string,
+    userId: string,
+    now: Date,
+  ): Promise<SavedAddressRecord | null> {
+    const updated = await this.models.SavedAddress.findOneAndUpdate(
+      { addressId, userId },
+      { $inc: { selectionCount: 1 }, $set: { lastSelectedAt: now } },
+      { new: true, runValidators: true },
+    );
+    return updated ? toSavedAddressRecord(updated) : null;
+  }
 }
 
 export class InMemoryCustomerStore implements CustomerStore {
@@ -544,6 +566,14 @@ export class InMemoryCustomerStore implements CustomerStore {
     return Array.from(this.addressesById.values())
       .filter((item) => item.userId === userId)
       .sort((a, b) => {
+        if (a.selectionCount !== b.selectionCount) {
+          return b.selectionCount - a.selectionCount;
+        }
+        const aLast = a.lastSelectedAt?.getTime() ?? 0;
+        const bLast = b.lastSelectedAt?.getTime() ?? 0;
+        if (aLast !== bLast) {
+          return bLast - aLast;
+        }
         if (a.isDefault !== b.isDefault) {
           return a.isDefault ? -1 : 1;
         }
@@ -593,6 +623,8 @@ export class InMemoryCustomerStore implements CustomerStore {
       deliveryInstructions: input.deliveryInstructions ?? null,
       location: { type: 'Point', coordinates: [...input.coordinates] as [number, number] },
       isDefault: shouldBeDefault,
+      selectionCount: 0,
+      lastSelectedAt: null,
       createdAt: now,
       updatedAt: now,
     };
@@ -678,5 +710,24 @@ export class InMemoryCustomerStore implements CustomerStore {
     now: Date,
   ): Promise<SavedAddressRecord | null> {
     return this.updateAddressForUser(addressId, userId, { isDefault: true }, now);
+  }
+
+  async recordAddressSelectionForUser(
+    addressId: string,
+    userId: string,
+    now: Date,
+  ): Promise<SavedAddressRecord | null> {
+    const existing = this.addressesById.get(addressId);
+    if (!existing || existing.userId !== userId) {
+      return null;
+    }
+    const updated: SavedAddressRecord = {
+      ...existing,
+      selectionCount: existing.selectionCount + 1,
+      lastSelectedAt: now,
+      updatedAt: now,
+    };
+    this.addressesById.set(addressId, updated);
+    return updated;
   }
 }

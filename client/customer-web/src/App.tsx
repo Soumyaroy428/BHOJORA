@@ -33,15 +33,17 @@ import { HeroSection } from './components/HeroSection';
 import { KitchenDiscovery } from './components/KitchenDiscovery';
 import { KolkataZonesSection } from './components/KolkataZonesSection';
 import {
+  formatFullSavedAddress,
+  getSavedAddressDisplayTitle,
   LocationPermissionSheet,
-  type SavedAddressItem,
+  type CreateSavedAddressPayload,
 } from './components/LocationPermissionSheet';
 import { OutletMenuDialog } from './components/OutletMenuDialog';
 import { PillarsSection } from './components/PillarsSection';
 import { PilotInfoDialog } from './components/PilotInfoDialog';
 import { TrustProfileDialog } from './components/TrustProfileDialog';
 import { KOLKATA_ZONE_OPTIONS, VERIFIED_KOLKATA_KITCHENS } from './data/kitchens';
-import { apiRequest } from './lib/apiClient';
+import { apiRequest, getZoneCoordinates } from './lib/apiClient';
 import { initNativeStatusBar, setupNativeBackButton } from './lib/capacitorNative';
 import {
   applyPreviewCartAddition,
@@ -68,6 +70,7 @@ import type {
   KitchenOutlet,
   KolkataZoneId,
   LocationPermissionState,
+  SavedAddressView,
 } from './types/domain';
 
 const HAS_CONFIGURED_API =
@@ -77,7 +80,83 @@ const HAS_CONFIGURED_API =
 
 const RECENT_SEARCHES_KEY = 'bhojora_recent_searches_v1';
 const SAVED_KITCHENS_KEY = 'bhojora_saved_kitchens_v1';
+const SAVED_ADDRESSES_HISTORY_KEY = 'bhojora_saved_addresses_history_v1';
+const ACTIVE_SAVED_ADDRESS_ID_KEY = 'bhojora_active_saved_address_id_v1';
 const DEFAULT_OFFLINE_PAGE_SIZE = 4;
+
+function sortAddressesBySelectionHistory(list: readonly SavedAddressView[]): SavedAddressView[] {
+  return [...list].sort((a, b) => {
+    const aCount = a.selectionCount ?? 0;
+    const bCount = b.selectionCount ?? 0;
+    if (aCount !== bCount) {
+      return bCount - aCount;
+    }
+    const aLast = a.lastSelectedAt ? Date.parse(a.lastSelectedAt) : 0;
+    const bLast = b.lastSelectedAt ? Date.parse(b.lastSelectedAt) : 0;
+    if (aLast !== bLast) {
+      return bLast - aLast;
+    }
+    if (a.isDefault !== b.isDefault) {
+      return a.isDefault ? -1 : 1;
+    }
+    return Date.parse(b.updatedAt) - Date.parse(a.updatedAt);
+  });
+}
+
+function readStoredSavedAddresses(): SavedAddressView[] {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return [];
+  }
+  try {
+    const raw = window.localStorage.getItem(SAVED_ADDRESSES_HISTORY_KEY);
+    if (!raw) {
+      return [];
+    }
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed)
+      ? sortAddressesBySelectionHistory(parsed as SavedAddressView[])
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeStoredSavedAddresses(items: readonly SavedAddressView[]): void {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return;
+  }
+  try {
+    window.localStorage.setItem(SAVED_ADDRESSES_HISTORY_KEY, JSON.stringify(items));
+  } catch {
+    // Ignore storage quota errors
+  }
+}
+
+function readStoredActiveAddressId(): string | null {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return null;
+  }
+  try {
+    return window.localStorage.getItem(ACTIVE_SAVED_ADDRESS_ID_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredActiveAddressId(addressId: string | null): void {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return;
+  }
+  try {
+    if (addressId) {
+      window.localStorage.setItem(ACTIVE_SAVED_ADDRESS_ID_KEY, addressId);
+    } else {
+      window.localStorage.removeItem(ACTIVE_SAVED_ADDRESS_ID_KEY);
+    }
+  } catch {
+    // Ignore storage quota errors
+  }
+}
 
 function readStoredStringList(storageKey: string): string[] {
   if (typeof window === 'undefined' || !window.localStorage) {
@@ -156,7 +235,14 @@ export function App() {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [locationSheetOpen, setLocationSheetOpen] = useState(false);
   const [cornerOutletOpen, setCornerOutletOpen] = useState(false);
-  const [activeAddressTitle, setActiveAddressTitle] = useState('Home');
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddressView[]>(() =>
+    HAS_CONFIGURED_API ? [] : readStoredSavedAddresses(),
+  );
+  const [activeAddressId, setActiveAddressId] = useState<string | null>(() =>
+    readStoredActiveAddressId(),
+  );
+  const [savingSheetAddress, setSavingSheetAddress] = useState(false);
+  const [sheetAddressError, setSheetAddressError] = useState<string | null>(null);
   const [activeCategorySlug, setActiveCategorySlug] = useState<string | null>(null);
   const [verifiedOnly, setVerifiedOnly] = useState(true);
   const [vegOnly, setVegOnly] = useState(false);
@@ -431,17 +517,169 @@ export function App() {
     }, 80);
   }, []);
 
-  const handleSelectSavedAddressFromSheet = useCallback((address: SavedAddressItem) => {
-    setSelectedZone(address.zoneId);
-    setSelectedQuoteLocationId(address.zoneId);
-    setActiveAddressTitle(address.title);
-    setLocationPermissionState('granted');
-    setLocationSheetOpen(false);
-    // After selecting address, show the 2nd pic outlet popover from corner right side
-    setTimeout(() => {
-      setCornerOutletOpen(true);
-    }, 80);
-  }, []);
+  const activeSavedAddress = useMemo(
+    () =>
+      savedAddresses.find((item) => item.addressId === activeAddressId) ??
+      savedAddresses[0] ??
+      null,
+    [savedAddresses, activeAddressId],
+  );
+
+  const handleSelectSavedAddressFromSheet = useCallback(
+    (address: SavedAddressView) => {
+      const targetZone = address.zoneId ?? 'salt-lake';
+      setActiveAddressId(address.addressId);
+      writeStoredActiveAddressId(address.addressId);
+      setSelectedZone(targetZone);
+      setSelectedQuoteLocationId(targetZone);
+      setLocationPermissionState('granted');
+      setSheetAddressError(null);
+      setLocationSheetOpen(false);
+
+      if (HAS_CONFIGURED_API && authSession?.tokens.accessToken) {
+        void apiRequest<{ address: SavedAddressView }>(
+          `/addresses/${encodeURIComponent(address.addressId)}/select`,
+          {
+            method: 'POST',
+            token: authSession.tokens.accessToken,
+          },
+        )
+          .then((res) => {
+            if (res.address) {
+              setSavedAddresses((prev) =>
+                sortAddressesBySelectionHistory(
+                  prev.map((item) =>
+                    item.addressId === res.address.addressId ? res.address : item,
+                  ),
+                ),
+              );
+            }
+          })
+          .catch(() => {});
+      } else {
+        const nowIso = new Date().toISOString();
+        setSavedAddresses((prev) => {
+          const updated = sortAddressesBySelectionHistory(
+            prev.map((item) =>
+              item.addressId === address.addressId
+                ? {
+                    ...item,
+                    selectionCount: (item.selectionCount ?? 0) + 1,
+                    lastSelectedAt: nowIso,
+                    updatedAt: nowIso,
+                  }
+                : item,
+            ),
+          );
+          writeStoredSavedAddresses(updated);
+          return updated;
+        });
+      }
+
+      setTimeout(() => {
+        setCornerOutletOpen(true);
+      }, 80);
+    },
+    [authSession?.tokens.accessToken],
+  );
+
+  const handleSaveNewAddressFromSheet = useCallback(
+    async (payload: CreateSavedAddressPayload): Promise<boolean> => {
+      setSheetAddressError(null);
+      if (HAS_CONFIGURED_API && !authSession?.tokens.accessToken) {
+        setSheetAddressError(
+          'Please sign in to save your delivery address to your database account history.',
+        );
+        return false;
+      }
+
+      setSavingSheetAddress(true);
+      try {
+        if (HAS_CONFIGURED_API && authSession?.tokens.accessToken) {
+          const created = await apiRequest<{ address: SavedAddressView }>('/addresses', {
+            method: 'POST',
+            token: authSession.tokens.accessToken,
+            body: {
+              label: payload.label,
+              customLabel: payload.customLabel ?? null,
+              recipientName: payload.recipientName,
+              streetAddress: payload.streetAddress,
+              landmark: payload.landmark,
+              locality: payload.locality,
+              city: 'Kolkata',
+              postalCode: payload.postalCode,
+              zoneId: payload.zoneId,
+              coordinates: getZoneCoordinates(payload.zoneId),
+              isDefault: savedAddresses.length === 0,
+            },
+          });
+
+          const selected = await apiRequest<{ address: SavedAddressView }>(
+            `/addresses/${encodeURIComponent(created.address.addressId)}/select`,
+            {
+              method: 'POST',
+              token: authSession.tokens.accessToken,
+            },
+          ).catch(() => created);
+
+          const finalAddr = selected.address;
+          setSavedAddresses((prev) => sortAddressesBySelectionHistory([finalAddr, ...prev]));
+          setActiveAddressId(finalAddr.addressId);
+          writeStoredActiveAddressId(finalAddr.addressId);
+          setSelectedZone(payload.zoneId);
+          setSelectedQuoteLocationId(payload.zoneId);
+          setLocationPermissionState('granted');
+          setLocationSheetOpen(false);
+          setTimeout(() => {
+            setCornerOutletOpen(true);
+          }, 80);
+          return true;
+        }
+
+        const nowIso = new Date().toISOString();
+        const localAddr: SavedAddressView = {
+          addressId: `local_${Date.now()}`,
+          userId: authSession?.user.id ?? 'guest',
+          label: payload.label,
+          customLabel: payload.customLabel ?? null,
+          recipientName: payload.recipientName,
+          contactPhoneMasked: null,
+          streetAddress: payload.streetAddress,
+          landmark: payload.landmark,
+          locality: payload.locality,
+          city: 'Kolkata',
+          postalCode: payload.postalCode,
+          zoneId: payload.zoneId,
+          deliveryInstructions: null,
+          location: { type: 'Point', coordinates: getZoneCoordinates(payload.zoneId) },
+          isDefault: savedAddresses.length === 0,
+          selectionCount: 1,
+          lastSelectedAt: nowIso,
+          createdAt: nowIso,
+          updatedAt: nowIso,
+        };
+        const nextList = sortAddressesBySelectionHistory([localAddr, ...savedAddresses]);
+        setSavedAddresses(nextList);
+        writeStoredSavedAddresses(nextList);
+        setActiveAddressId(localAddr.addressId);
+        writeStoredActiveAddressId(localAddr.addressId);
+        setSelectedZone(payload.zoneId);
+        setSelectedQuoteLocationId(payload.zoneId);
+        setLocationPermissionState('granted');
+        setLocationSheetOpen(false);
+        setTimeout(() => {
+          setCornerOutletOpen(true);
+        }, 80);
+        return true;
+      } catch (err) {
+        setSheetAddressError(err instanceof Error ? err.message : 'Unable to save address.');
+        return false;
+      } finally {
+        setSavingSheetAddress(false);
+      }
+    },
+    [authSession?.tokens.accessToken, authSession?.user.id, savedAddresses],
+  );
 
   const handleUseMyLocationFromCorner = useCallback(() => {
     setLocationPermissionState('granted');
@@ -459,7 +697,14 @@ export function App() {
     return KOLKATA_ZONE_OPTIONS.find((item) => item.id === selectedZone)?.label ?? 'All Kolkata';
   }, [selectedZone]);
 
-  const headerZoneLabel = selectedZone === 'all' ? 'Salt Lake, Sector V' : selectedZoneLabel;
+  const headerZoneLabel = activeSavedAddress
+    ? `${getSavedAddressDisplayTitle(activeSavedAddress)} · ${activeSavedAddress.streetAddress}, ${activeSavedAddress.locality}`
+    : selectedZone === 'all'
+      ? 'Select delivery address'
+      : selectedZoneLabel;
+  const headerAddressTitle = activeSavedAddress
+    ? `${getSavedAddressDisplayTitle(activeSavedAddress)}: ${formatFullSavedAddress(activeSavedAddress)}`
+    : undefined;
 
   const { visibleKitchens, totalMatchedCount, hasMore, matchedDishes } = useMemo(() => {
     if (liveResults !== null) {
@@ -661,6 +906,10 @@ export function App() {
   useEffect(() => {
     const token = authSession?.tokens.accessToken;
     if (!HAS_CONFIGURED_API || !token) {
+      if (HAS_CONFIGURED_API && !token) {
+        setSavedAddresses([]);
+        setActiveAddressId(null);
+      }
       return;
     }
     let cancelled = false;
@@ -675,6 +924,24 @@ export function App() {
       .then((res) => {
         if (!cancelled && Array.isArray(res.orders)) {
           setLiveOrders(res.orders);
+        }
+      })
+      .catch(() => {});
+    void apiRequest<{ addresses: SavedAddressView[] }>('/addresses', { token })
+      .then((res) => {
+        if (!cancelled && Array.isArray(res.addresses)) {
+          const sorted = sortAddressesBySelectionHistory(res.addresses);
+          setSavedAddresses(sorted);
+          const top = sorted[0] ?? null;
+          if (top) {
+            setActiveAddressId((prev) =>
+              prev && sorted.some((item) => item.addressId === prev) ? prev : top.addressId,
+            );
+            if (top.zoneId) {
+              setSelectedZone(top.zoneId);
+              setSelectedQuoteLocationId(top.zoneId);
+            }
+          }
         }
       })
       .catch(() => {});
@@ -1313,7 +1580,10 @@ export function App() {
 
       <Header
         headerZoneLabel={headerZoneLabel}
-        deliveryEtaText="Delivery in 27 minutes"
+        headerAddressTitle={headerAddressTitle}
+        deliveryEtaText={
+          cart.itemCount > 0 ? 'Delivering to saved address' : 'Delivery in 27 minutes'
+        }
         signedInFirstName={signedInFirstName}
         cartItemCount={cart.itemCount}
         activeOrderCount={activeOrderCount}
@@ -1328,7 +1598,12 @@ export function App() {
       <CornerLocationOutletPopover
         open={cornerOutletOpen}
         currentZoneLabel={headerZoneLabel}
-        currentAddressTitle={activeAddressTitle}
+        currentAddressTitle={
+          activeSavedAddress ? getSavedAddressDisplayTitle(activeSavedAddress) : undefined
+        }
+        currentAddressSummary={
+          activeSavedAddress ? formatFullSavedAddress(activeSavedAddress) : undefined
+        }
         onUseMyLocation={handleUseMyLocationFromCorner}
         onSelectManually={handleSelectManuallyFromCorner}
         onClose={() => setCornerOutletOpen(false)}
@@ -1438,8 +1713,21 @@ export function App() {
 
       <LocationPermissionSheet
         open={locationSheetOpen}
+        addresses={savedAddresses}
+        selectedAddressId={activeSavedAddress?.addressId ?? null}
+        isAuthenticated={Boolean(authSession?.tokens.accessToken)}
+        hasConfiguredApi={HAS_CONFIGURED_API}
+        locationPermissionState={locationPermissionState}
+        savingAddress={savingSheetAddress}
+        addressError={sheetAddressError}
+        defaultRecipientName={authSession?.user.name ?? 'Bhojora Customer'}
         onEnableLocation={handleEnableLocationFromSheet}
         onSelectAddress={handleSelectSavedAddressFromSheet}
+        onSaveNewAddress={handleSaveNewAddressFromSheet}
+        onOpenSignIn={() => {
+          setLocationSheetOpen(false);
+          setAuthModalOpen(true);
+        }}
         onClose={() => setLocationSheetOpen(false)}
       />
 
@@ -1451,6 +1739,13 @@ export function App() {
         onSessionChange={setAuthSession}
         onSelectZone={setSelectedZone}
         onLocationPermissionChange={setLocationPermissionState}
+        onAddressesChange={(next) => {
+          const sorted = sortAddressesBySelectionHistory(next);
+          setSavedAddresses(sorted);
+          if (!HAS_CONFIGURED_API) {
+            writeStoredSavedAddresses(sorted);
+          }
+        }}
         onClose={() => setAuthModalOpen(false)}
       />
 
@@ -1460,6 +1755,7 @@ export function App() {
         quote={quote}
         availableCoupons={availableCoupons}
         selectedLocationId={selectedQuoteLocationId}
+        activeSavedAddress={activeSavedAddress}
         couponInput={couponInput}
         tipPaise={tipPaise}
         quoteLoading={quoteLoading}
@@ -1468,6 +1764,10 @@ export function App() {
         orderError={orderError}
         isLiveServerMode={isLiveCartMode}
         onSelectLocation={handleSelectQuoteLocation}
+        onChangeSavedAddress={() => {
+          setCartModalOpen(false);
+          setLocationSheetOpen(true);
+        }}
         onChangeCouponInput={setCouponInput}
         onApplyCoupon={handleApplyCoupon}
         onChangeTipPaise={handleChangeTipPaise}

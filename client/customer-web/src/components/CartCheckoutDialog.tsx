@@ -8,8 +8,9 @@ import {
 } from '@bhojora/shared';
 import { useDialogLightDismiss } from '../hooks/useDialogLightDismiss';
 import { KOLKATA_QUOTE_LOCATIONS } from '../lib/cartHelpers';
-import type { KolkataZoneId } from '../types/domain';
+import type { KolkataZoneId, SavedAddressView } from '../types/domain';
 import { DietaryBadge } from './DietaryBadge';
+import { formatFullSavedAddress, getSavedAddressDisplayTitle } from './LocationPermissionSheet';
 
 interface CartCheckoutDialogProps {
   open: boolean;
@@ -17,6 +18,7 @@ interface CartCheckoutDialogProps {
   quote: CheckoutQuoteDto | null;
   availableCoupons: readonly PublicCouponSummaryDto[];
   selectedLocationId: Exclude<KolkataZoneId, 'all'>;
+  activeSavedAddress?: SavedAddressView | null;
   couponInput: string;
   tipPaise: number;
   quoteLoading: boolean;
@@ -25,6 +27,7 @@ interface CartCheckoutDialogProps {
   orderError: string | null;
   isLiveServerMode: boolean;
   onSelectLocation: (locId: Exclude<KolkataZoneId, 'all'>) => void;
+  onChangeSavedAddress?: () => void;
   onChangeCouponInput: (code: string) => void;
   onApplyCoupon: (code: string) => void;
   onChangeTipPaise: (tipPaise: number) => void;
@@ -48,6 +51,7 @@ export function CartCheckoutDialog({
   quote,
   availableCoupons,
   selectedLocationId,
+  activeSavedAddress,
   couponInput,
   tipPaise,
   quoteLoading,
@@ -56,6 +60,7 @@ export function CartCheckoutDialog({
   orderError,
   isLiveServerMode,
   onSelectLocation,
+  onChangeSavedAddress,
   onChangeCouponInput,
   onApplyCoupon,
   onChangeTipPaise,
@@ -215,6 +220,41 @@ export function CartCheckoutDialog({
           </ul>
 
           <div className="cart-section-box">
+            {activeSavedAddress ? (
+              <div
+                style={{
+                  marginBottom: '12px',
+                  padding: '10px 12px',
+                  borderRadius: '10px',
+                  border: '1px solid var(--neutral-200)',
+                  background: 'var(--neutral-50)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  gap: '10px',
+                }}
+              >
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--neutral-950)' }}>
+                    Delivering to {getSavedAddressDisplayTitle(activeSavedAddress)} ·{' '}
+                    {activeSavedAddress.recipientName}
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--neutral-700)', marginTop: '2px' }}>
+                    {formatFullSavedAddress(activeSavedAddress)}
+                  </div>
+                </div>
+                {onChangeSavedAddress ? (
+                  <button
+                    type="button"
+                    className="auth-link-btn"
+                    style={{ minHeight: '36px', flexShrink: 0 }}
+                    onClick={onChangeSavedAddress}
+                  >
+                    Change
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
             <label htmlFor="cartDeliveryLocSelect" className="cart-field-label">
               Delivery Location (Kolkata Service Zone)
             </label>

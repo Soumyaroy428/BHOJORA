@@ -316,6 +316,32 @@ async function run() {
     const a1InList = listA.json.data.addresses.find((x) => x.addressId === addr1.addressId);
     assert.equal(a1InList.isDefault, false);
 
+    // Most-frequently selected address ranks first in user history
+    const sel1 = await apiJson(baseUrl, `/addresses/${addr1.addressId}/select`, {
+      method: 'POST',
+      headers: authA,
+    });
+    assert.equal(sel1.status, 200);
+    assert.equal(sel1.json.data.address.selectionCount, 1);
+
+    const sel2 = await apiJson(baseUrl, `/addresses/${addr1.addressId}/select`, {
+      method: 'POST',
+      headers: authA,
+    });
+    assert.equal(sel2.status, 200);
+    assert.equal(sel2.json.data.address.selectionCount, 2);
+    assert.ok(sel2.json.data.address.lastSelectedAt);
+
+    const listRanked = await apiJson(baseUrl, '/addresses', { headers: authA });
+    assert.equal(listRanked.status, 200);
+    assert.equal(listRanked.json.data.addresses[0].addressId, addr1.addressId);
+
+    const idorSelect = await apiJson(baseUrl, `/addresses/${addr1.addressId}/select`, {
+      method: 'POST',
+      headers: authB,
+    });
+    assert.equal(idorSelect.status, 403);
+
     // 5. Cross-customer IDOR protection (Customer B CANNOT read, update, set default, or delete Customer A address)
     const idorGet = await apiJson(baseUrl, `/addresses/${addr1.addressId}`, { headers: authB });
     assert.equal(idorGet.status, 403);

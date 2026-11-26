@@ -20,6 +20,7 @@ interface CustomerAccountPanelProps {
   onSessionUpdate: (session: AuthSessionState | null) => void;
   onZoneSelect: (zone: KolkataZoneId) => void;
   onLocationPermissionChange: (state: LocationPermissionState) => void;
+  onAddressesChange?: (addresses: SavedAddressView[]) => void;
   onStatusMessage: (banner: { text: string; kind: 'neutral' | 'success' | 'error' }) => void;
 }
 
@@ -51,6 +52,7 @@ export function CustomerAccountPanel({
   onSessionUpdate,
   onZoneSelect,
   onLocationPermissionChange,
+  onAddressesChange,
   onStatusMessage,
 }: CustomerAccountPanelProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -119,6 +121,7 @@ export function CustomerAccountPanel({
         onLocationPermissionChange(bundle.profile.locationPermissionState);
         setConsents(bundle.consents);
         setAddresses(addrData.addresses);
+        onAddressesChange?.(addrData.addresses);
       } catch (error) {
         if (!active) {
           return;
@@ -219,7 +222,9 @@ export function CustomerAccountPanel({
         const mapped = result.address.isDefault
           ? prev.map((item) => ({ ...item, isDefault: false }))
           : prev;
-        return [result.address, ...mapped];
+        const next = [result.address, ...mapped];
+        onAddressesChange?.(next);
+        return next;
       });
       setAddrStreet('');
       setAddrLandmark('');
@@ -273,9 +278,11 @@ export function CustomerAccountPanel({
         method: 'POST',
         token: session.tokens.accessToken,
       });
-      setAddresses((prev) =>
-        prev.map((item) => ({ ...item, isDefault: item.addressId === addressId })),
-      );
+      setAddresses((prev) => {
+        const next = prev.map((item) => ({ ...item, isDefault: item.addressId === addressId }));
+        onAddressesChange?.(next);
+        return next;
+      });
       onStatusMessage({ text: 'Default delivery address updated.', kind: 'success' });
     } catch (error) {
       if (error instanceof Error && error.message === 'PREVIEW_NO_API') {
@@ -300,11 +307,19 @@ export function CustomerAccountPanel({
         method: 'DELETE',
         token: session.tokens.accessToken,
       });
-      setAddresses((prev) => prev.filter((item) => item.addressId !== addressId));
+      setAddresses((prev) => {
+        const next = prev.filter((item) => item.addressId !== addressId);
+        onAddressesChange?.(next);
+        return next;
+      });
       onStatusMessage({ text: 'Saved address deleted.', kind: 'neutral' });
     } catch (error) {
       if (error instanceof Error && error.message === 'PREVIEW_NO_API') {
-        setAddresses((prev) => prev.filter((item) => item.addressId !== addressId));
+        setAddresses((prev) => {
+          const next = prev.filter((item) => item.addressId !== addressId);
+          onAddressesChange?.(next);
+          return next;
+        });
       } else {
         onStatusMessage({
           text: error instanceof Error ? error.message : 'Unable to delete address',
