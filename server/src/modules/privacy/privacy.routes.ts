@@ -125,7 +125,15 @@ export function createPrivacyRouter(params: CreatePrivacyRouterParams): Router {
     requireAuth,
     wrapAsync(async (req: Request, res: Response) => {
       requireAdminScope(req, res);
-      const retentionDays = Number(req.body.retentionDays ?? 30);
+      const rawDays = (req.body as { retentionDays?: unknown } | undefined)?.retentionDays;
+      const retentionDays = rawDays === undefined ? 30 : Number(rawDays);
+      if (!Number.isInteger(retentionDays) || retentionDays < 1 || retentionDays > 3650) {
+        throw new AppError(
+          400,
+          'VALIDATION_ERROR',
+          'retentionDays must be an integer between 1 and 3650',
+        );
+      }
       const result = await privacyService.executeRetentionPurge(retentionDays);
       sendSuccess(res, 200, result);
     }),

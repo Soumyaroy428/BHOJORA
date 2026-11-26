@@ -2,6 +2,7 @@ import { Router, type NextFunction, type Request, type Response } from 'express'
 import type { AppConfig } from '../../config/env-types';
 import { sendSuccess } from '../../contracts/api';
 import { createRequireAuthMiddleware, getAuthContext } from '../../middleware/auth';
+import { AppError } from '../../middleware/error-handler';
 import { createRequirePermissionMiddleware } from '../../middleware/rbac';
 import type { IdentityService } from '../identity/identity.service';
 import type { Permission } from '../rbac/rbac.policy';
@@ -35,11 +36,18 @@ export function createNotificationRouter(params: CreateNotificationRouterParams)
   const requireAuth = createRequireAuthMiddleware(identityService, config.corsAllowedOrigins);
   const requirePerm = (perm: Permission) => createRequirePermissionMiddleware(perm, rbacStore);
 
-  // 1. Dispatch Multi-Channel Notification
-  // Can be called by internal services, or authorized roles
+  // 1. Dispatch Multi-Channel Notification (Admin / Support / Ops roles only)
   router.post(
     '/notifications/dispatch',
+    requireAuth,
     wrapAsync(async (req, res) => {
+      const auth = getAuthContext(res);
+      const isAuthorized = auth.roles.some((r) =>
+        ['OPS_ADMIN', 'TRUST_ADMIN', 'SUPPORT_AGENT', 'FINANCE_ADMIN', 'SUPER_ADMIN'].includes(r),
+      );
+      if (!isAuthorized) {
+        throw new AppError(403, 'FORBIDDEN', 'Privileged role required to dispatch notifications');
+      }
       const validated = dispatchNotificationSchema.parse(req.body);
       const result = await notificationService.dispatch(validated);
       sendSuccess(res, 201, result);
@@ -99,11 +107,19 @@ export function createNotificationRouter(params: CreateNotificationRouterParams)
     }),
   );
 
-  // 6. Direct Promotional Opt-Out (1-click unsubscribe)
+  // 6. Direct Promotional Opt-Out (Authenticated self or admin)
   router.post(
     '/notifications/opt-out',
+    requireAuth,
     wrapAsync(async (req, res) => {
+      const auth = getAuthContext(res);
       const validated = notificationOptOutSchema.parse(req.body);
+      const isAdmin = auth.roles.some((r) =>
+        ['OPS_ADMIN', 'TRUST_ADMIN', 'SUPPORT_AGENT', 'SUPER_ADMIN'].includes(r),
+      );
+      if (validated.userId !== auth.userId && !isAdmin) {
+        throw new AppError(403, 'FORBIDDEN', 'Cannot modify notification opt-out for another user');
+      }
       const result = await notificationService.optOut(validated.userId, validated.reason);
       sendSuccess(res, 200, result);
     }),

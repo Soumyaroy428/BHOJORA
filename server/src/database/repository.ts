@@ -104,13 +104,38 @@ export class BaseRepository<TDoc extends WithIdConstraint> {
   }
 }
 
+function isStandaloneTransactionUnsupported(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+  const msg = (error as { message?: unknown }).message;
+  const code = (error as { code?: unknown }).code;
+  if (typeof msg !== 'string') {
+    return false;
+  }
+  return (
+    code === 20 ||
+    msg.includes('Transaction numbers are only allowed on a replica set') ||
+    msg.includes('does not support retryable writes')
+  );
+}
+
 export async function withTransaction<TResult>(
   connection: Pick<Connection, 'startSession'>,
-  work: (session: ClientSession) => Promise<TResult>,
+  work: (session: ClientSession | undefined) => Promise<TResult>,
 ): Promise<TResult> {
   const session = await connection.startSession();
+  let result!: TResult;
   try {
-    return await session.withTransaction(async () => work(session));
+    await session.withTransaction(async () => {
+      result = await work(session);
+    });
+    return result;
+  } catch (error) {
+    if (isStandaloneTransactionUnsupported(error)) {
+      return await work(undefined);
+    }
+    throw error;
   } finally {
     await session.endSession();
   }

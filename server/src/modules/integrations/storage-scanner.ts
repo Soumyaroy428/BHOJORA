@@ -80,12 +80,15 @@ export class StorageScannerService {
       };
     }
 
-    // Disguised script payloads (XSS/PHP in documents)
-    const headerSlice = buffer.subarray(0, 1024).toString('utf-8').toLowerCase();
+    // Disguised script payloads (XSS/PHP/SVG/HTML event handlers across entire bounded buffer)
+    const normalizedText = buffer.toString('utf-8').toLowerCase();
     if (
-      headerSlice.includes('<script') ||
-      headerSlice.includes('javascript:') ||
-      headerSlice.includes('<?php')
+      normalizedText.includes('<script') ||
+      normalizedText.includes('javascript:') ||
+      normalizedText.includes('<?php') ||
+      normalizedText.includes('<svg') ||
+      normalizedText.includes('<iframe') ||
+      /\bon(?:error|load|click|mouseover)\s*=/.test(normalizedText)
     ) {
       return {
         fileName,
@@ -146,7 +149,7 @@ export class StorageScannerService {
       detectedMime === declaredMimeType ||
       (detectedMime.startsWith('image/') && declaredMimeType.startsWith('image/'));
 
-    if (!isMimeCompatible && detectedMime === 'application/octet-stream') {
+    if (!isMimeCompatible) {
       return {
         fileName,
         fileSizeBytes: size,
@@ -154,7 +157,27 @@ export class StorageScannerService {
         declaredMimeType,
         sha256Checksum: sha256,
         isSafe: false,
-        rejectionReason: `Declared type '${declaredMimeType}' does not match unknown binary payload format`,
+        rejectionReason: `Declared type '${declaredMimeType}' does not match detected format '${detectedMime}'`,
+        scannedAt: now,
+      };
+    }
+
+    if (
+      !fileName ||
+      fileName.includes('..') ||
+      fileName.includes('/') ||
+      fileName.includes('\\') ||
+      fileName.includes('\0') ||
+      /\.(?:exe|dll|bat|cmd|ps1|sh|msi|php|js|mjs|cjs|html|htm|svg)$/i.test(fileName.trim())
+    ) {
+      return {
+        fileName,
+        fileSizeBytes: size,
+        detectedMimeType: detectedMime,
+        declaredMimeType,
+        sha256Checksum: sha256,
+        isSafe: false,
+        rejectionReason: 'Unsafe file name or forbidden executable/script file extension',
         scannedAt: now,
       };
     }

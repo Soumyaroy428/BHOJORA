@@ -30,6 +30,7 @@ import {
   type IdentityStore,
   type OtpChannel,
   type OtpSendResponseDto,
+  type RateLimitScope,
   type RequestMetadata,
   type UserProfileDto,
   type UserRecord,
@@ -213,6 +214,76 @@ export class IdentityService {
     return this.options.store;
   }
 
+  private buildRateLimitKeys(ipAddress: string, rawSubject: string) {
+    const secret = this.options.config.jwtAccessSecret;
+    const ipHash = hashAuditValue(ipAddress, secret);
+    const idHash = hashAuditValue(rawSubject, secret);
+    return {
+      ipSubjectKey: `ip:${ipHash}:id:${idHash}`,
+      ipOnlyKey: `ip:${ipHash}`,
+      idOnlyKey: `id:${idHash}`,
+    };
+  }
+
+  private async assertNotRateLimited(
+    checks: ReadonlyArray<{ scope: RateLimitScope; subjectKey: string }>,
+    messagePrefix: string,
+    now: Date,
+  ): Promise<void> {
+    for (const check of checks) {
+      const status = await this.options.store.getRateLimitBlockStatus({
+        scope: check.scope,
+        subjectKey: check.subjectKey,
+        now,
+      });
+      if (!status.allowed) {
+        throw new AppError(
+          429,
+          'RATE_LIMITED',
+          `${messagePrefix}. Try again in ${status.retryAfterSeconds} seconds.`,
+          undefined,
+          status.retryAfterSeconds,
+        );
+      }
+    }
+  }
+
+  private async recordFailedAttempt(
+    buckets: ReadonlyArray<{
+      scope: RateLimitScope;
+      subjectKey: string;
+      maxFailures: number;
+      windowSeconds: number;
+      blockSeconds: number;
+    }>,
+    messagePrefix: string,
+    now: Date,
+  ): Promise<void> {
+    for (const bucket of buckets) {
+      const state = await this.options.store.consumeRateLimitWindow({
+        scope: bucket.scope,
+        subjectKey: bucket.subjectKey,
+        maxCount: Math.max(0, bucket.maxFailures - 1),
+        windowSeconds: bucket.windowSeconds,
+        blockSeconds: bucket.blockSeconds,
+        now,
+      });
+      if (!state.allowed) {
+        this.options.logger.warn('identity.rate_limit.blocked', {
+          scope: bucket.scope,
+          retryAfterSeconds: state.retryAfterSeconds,
+        });
+        throw new AppError(
+          429,
+          'RATE_LIMITED',
+          `${messagePrefix}. Try again in ${state.retryAfterSeconds} seconds.`,
+          undefined,
+          state.retryAfterSeconds,
+        );
+      }
+    }
+  }
+
   async register(rawInput: unknown, meta: RequestMetadata): Promise<AuthSessionResponseDto> {
     const input = registerSchema.parse(rawInput);
     const now = this.clock.now();
@@ -282,20 +353,20 @@ export class IdentityService {
     const subjectKey = resolved
       ? resolved.normalized
       : `raw:${hashAuditValue(input.identifier, this.options.config.jwtAccessSecret)}`;
-    const ipSubjectKey = `ip:${hashAuditValue(meta.ipAddress, this.options.config.jwtAccessSecret)}:id:${hashAuditValue(subjectKey, this.options.config.jwtAccessSecret)}`;
+    const { ipSubjectKey, ipOnlyKey, idOnlyKey } = this.buildRateLimitKeys(
+      meta.ipAddress,
+      subjectKey,
+    );
 
-    const lockStatus = await this.options.store.getRateLimitBlockStatus({
-      scope: 'login_fail',
-      subjectKey: ipSubjectKey,
+    await this.assertNotRateLimited(
+      [
+        { scope: 'login_fail', subjectKey: ipSubjectKey },
+        { scope: 'login_fail', subjectKey: idOnlyKey },
+        { scope: 'login_fail', subjectKey: ipOnlyKey },
+      ],
+      'Too many failed login attempts',
       now,
-    });
-    if (!lockStatus.allowed) {
-      throw new AppError(
-        429,
-        'RATE_LIMITED',
-        `Too many failed login attempts. Try again in ${lockStatus.retryAfterSeconds} seconds.`,
-      );
-    }
+    );
 
     const user = resolved
       ? await this.options.store.findUserByIdentifier(
@@ -313,28 +384,38 @@ export class IdentityService {
     }
 
     if (!user || !passwordMatches) {
-      const failureState = await this.options.store.consumeRateLimitWindow({
-        scope: 'login_fail',
-        subjectKey: ipSubjectKey,
-        maxCount: this.options.config.loginMaxFailures - 1,
-        windowSeconds: this.options.config.loginLockoutSeconds,
-        blockSeconds: this.options.config.loginLockoutSeconds,
-        now,
-      });
-
+      const lockoutSeconds = this.options.config.loginLockoutSeconds;
+      const maxFailures = this.options.config.loginMaxFailures;
       this.options.logger.warn('identity.login.failed', {
         requestId: meta.requestId,
-        attemptCount: failureState.count,
-        blocked: !failureState.allowed,
       });
-
-      if (!failureState.allowed) {
-        throw new AppError(
-          429,
-          'RATE_LIMITED',
-          `Too many failed login attempts. Try again in ${failureState.retryAfterSeconds} seconds.`,
-        );
-      }
+      await this.recordFailedAttempt(
+        [
+          {
+            scope: 'login_fail',
+            subjectKey: ipSubjectKey,
+            maxFailures,
+            windowSeconds: lockoutSeconds,
+            blockSeconds: lockoutSeconds,
+          },
+          {
+            scope: 'login_fail',
+            subjectKey: idOnlyKey,
+            maxFailures: maxFailures * 2,
+            windowSeconds: lockoutSeconds,
+            blockSeconds: lockoutSeconds,
+          },
+          {
+            scope: 'login_fail',
+            subjectKey: ipOnlyKey,
+            maxFailures: maxFailures * 2,
+            windowSeconds: lockoutSeconds,
+            blockSeconds: lockoutSeconds,
+          },
+        ],
+        'Too many failed login attempts',
+        now,
+      );
       throw new AppError(401, 'UNAUTHORIZED', 'Invalid credentials');
     }
 
@@ -386,6 +467,8 @@ export class IdentityService {
         429,
         'RATE_LIMITED',
         `Too many OTP requests. Try again in ${idLimit.retryAfterSeconds} seconds.`,
+        undefined,
+        idLimit.retryAfterSeconds,
       );
     }
 
@@ -402,6 +485,8 @@ export class IdentityService {
         429,
         'RATE_LIMITED',
         `Too many OTP requests from this network. Try again in ${ipLimit.retryAfterSeconds} seconds.`,
+        undefined,
+        ipLimit.retryAfterSeconds,
       );
     }
 
@@ -464,6 +549,16 @@ export class IdentityService {
       throw new AppError(400, 'VALIDATION_ERROR', 'Invalid mobile number or email identifier');
     }
 
+    const { ipSubjectKey: otpSubjectKey } = this.buildRateLimitKeys(
+      meta.ipAddress,
+      resolved.normalized,
+    );
+    await this.assertNotRateLimited(
+      [{ scope: 'otp_verify', subjectKey: otpSubjectKey }],
+      'Too many failed OTP verification attempts',
+      now,
+    );
+
     const challenge = await this.options.store.findChallengeById(input.challengeId);
     if (
       !challenge ||
@@ -482,8 +577,23 @@ export class IdentityService {
     );
     if (!timingSafeHexEqual(challenge.secretHash, expectedHash)) {
       await this.options.store.recordFailedChallengeAttempt(challenge.challengeId, now);
+      await this.recordFailedAttempt(
+        [
+          {
+            scope: 'otp_verify',
+            subjectKey: otpSubjectKey,
+            maxFailures: this.options.config.otpMaxVerifyAttempts + 1,
+            windowSeconds: this.options.config.otpBlockSeconds,
+            blockSeconds: this.options.config.otpBlockSeconds,
+          },
+        ],
+        'Too many failed OTP verification attempts',
+        now,
+      );
       throw new AppError(401, 'UNAUTHORIZED', 'Invalid OTP verification code');
     }
+
+    await this.options.store.resetRateLimit('otp_verify', otpSubjectKey);
 
     const consumed = await this.options.store.consumeChallengeAtomically(
       challenge.challengeId,
@@ -778,6 +888,14 @@ export class IdentityService {
   ): Promise<{ mfaVerified: true; session: AuthSessionSummaryDto; user: UserProfileDto }> {
     const input = mfaVerifySchema.parse(rawInput);
     const now = this.clock.now();
+    const { ipSubjectKey: mfaSubjectKey } = this.buildRateLimitKeys(meta.ipAddress, userId);
+
+    await this.assertNotRateLimited(
+      [{ scope: 'mfa_verify', subjectKey: mfaSubjectKey }],
+      'Too many failed MFA attempts',
+      now,
+    );
+
     const challenge = await this.options.store.findChallengeById(input.challengeId);
 
     if (
@@ -797,8 +915,23 @@ export class IdentityService {
     );
     if (!timingSafeHexEqual(challenge.secretHash, expectedHash)) {
       await this.options.store.recordFailedChallengeAttempt(challenge.challengeId, now);
+      await this.recordFailedAttempt(
+        [
+          {
+            scope: 'mfa_verify',
+            subjectKey: mfaSubjectKey,
+            maxFailures: this.options.config.loginMaxFailures,
+            windowSeconds: this.options.config.loginLockoutSeconds,
+            blockSeconds: this.options.config.loginLockoutSeconds,
+          },
+        ],
+        'Too many failed MFA attempts',
+        now,
+      );
       throw new AppError(401, 'UNAUTHORIZED', 'Invalid MFA verification code');
     }
+
+    await this.options.store.resetRateLimit('mfa_verify', mfaSubjectKey);
 
     const consumed = await this.options.store.consumeChallengeAtomically(
       challenge.challengeId,
@@ -882,6 +1015,26 @@ export class IdentityService {
         429,
         'RATE_LIMITED',
         `Too many password recovery requests. Try again in ${rateState.retryAfterSeconds} seconds.`,
+        undefined,
+        rateState.retryAfterSeconds,
+      );
+    }
+
+    const ipRateState = await this.options.store.consumeRateLimitWindow({
+      scope: 'recovery_send',
+      subjectKey: `ip:${hashAuditValue(meta.ipAddress, this.options.config.jwtAccessSecret)}`,
+      maxCount: this.options.config.otpMaxSendPerWindow * 2,
+      windowSeconds: this.options.config.otpWindowSeconds,
+      blockSeconds: this.options.config.otpBlockSeconds,
+      now,
+    });
+    if (!ipRateState.allowed) {
+      throw new AppError(
+        429,
+        'RATE_LIMITED',
+        `Too many password recovery requests. Try again in ${ipRateState.retryAfterSeconds} seconds.`,
+        undefined,
+        ipRateState.retryAfterSeconds,
       );
     }
 
@@ -963,6 +1116,16 @@ export class IdentityService {
       throw new AppError(400, 'VALIDATION_ERROR', 'Invalid account identifier');
     }
 
+    const { ipSubjectKey: recoverySubjectKey } = this.buildRateLimitKeys(
+      meta.ipAddress,
+      resolved.normalized,
+    );
+    await this.assertNotRateLimited(
+      [{ scope: 'recovery_verify', subjectKey: recoverySubjectKey }],
+      'Too many failed password recovery attempts',
+      now,
+    );
+
     const challenge = await this.options.store.findLatestActiveChallenge(
       resolved.normalized,
       'password_recovery',
@@ -978,8 +1141,23 @@ export class IdentityService {
     );
     if (!timingSafeHexEqual(challenge.secretHash, expectedHash)) {
       await this.options.store.recordFailedChallengeAttempt(challenge.challengeId, now);
+      await this.recordFailedAttempt(
+        [
+          {
+            scope: 'recovery_verify',
+            subjectKey: recoverySubjectKey,
+            maxFailures: this.options.config.loginMaxFailures,
+            windowSeconds: this.options.config.loginLockoutSeconds,
+            blockSeconds: this.options.config.loginLockoutSeconds,
+          },
+        ],
+        'Too many failed password recovery attempts',
+        now,
+      );
       throw new AppError(401, 'UNAUTHORIZED', 'Invalid password recovery token');
     }
+
+    await this.options.store.resetRateLimit('recovery_verify', recoverySubjectKey);
 
     const consumed = await this.options.store.consumeChallengeAtomically(
       challenge.challengeId,

@@ -2,6 +2,7 @@ import { Router, type NextFunction, type Request, type Response } from 'express'
 import type { AppConfig } from '../../config/env-types';
 import { sendSuccess } from '../../contracts/api';
 import { createRequireAuthMiddleware, getAuthContext } from '../../middleware/auth';
+import { AppError } from '../../middleware/error-handler';
 import type { IdentityService } from '../identity/identity.service';
 import type { SupportService } from './support.service';
 import type {
@@ -86,12 +87,18 @@ export function createSupportRouter(params: CreateSupportRouterParams): Router {
     }),
   );
 
-  // 3. Moderate review (Admin only)
+  // 3. Moderate review (Admin / Support / Trust only)
   router.patch(
     '/support/reviews/:reviewId/moderate',
     requireAuth,
     wrapAsync(async (req, res) => {
       const auth = getAuthContext(res);
+      const canModerate = auth.roles.some((r) =>
+        ['SUPPORT_AGENT', 'OPS_ADMIN', 'TRUST_ADMIN', 'SUPER_ADMIN'].includes(r),
+      );
+      if (!canModerate) {
+        throw new AppError(403, 'FORBIDDEN', 'Support or Admin role required to moderate reviews');
+      }
       const review = await supportService.moderateReview(
         auth.userId,
         req.params['reviewId'] as string,
@@ -179,6 +186,16 @@ export function createSupportRouter(params: CreateSupportRouterParams): Router {
     requireAuth,
     wrapAsync(async (req, res) => {
       const auth = getAuthContext(res);
+      const canResolve = auth.roles.some((r) =>
+        ['SUPPORT_AGENT', 'OPS_ADMIN', 'TRUST_ADMIN', 'SUPER_ADMIN'].includes(r),
+      );
+      if (!canResolve) {
+        throw new AppError(
+          403,
+          'FORBIDDEN',
+          'Support or Admin role required to resolve safety complaints',
+        );
+      }
       const complaint = await supportService.resolveComplaint(
         auth.userId,
         req.params['complaintId'] as string,

@@ -530,7 +530,7 @@ export function createApp(options: CreateAppOptions): Express {
       financeStore,
       ...(options.clock ? { clock: options.clock } : {}),
     });
-  const financeRouter = createFinanceRouter({ identityService, financeService, config });
+  const financeRouter = createFinanceRouter({ identityService, financeService, rbacStore, config });
   const governanceStore =
     options.governanceStore ??
     (isInMemoryMode

@@ -1,4 +1,5 @@
 import { Router, type NextFunction, type Request, type Response } from 'express';
+import type { PilotZoneCode } from '@bhojora/shared';
 import type { AppConfig } from '../../config/env-types';
 import { sendError, sendSuccess } from '../../contracts/api';
 import { createRequireAuthMiddleware } from '../../middleware/auth';
@@ -7,7 +8,7 @@ import { resolveRbacRequestContext } from '../../middleware/rbac';
 import type { IdentityService } from '../identity/identity.service';
 import type { UserRole } from '../identity/identity.types';
 import type { PilotService } from './pilot.service';
-import { emergencyRollbackSchema, joinPilotCohortSchema } from './pilot.types';
+import { PILOT_ZONE_CODES, emergencyRollbackSchema, joinPilotCohortSchema } from './pilot.types';
 
 function wrapAsync(
   handler: (req: Request, res: Response) => Promise<void>,
@@ -124,7 +125,17 @@ export function createPilotRouter(params: CreatePilotRouterParams): Router {
     wrapAsync(async (req: Request, res: Response) => {
       requireAdminScope(req, res);
       const ctx = resolveRbacRequestContext(req, res);
-      const zoneCode = req.body?.zoneCode;
+      const rawZone = (req.body as { zoneCode?: unknown } | undefined)?.zoneCode;
+      let zoneCode: PilotZoneCode | undefined;
+      if (rawZone !== undefined) {
+        if (
+          typeof rawZone !== 'string' ||
+          !(PILOT_ZONE_CODES as readonly string[]).includes(rawZone.trim())
+        ) {
+          throw new AppError(400, 'VALIDATION_ERROR', 'zoneCode must be a valid PilotZoneCode');
+        }
+        zoneCode = rawZone.trim() as PilotZoneCode;
+      }
       const updatedStatus = await pilotService.resumePilot(ctx.userId, zoneCode);
       sendSuccess(res, 200, updatedStatus);
     }),

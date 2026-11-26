@@ -205,6 +205,7 @@ async function runCheckpoint29Tests() {
     console.log('[Check 1] Validating multi-channel notification dispatch...');
     const dispatch1 = await apiJson(baseUrl, '/api/v1/notifications/dispatch', {
       method: 'POST',
+      token: admin.token,
       body: {
         userId: customer.userId,
         channels: ['SMS', 'EMAIL', 'PUSH', 'IN_APP'],
@@ -247,6 +248,7 @@ async function runCheckpoint29Tests() {
     // Dispatch delivery OTP in Bengali
     const bnDispatch = await apiJson(baseUrl, '/api/v1/notifications/dispatch', {
       method: 'POST',
+      token: admin.token,
       body: {
         userId: customer.userId,
         channels: ['SMS'],
@@ -271,6 +273,7 @@ async function runCheckpoint29Tests() {
     console.log('[Check 3] Validating zero sensitive PII leakage in notification bodies...');
     const piiDispatch = await apiJson(baseUrl, '/api/v1/notifications/dispatch', {
       method: 'POST',
+      token: admin.token,
       body: {
         userId: customer.userId,
         channels: ['SMS', 'EMAIL'],
@@ -319,6 +322,7 @@ async function runCheckpoint29Tests() {
 
     const firstRun = await apiJson(baseUrl, '/api/v1/notifications/dispatch', {
       method: 'POST',
+      token: admin.token,
       body: dispatchReq,
     });
     assert.equal(firstRun.status, 201);
@@ -327,6 +331,7 @@ async function runCheckpoint29Tests() {
     // Replay with identical idempotencyKey
     const secondRun = await apiJson(baseUrl, '/api/v1/notifications/dispatch', {
       method: 'POST',
+      token: admin.token,
       body: dispatchReq,
     });
     assert.equal(secondRun.status, 201);
@@ -348,6 +353,7 @@ async function runCheckpoint29Tests() {
     // Opt-out from promotions
     const optOutRes = await apiJson(baseUrl, '/api/v1/notifications/opt-out', {
       method: 'POST',
+      token: customer.token,
       body: {
         userId: customer.userId,
         reason: 'Too many festival promo notifications',
@@ -359,6 +365,7 @@ async function runCheckpoint29Tests() {
     // Try to send promotional notification
     const promoDispatch = await apiJson(baseUrl, '/api/v1/notifications/dispatch', {
       method: 'POST',
+      token: admin.token,
       body: {
         userId: customer.userId,
         channels: ['SMS', 'EMAIL', 'PUSH'],
@@ -387,6 +394,7 @@ async function runCheckpoint29Tests() {
     );
     const transDispatch = await apiJson(baseUrl, '/api/v1/notifications/dispatch', {
       method: 'POST',
+      token: admin.token,
       body: {
         userId: customer.userId,
         channels: ['SMS'],
@@ -412,6 +420,7 @@ async function runCheckpoint29Tests() {
 
     const failDispatch = await apiJson(baseUrl, '/api/v1/notifications/dispatch', {
       method: 'POST',
+      token: admin.token,
       body: {
         userId: customer.userId,
         channels: ['SMS'],

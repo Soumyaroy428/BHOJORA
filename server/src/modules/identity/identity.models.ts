@@ -9,6 +9,7 @@ import {
   CONSENT_SOURCES,
   CONSENT_TYPES,
   LANGUAGE_PREFERENCES,
+  RATE_LIMIT_SCOPES,
   USER_ROLES,
   type AccountStatus,
   type UserRole,
@@ -124,7 +125,7 @@ const consentRecordSchema = applyBaseSchemaConventions(
 
 const authRateLimitSchema = applyBaseSchemaConventions(
   new Schema<MongoRateLimitDoc>({
-    scope: { type: String, enum: ['otp_send', 'login_fail', 'recovery_send'], required: true },
+    scope: { type: String, enum: RATE_LIMIT_SCOPES, required: true },
     subjectKey: { type: String, required: true },
     count: { type: Number, required: true, default: 0, min: 0 },
     windowStartAt: { type: Date, required: true },
@@ -353,7 +354,10 @@ export class MongooseIdentityStore implements IdentityStore {
           userPayload['passwordChangedAt'] = userInput.now;
         }
 
-        const [createdUser] = await this.models.User.create([userPayload], { session });
+        const [createdUser] = await this.models.User.create(
+          [userPayload],
+          session ? { session } : undefined,
+        );
         if (!createdUser) {
           throw new Error('Failed to create user record');
         }
@@ -372,7 +376,7 @@ export class MongooseIdentityStore implements IdentityStore {
                 note: null,
               },
             ],
-            { session },
+            session ? { session } : undefined,
           );
         }
 
@@ -403,7 +407,8 @@ export class MongooseIdentityStore implements IdentityStore {
       filter.status = options.status;
     }
     if (options.search) {
-      const reg = new RegExp(options.search, 'i');
+      const escapedSearch = options.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const reg = new RegExp(escapedSearch, 'i');
       filter.$or = [{ name: reg }, { emailNormalized: reg }, { phoneNormalized: reg }];
     }
     const limit = Math.min(Math.max(1, options.limit ?? 50), 100);

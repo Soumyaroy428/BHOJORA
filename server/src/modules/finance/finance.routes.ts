@@ -5,6 +5,7 @@ import { createRequireAuthMiddleware, getAuthContext } from '../../middleware/au
 import { createRequirePermissionMiddleware, getRbacContext } from '../../middleware/rbac';
 import type { IdentityService } from '../identity/identity.service';
 import type { Permission } from '../rbac/rbac.policy';
+import type { RbacStore } from '../rbac/rbac.store';
 import type { FinanceService } from './finance.service';
 
 function wrapAsync(
@@ -18,14 +19,15 @@ function wrapAsync(
 export interface CreateFinanceRouterParams {
   identityService: IdentityService;
   financeService: FinanceService;
+  rbacStore?: RbacStore;
   config: Pick<AppConfig, 'corsAllowedOrigins'>;
 }
 
 export function createFinanceRouter(params: CreateFinanceRouterParams): Router {
-  const { identityService, financeService, config } = params;
+  const { identityService, financeService, rbacStore, config } = params;
   const router = Router();
   const requireAuth = createRequireAuthMiddleware(identityService, config.corsAllowedOrigins);
-  const requirePerm = (perm: Permission) => createRequirePermissionMiddleware(perm);
+  const requirePerm = (perm: Permission) => createRequirePermissionMiddleware(perm, rbacStore);
 
   router.get(
     '/finance/refunds',
@@ -42,7 +44,7 @@ export function createFinanceRouter(params: CreateFinanceRouterParams): Router {
     requireAuth,
     wrapAsync(async (req, res) => {
       const auth = getAuthContext(res);
-      const refund = await financeService.createRefundRequest(auth.userId, req.body);
+      const refund = await financeService.createRefundRequest(auth.userId, req.body, auth.roles);
       sendSuccess(res, 201, { refund });
     }),
   );

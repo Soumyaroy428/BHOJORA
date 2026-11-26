@@ -291,14 +291,18 @@ async function main() {
     assert.equal(dupRes.status, 409);
     assert.equal(dupRes.json.error.code, 'CONFLICT');
 
-    // Test 3: Login & brute-force lockout enforcement and expiry recovery
+    // Test 3: Login & brute-force lockout enforcement (4th fail locks for 1 hour) and expiry recovery
+    assert.equal(config.loginMaxFailures, 4);
+    assert.equal(config.loginLockoutSeconds, 3600);
+    assert.equal(config.otpBlockSeconds, 3600);
+
     const unknownLogin = await requestJson(baseUrl, '/api/v1/auth/login', {
       method: 'POST',
       body: { identifier: 'nobody@example.com', password: 'StrongPassword@1' },
     });
     assert.equal(unknownLogin.status, 401);
 
-    for (let attempt = 1; attempt <= 4; attempt += 1) {
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
       const failRes = await requestJson(baseUrl, '/api/v1/auth/login', {
         method: 'POST',
         body: { identifier: 'arjun.bose@example.com', password: 'WrongPassword@9' },
@@ -319,7 +323,14 @@ async function main() {
     });
     assert.equal(blockedEvenWithValid.status, 429);
 
-    clock.advanceSeconds(config.loginLockoutSeconds + 1);
+    clock.advanceSeconds(config.loginLockoutSeconds - 2);
+    const stillBlockedNearExpiry = await requestJson(baseUrl, '/api/v1/auth/login', {
+      method: 'POST',
+      body: { identifier: 'arjun.bose@example.com', password: 'StrongPassword@1' },
+    });
+    assert.equal(stillBlockedNearExpiry.status, 429);
+
+    clock.advanceSeconds(3);
     const unlockedLogin = await requestJson(baseUrl, '/api/v1/auth/login', {
       method: 'POST',
       body: { identifier: 'arjun.bose@example.com', password: 'StrongPassword@1' },

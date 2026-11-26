@@ -29,88 +29,14 @@ const VEHICLE_OPTIONS: { type: VehicleType; label: string }[] = [
 type AuthMode = 'LANDING' | 'LOGIN' | 'ONBOARD' | 'AUTHENTICATED';
 type FleetTab = 'DISPATCH' | 'EARNINGS' | 'PERFORMANCE' | 'PROFILE' | 'SUPPORT';
 
-const DEFAULT_DEMO_PARTNER: DeliveryPartnerDto = {
-  partnerId: 'del_kolkata_8821',
-  userId: 'usr_rider_soumyadip',
-  fullName: 'Soumyadip Saha',
-  phoneMasked: '+91 98300 12345',
-  email: 'rider@bhojora.in',
-  city: 'Kolkata',
-  preferredZones: ['central', 'salt-lake', 'new-town'],
-  vehicle: {
-    vehicleType: 'MOTORCYCLE',
-    model: 'Hero Splendor Plus',
-    registrationNumberMasked: 'WBXX-XXXX-4421',
-  },
-  status: 'APPROVED',
-  shiftStatus: 'OFFLINE',
-  documents: [
-    {
-      documentId: 'doc_dl_001',
-      type: 'DRIVING_LICENSE',
-      documentNumberMasked: 'XXXXXXXXXXX2345',
-      fileUrl: 'https://storage.bhojora.in/private/docs/mock_dl.pdf',
-      mimeType: 'application/pdf',
-      isPublic: false,
-      verificationStatus: 'VERIFIED',
-      rejectionReason: null,
-      uploadedAt: new Date(Date.now() - 86400000 * 30).toISOString(),
-      verifiedAt: new Date(Date.now() - 86400000 * 29).toISOString(),
-    },
-    {
-      documentId: 'doc_rc_002',
-      type: 'VEHICLE_RC',
-      documentNumberMasked: 'WBXX-XXXX-4421',
-      fileUrl: 'https://storage.bhojora.in/private/docs/mock_rc.pdf',
-      mimeType: 'application/pdf',
-      isPublic: false,
-      verificationStatus: 'VERIFIED',
-      rejectionReason: null,
-      uploadedAt: new Date(Date.now() - 86400000 * 30).toISOString(),
-      verifiedAt: new Date(Date.now() - 86400000 * 29).toISOString(),
-    },
-    {
-      documentId: 'doc_pan_003',
-      type: 'PAN_CARD',
-      documentNumberMasked: 'XXXXX1234F',
-      fileUrl: 'https://storage.bhojora.in/private/docs/mock_pan.pdf',
-      mimeType: 'application/pdf',
-      isPublic: false,
-      verificationStatus: 'VERIFIED',
-      rejectionReason: null,
-      uploadedAt: new Date(Date.now() - 86400000 * 30).toISOString(),
-      verifiedAt: new Date(Date.now() - 86400000 * 29).toISOString(),
-    },
-  ],
-  bankPayout: {
-    accountHolderName: 'Soumyadip Saha',
-    accountNumberMasked: 'XXXXXXXX1012',
-    ifscCode: 'HDFC0000128',
-    bankName: 'HDFC Bank Park Street',
-  },
-  emergencyContact: {
-    name: 'Anirban Saha',
-    phoneMasked: '+91 98300 54321',
-    relationship: 'Brother',
-  },
-  rejectionReason: null,
-  rating: 4.95,
-  totalDeliveries: 248,
-  submittedAt: new Date(Date.now() - 86400000 * 30).toISOString(),
-  reviewedAt: new Date(Date.now() - 86400000 * 29).toISOString(),
-  approvedAt: new Date(Date.now() - 86400000 * 29).toISOString(),
-  createdAt: new Date(Date.now() - 86400000 * 30).toISOString(),
-  updatedAt: new Date().toISOString(),
-};
-
 export function App() {
   const [authMode, setAuthMode] = useState<AuthMode>('LANDING');
   const [profile, setProfile] = useState<DeliveryPartnerDto | null>(null);
   const [activeTab, setActiveTab] = useState<FleetTab>('DISPATCH');
 
   // Login form state
-  const [loginIdentifier, setLoginIdentifier] = useState('rider@bhojora.in');
-  const [loginPassword, setLoginPassword] = useState('BhojoraRider@2026!');
+  const [loginIdentifier, setLoginIdentifier] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
@@ -187,7 +113,7 @@ export function App() {
   // -------------------------------------------------------------
   // Auth Handlers
   // -------------------------------------------------------------
-  const handlePartnerLogin = (e: React.FormEvent) => {
+  const handlePartnerLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
 
@@ -199,17 +125,65 @@ export function App() {
       return;
     }
 
-    // Authenticate with demo courier or credentials
-    setProfile(DEFAULT_DEMO_PARTNER);
-    setShiftStatus('OFFLINE');
-    setAuthMode('AUTHENTICATED');
-    setActiveTab('DISPATCH');
-  };
+    const win = window as { BHOJORA_API_BASE?: string };
+    const apiBase =
+      win.BHOJORA_API_BASE?.trim() ||
+      (import.meta.env.VITE_API_BASE as string | undefined)?.trim() ||
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://127.0.0.1:4000'
+        : '');
 
-  const handleAutofillDemoCourier = () => {
-    setLoginIdentifier('rider@bhojora.in');
-    setLoginPassword('BhojoraRider@2026!');
-    setLoginError(null);
+    if (!apiBase) {
+      setLoginError(
+        'Delivery Fleet API URL is not configured (VITE_API_BASE). Connect a live Bhojora backend to sign in.',
+      );
+      return;
+    }
+
+    try {
+      const response = await fetch(`${apiBase.replace(/\/$/, '')}/api/v1/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          identifier: id,
+          password: pw,
+          deviceName: 'Bhojora Delivery Fleet App',
+        }),
+      });
+      const payload = (await response.json()) as {
+        success: boolean;
+        data?: { tokens?: { accessToken?: string } };
+        error?: { message?: string };
+      };
+      if (!response.ok || !payload.success || !payload.data?.tokens?.accessToken) {
+        setLoginError(payload.error?.message || 'Invalid courier credentials.');
+        return;
+      }
+
+      const partnerRes = await fetch(`${apiBase.replace(/\/$/, '')}/api/v1/delivery/partners/me`, {
+        headers: { Authorization: `Bearer ${payload.data.tokens.accessToken}` },
+      });
+      const partnerPayload = (await partnerRes.json()) as {
+        success: boolean;
+        data?: { partner?: DeliveryPartnerDto };
+        error?: { message?: string };
+      };
+      if (!partnerRes.ok || !partnerPayload.success || !partnerPayload.data?.partner) {
+        setLoginError(
+          partnerPayload.error?.message ||
+            'No approved delivery partner profile found for this account.',
+        );
+        return;
+      }
+
+      setProfile(partnerPayload.data.partner);
+      setLoginPassword('');
+      setShiftStatus('OFFLINE');
+      setAuthMode('AUTHENTICATED');
+      setActiveTab('DISPATCH');
+    } catch {
+      setLoginError(`Unable to reach Delivery Fleet API at ${apiBase}.`);
+    }
   };
 
   const handleSignOut = () => {
@@ -1195,15 +1169,6 @@ export function App() {
               <button type="submit" className="btn-primary" style={{ marginTop: '6px' }}>
                 Sign In to Dispatch Console →
               </button>
-
-              <button
-                type="button"
-                className="btn-secondary"
-                style={{ width: '100%', borderColor: 'var(--brand-accent)' }}
-                onClick={handleAutofillDemoCourier}
-              >
-                ⚡ Autofill Demo Courier (Soumyadip Saha)
-              </button>
             </form>
 
             <div
@@ -1779,7 +1744,10 @@ export function App() {
   // =========================================================================
   // VIEW 4: AUTHENTICATED DELIVERY PARTNER CONSOLE & DASHBOARD
   // =========================================================================
-  const activePartner = profile || DEFAULT_DEMO_PARTNER;
+  if (!profile) {
+    return null;
+  }
+  const activePartner = profile;
 
   return (
     <div className="fleet-shell">

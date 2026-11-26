@@ -15,14 +15,22 @@ export class AppError extends Error {
   public readonly statusCode: number;
   public readonly code: ApiErrorCode;
   public readonly details?: ApiErrorDetail[];
+  public readonly retryAfterSeconds?: number;
   public readonly isOperational: boolean = true;
 
-  constructor(statusCode: number, code: ApiErrorCode, message: string, details?: ApiErrorDetail[]) {
+  constructor(
+    statusCode: number,
+    code: ApiErrorCode,
+    message: string,
+    details?: ApiErrorDetail[],
+    retryAfterSeconds?: number,
+  ) {
     super(message);
     this.name = 'AppError';
     this.statusCode = statusCode;
     this.code = code;
     this.details = details;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 }
 
@@ -83,6 +91,9 @@ export function createErrorHandler(logger: Logger) {
         errorCode: err.code,
         message: err.message,
       });
+      if (typeof err.retryAfterSeconds === 'number' && err.retryAfterSeconds > 0) {
+        res.setHeader('Retry-After', String(err.retryAfterSeconds));
+      }
       sendError(res, err.statusCode, err.code, err.message, err.details);
       return;
     }

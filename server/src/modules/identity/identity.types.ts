@@ -32,7 +32,15 @@ export type LanguagePreference = (typeof LANGUAGE_PREFERENCES)[number];
 export type OtpChannel = 'sms' | 'email';
 export type OtpPurpose = 'auth' | 'recovery' | 'mfa';
 export type ChallengePurpose = 'otp_auth' | 'password_recovery' | 'mfa_step_up';
-export type RateLimitScope = 'otp_send' | 'login_fail' | 'recovery_send';
+export const RATE_LIMIT_SCOPES = [
+  'otp_send',
+  'otp_verify',
+  'login_fail',
+  'recovery_send',
+  'recovery_verify',
+  'mfa_verify',
+] as const;
+export type RateLimitScope = (typeof RATE_LIMIT_SCOPES)[number];
 
 export const CONSENT_TYPES = [
   'TERMS_AND_PRIVACY',

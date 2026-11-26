@@ -455,7 +455,8 @@ export class MongooseRbacStore implements RbacStore {
       filter.outcome = query.outcome;
     }
     if (query.search) {
-      const reg = new RegExp(query.search, 'i');
+      const escapedSearch = query.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const reg = new RegExp(escapedSearch, 'i');
       filter.$or = [{ reason: reg }, { action: reg }, { resourceId: reg }, { actorId: reg }];
     }
     const limit = Math.min(Math.max(1, query.limit ?? 50), 100);

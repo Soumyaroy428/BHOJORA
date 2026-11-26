@@ -62,23 +62,6 @@ type AdminNavTab =
   | 'AI'
   | 'ALL';
 
-const DEFAULT_ENV_ADMIN_EMAIL = 'admin@bhojora.in';
-const DEFAULT_ENV_ADMIN_PASSWORD = 'BhojoraAdmin@2026!';
-
-function getEnvAdminCredentials(): { email: string; password: string } {
-  const email = (
-    window.BHOJORA_ADMIN_EMAIL ||
-    import.meta.env.VITE_ADMIN_EMAIL ||
-    DEFAULT_ENV_ADMIN_EMAIL
-  ).trim();
-  const password = (
-    window.BHOJORA_ADMIN_PASSWORD ||
-    import.meta.env.VITE_ADMIN_PASSWORD ||
-    DEFAULT_ENV_ADMIN_PASSWORD
-  ).trim();
-  return { email, password };
-}
-
 function getApiBase(): string {
   const configured = window.BHOJORA_API_BASE?.trim();
   if (configured) {
@@ -111,8 +94,6 @@ export function App() {
   );
   const [activeTab, setActiveTab] = useState<AdminNavTab>('OVERVIEW');
 
-  const envCreds = getEnvAdminCredentials();
-
   const visibleItems =
     filter === 'ALL'
       ? GOVERNANCE_QUEUE
@@ -136,12 +117,6 @@ export function App() {
     }
   }
 
-  function handleAutofillEnvCredentials() {
-    setIdentifier(envCreds.email);
-    setPassword(envCreds.password);
-    setLoginError(null);
-  }
-
   async function handleAdminSignIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSubmitting(true);
@@ -149,85 +124,51 @@ export function App() {
 
     const enteredEmail = identifier.trim().toLowerCase();
     const enteredPassword = password.trim();
-    const configuredEmail = envCreds.email.toLowerCase();
-    const configuredPassword = envCreds.password;
 
-    // Check 1: Manual entry matches configured environment credentials
-    if (enteredEmail === configuredEmail && enteredPassword === configuredPassword) {
-      const syntheticAdminUser: UserProfileDto = {
-        id: 'usr_super_admin_env',
-        name: 'Super Administrator',
-        emailMasked: envCreds.email,
-        phoneMasked: '+91 98*** *****',
-        roles: ['SUPER_ADMIN', 'OPS_ADMIN', 'TRUST_ADMIN', 'FINANCE_ADMIN'],
-        activeRole: 'SUPER_ADMIN',
-        status: 'ACTIVE',
-        languagePreference: 'en-IN',
-        phoneVerified: true,
-        emailVerified: true,
-        createdAt: new Date().toISOString(),
-      };
-      const syntheticAdminRbac: RbacContextDto = {
-        userId: 'usr_super_admin_env',
-        roles: ['SUPER_ADMIN', 'OPS_ADMIN', 'TRUST_ADMIN', 'FINANCE_ADMIN'],
-        activeRole: 'SUPER_ADMIN',
-        mfaVerified: true,
-        mfaRequiredForActiveRole: false,
-        permissions: [...ROLE_PERMISSION_MATRIX['SUPER_ADMIN']],
-        memberships: [],
-      };
-
-      setSessionUser(syntheticAdminUser);
-      setRbacContext(syntheticAdminRbac);
-      setAccessToken('bhojora_privileged_admin_session_token');
-      setPassword('');
-      setLoginError(null);
-      setStatusMessage(`Authenticated via environment admin credentials as Super Administrator.`);
+    if (!enteredEmail || !enteredPassword) {
+      setLoginError('Please enter your administrator email/phone and password.');
       setIsSubmitting(false);
       return;
     }
 
-    // Check 2: Try authenticating against backend API if available
     const apiBase = getApiBase();
-    if (apiBase) {
-      try {
-        const response = await fetch(`${apiBase}/api/v1/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            identifier: enteredEmail,
-            password: enteredPassword,
-            deviceName: 'Bhojora CMS Control Admin',
-          }),
-        });
-        const payload = (await response.json()) as ApiResponse<AuthSessionResponseDto>;
-        if (response.ok && payload.success) {
-          setSessionUser(payload.data.user);
-          setAccessToken(payload.data.tokens.accessToken);
-          setPassword('');
-          setLoginError(null);
-          await refreshRbacContext(payload.data.tokens.accessToken);
-          setStatusMessage(
-            `Signed in as ${payload.data.user.name} (${payload.data.user.activeRole}). Complete step-up MFA if required.`,
-          );
-          setIsSubmitting(false);
-          return;
-        } else {
-          const errMsg = payload.success
-            ? 'Sign-in failed.'
-            : payload.error?.message ||
-              'Invalid administrator credentials. Please check your email and password.';
-          setLoginError(errMsg);
-        }
-      } catch {
-        setLoginError(
-          `Unable to reach control plane API at ${apiBase} and credentials did not match configured environment admin.`,
-        );
-      }
-    } else {
+    if (!apiBase) {
       setLoginError(
-        'Invalid administrator credentials. Please verify your email and password match configured environment credentials.',
+        'Control plane API URL is not configured (VITE_API_BASE). Connect a live Bhojora backend to sign in.',
       );
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${apiBase}/api/v1/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          identifier: enteredEmail,
+          password: enteredPassword,
+          deviceName: 'Bhojora CMS Control Admin',
+        }),
+      });
+      const payload = (await response.json()) as ApiResponse<AuthSessionResponseDto>;
+      if (response.ok && payload.success) {
+        setSessionUser(payload.data.user);
+        setAccessToken(payload.data.tokens.accessToken);
+        setPassword('');
+        setLoginError(null);
+        await refreshRbacContext(payload.data.tokens.accessToken);
+        setStatusMessage(
+          `Signed in as ${payload.data.user.name} (${payload.data.user.activeRole}). Complete step-up MFA if required.`,
+        );
+      } else {
+        const errMsg = payload.success
+          ? 'Sign-in failed.'
+          : payload.error?.message ||
+            'Invalid administrator credentials. Please check your email and password.';
+        setLoginError(errMsg);
+      }
+    } catch {
+      setLoginError(`Unable to reach control plane API at ${apiBase}.`);
     }
 
     setIsSubmitting(false);
@@ -386,27 +327,12 @@ export function App() {
                   ? 'Authenticating CMS Session...'
                   : 'Sign In to Operations Command Center →'}
               </button>
-
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={handleAutofillEnvCredentials}
-                style={{ marginTop: '0.5rem', width: '100%' }}
-                title="Populate configured environment credentials"
-              >
-                ⚡ Autofill Configured Environment Credentials
-              </button>
             </form>
 
             <div className="env-credential-callout">
-              <strong>Environment Credentials Configured:</strong>
+              <strong>Backend Authentication &amp; MFA Required:</strong>
               <br />
-              Validated against <code>VITE_ADMIN_EMAIL</code> &amp; <code>VITE_ADMIN_PASSWORD</code>
-              .
-              <br />
-              <span style={{ fontSize: '0.78rem', color: 'var(--ink-600)' }}>
-                Target Admin: <code>{envCreds.email}</code>
-              </span>
+              Sign in with your authorized administrator account via the Bhojora identity API.
             </div>
 
             <p className="status-note" role="status" aria-live="polite">

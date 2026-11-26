@@ -127,10 +127,10 @@ const rawEnvSchema = z.object({
   OTP_RESEND_COOLDOWN_SECONDS: z.coerce.number().int().min(10).max(600).default(60),
   OTP_MAX_SEND_PER_WINDOW: z.coerce.number().int().min(1).max(20).default(3),
   OTP_WINDOW_SECONDS: z.coerce.number().int().min(60).max(86400).default(600),
-  OTP_BLOCK_SECONDS: z.coerce.number().int().min(60).max(86400).default(900),
+  OTP_BLOCK_SECONDS: z.coerce.number().int().min(60).max(86400).default(3600),
   OTP_MAX_VERIFY_ATTEMPTS: z.coerce.number().int().min(1).max(10).default(3),
-  LOGIN_MAX_FAILURES: z.coerce.number().int().min(1).max(20).default(5),
-  LOGIN_LOCKOUT_SECONDS: z.coerce.number().int().min(60).max(86400).default(900),
+  LOGIN_MAX_FAILURES: z.coerce.number().int().min(1).max(20).default(4),
+  LOGIN_LOCKOUT_SECONDS: z.coerce.number().int().min(60).max(86400).default(3600),
   RECOVERY_TTL_SECONDS: z.coerce.number().int().min(60).max(7200).default(900),
   AUTH_COOKIE_SECURE: z
     .enum(['true', 'false'])

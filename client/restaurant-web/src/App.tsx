@@ -58,23 +58,6 @@ const INITIAL_SAMPLE_OUTLETS: PartnerOutletView[] = [
 type PartnerAuthMode = 'SIGNIN' | 'ONBOARDING';
 type PartnerNavTab = 'KDS' | 'ONBOARDING' | 'ZONES' | 'CATALOG' | 'ALL';
 
-const DEFAULT_ENV_PARTNER_EMAIL = 'partner@bhojora.in';
-const DEFAULT_ENV_PARTNER_PASSWORD = 'BhojoraPartner@2026!';
-
-function getEnvPartnerCredentials(): { email: string; password: string } {
-  const email = (
-    window.BHOJORA_PARTNER_EMAIL ||
-    import.meta.env.VITE_PARTNER_EMAIL ||
-    DEFAULT_ENV_PARTNER_EMAIL
-  ).trim();
-  const password = (
-    window.BHOJORA_PARTNER_PASSWORD ||
-    import.meta.env.VITE_PARTNER_PASSWORD ||
-    DEFAULT_ENV_PARTNER_PASSWORD
-  ).trim();
-  return { email, password };
-}
-
 function getApiBase(): string {
   const configured = window.BHOJORA_API_BASE?.trim();
   if (configured) {
@@ -128,8 +111,6 @@ export function App() {
     'Tenant-scoped partner console. Sign in or register your kitchen to access the console.',
   );
 
-  const envCreds = getEnvPartnerCredentials();
-
   const partnerActiveRole = sessionUser?.roles.includes('RESTAURANT_OWNER')
     ? 'RESTAURANT_OWNER'
     : sessionUser?.roles.includes('RESTAURANT_MANAGER')
@@ -177,110 +158,64 @@ export function App() {
 
     const enteredEmail = identifier.trim().toLowerCase();
     const enteredPassword = password.trim();
-    const configuredEmail = envCreds.email.toLowerCase();
-    const configuredPassword = envCreds.password;
 
-    // Check 1: Matches configured environment credentials
-    if (enteredEmail === configuredEmail && enteredPassword === configuredPassword) {
-      const syntheticPartnerUser: UserProfileDto = {
-        id: 'usr_partner_owner_env',
-        name: 'Flagship Restaurant Owner',
-        emailMasked: envCreds.email,
-        phoneMasked: '+91 98300 *****',
-        roles: ['RESTAURANT_OWNER'],
-        activeRole: 'RESTAURANT_OWNER',
-        status: 'ACTIVE',
-        languagePreference: 'en-IN',
-        phoneVerified: true,
-        emailVerified: true,
-        createdAt: new Date().toISOString(),
-      };
-      const syntheticPartnerRbac: RbacContextDto = {
-        userId: 'usr_partner_owner_env',
-        roles: ['RESTAURANT_OWNER'],
-        activeRole: 'RESTAURANT_OWNER',
-        mfaVerified: true,
-        mfaRequiredForActiveRole: false,
-        permissions: [...ROLE_PERMISSION_MATRIX.RESTAURANT_OWNER],
-        memberships: [
-          {
-            membershipId: 'mem_partner_owner_01',
-            userId: 'usr_partner_owner_env',
-            outletId: selectedOutlet.outletId,
-            restaurantId: 'rest_partner_01',
-            role: 'RESTAURANT_OWNER',
-            status: 'ACTIVE',
-            createdAt: new Date().toISOString(),
-          },
-        ],
-      };
+    if (!enteredEmail || !enteredPassword) {
+      setAuthError('Please enter your partner email/phone and password.');
+      setIsSubmitting(false);
+      return;
+    }
 
-      setSessionUser(syntheticPartnerUser);
-      setRbacContext(syntheticPartnerRbac);
-      setAccessToken('bhojora_partner_session_token');
-      setPassword('');
-      setAuthError(null);
-      setStatusMessage(
-        `Authenticated via partner environment credentials as ${syntheticPartnerUser.name}.`,
+    const apiBase = getApiBase();
+    if (!apiBase) {
+      setAuthError(
+        'Backend API URL is not configured (VITE_API_BASE). Connect a live Bhojora backend to sign in.',
       );
       setIsSubmitting(false);
       return;
     }
 
-    // Check 2: Try authenticating against backend API
-    const apiBase = getApiBase();
-    if (apiBase) {
-      try {
-        const response = await fetch(`${apiBase}/api/v1/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            identifier: enteredEmail,
-            password: enteredPassword,
-            deviceName: 'Bhojora Partner Portal Web',
-          }),
-        });
-        const payload = (await response.json()) as ApiResponse<AuthSessionResponseDto>;
-        if (response.ok && payload.success) {
-          setSessionUser(payload.data.user);
-          setAccessToken(payload.data.tokens.accessToken);
-          setPassword('');
-          setAuthError(null);
+    try {
+      const response = await fetch(`${apiBase}/api/v1/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          identifier: enteredEmail,
+          password: enteredPassword,
+          deviceName: 'Bhojora Partner Portal Web',
+        }),
+      });
+      const payload = (await response.json()) as ApiResponse<AuthSessionResponseDto>;
+      if (response.ok && payload.success) {
+        setSessionUser(payload.data.user);
+        setAccessToken(payload.data.tokens.accessToken);
+        setPassword('');
+        setAuthError(null);
 
-          try {
-            const rbacRes = await fetch(`${apiBase}/api/v1/rbac/me`, {
-              headers: { Authorization: `Bearer ${payload.data.tokens.accessToken}` },
-            });
-            const rbacPayload = (await rbacRes.json()) as ApiResponse<RbacContextDto>;
-            if (rbacRes.ok && rbacPayload.success) {
-              setRbacContext(rbacPayload.data);
-            }
-          } catch {
-            // Non-critical RBAC fetch
+        try {
+          const rbacRes = await fetch(`${apiBase}/api/v1/rbac/me`, {
+            headers: { Authorization: `Bearer ${payload.data.tokens.accessToken}` },
+          });
+          const rbacPayload = (await rbacRes.json()) as ApiResponse<RbacContextDto>;
+          if (rbacRes.ok && rbacPayload.success) {
+            setRbacContext(rbacPayload.data);
           }
-
-          setStatusMessage(
-            `Signed in as ${payload.data.user.name} (${payload.data.user.activeRole}).`,
-          );
-          setIsSubmitting(false);
-          return;
-        } else {
-          setAuthError(
-            payload.success
-              ? 'Sign-in failed.'
-              : payload.error?.message ||
-                  'Invalid partner credentials. Please check your email and password.',
-          );
+        } catch {
+          // Non-critical RBAC fetch
         }
-      } catch {
+
+        setStatusMessage(
+          `Signed in as ${payload.data.user.name} (${payload.data.user.activeRole}).`,
+        );
+      } else {
         setAuthError(
-          `Unable to reach backend API at ${apiBase} and credentials did not match configured environment partner.`,
+          payload.success
+            ? 'Sign-in failed.'
+            : payload.error?.message ||
+                'Invalid partner credentials. Please check your email and password.',
         );
       }
-    } else {
-      setAuthError(
-        'Invalid partner credentials. Please verify your email and password match the configured environment variables.',
-      );
+    } catch {
+      setAuthError(`Unable to reach backend API at ${apiBase}.`);
     }
 
     setIsSubmitting(false);
@@ -688,14 +623,10 @@ export function App() {
                   </form>
 
                   <div className="env-credential-callout">
-                    <strong>Demo / Environment Credentials:</strong>
+                    <strong>Backend Authentication Required:</strong>
                     <br />
-                    Configured via <code>VITE_PARTNER_EMAIL</code> &amp;{' '}
-                    <code>VITE_PARTNER_PASSWORD</code>.
-                    <br />
-                    <span style={{ fontSize: '0.76rem', color: 'var(--ink-600)' }}>
-                      Default Demo: <code>{envCreds.email}</code>
-                    </span>
+                    Sign in with your verified restaurant partner account via the Bhojora identity
+                    API.
                   </div>
                 </div>
               ) : (

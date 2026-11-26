@@ -64,14 +64,28 @@ export class FinanceService {
     return actualPaise - expectedPaise;
   }
 
-  async createRefundRequest(actorUserId: string, rawInput: unknown): Promise<RefundRecord> {
+  async createRefundRequest(
+    actorUserId: string,
+    rawInput: unknown,
+    actorRoles: readonly string[] = [],
+  ): Promise<RefundRecord> {
     const input = createRefundRequestSchema.parse(rawInput) as CreateRefundRequestInput;
     FinanceService.assertPaiseCurrency(input.amountPaise, 'amountPaise');
+
+    const isPrivileged = actorRoles.some((r) =>
+      ['FINANCE_ADMIN', 'SUPPORT_AGENT', 'OPS_ADMIN', 'SUPER_ADMIN'].includes(r),
+    );
+    if (!isPrivileged && input.customerId !== actorUserId) {
+      throw new AppError(403, 'FORBIDDEN', 'Cannot create a refund request for another customer');
+    }
 
     const existing = await this.financeStore.listRefunds();
     const idempotencyKey =
       input.idempotencyKey ?? `${actorUserId}:${input.paymentId}:${input.orderId}`;
-    const duplicate = existing.find((refund) => refund.idempotencyKey === idempotencyKey);
+    const duplicate = existing.find(
+      (refund) =>
+        refund.idempotencyKey === idempotencyKey && refund.customerId === input.customerId,
+    );
     if (duplicate) {
       return duplicate;
     }
