@@ -1,4 +1,12 @@
 import type { KolkataZoneId } from '../types/domain';
+import {
+  DEFAULT_DELIVERY_RADIUS_KM,
+  evaluateDeliveryRouting,
+  haversineDistanceKm,
+  KOLKATA_CORRIDOR_METADATA,
+  roundDistanceKm,
+  type DeliveryRoutingResult,
+} from '../utils/deliveryGraph';
 
 export async function apiRequest<T>(
   path: string,
@@ -61,80 +69,34 @@ export interface KolkataZoneDetail {
   minOrderInr: number;
 }
 
-export const ZONE_CENTERS: readonly KolkataZoneDetail[] = [
-  {
-    id: 'salt-lake',
-    label: 'Salt Lake (Sector V)',
-    bengaliName: 'সল্টলেক ও সেক্টর ৫',
-    coords: [88.4317, 22.5806],
-    centerLat: 22.5806,
-    centerLng: 88.4317,
-    googleMapQuery: 'Sector V, Salt Lake, Kolkata, West Bengal 700091',
-    keyAreas: 'Karunamoyee, Salt Lake Stadium, Nicco Park, City Centre 1',
-    avgEtaMinutes: '20–30 mins',
-    verifiedKitchensCount: 5,
-    minOrderInr: 149,
-  },
-  {
-    id: 'central',
-    label: 'Central (Park Street)',
-    bengaliName: 'পার্ক স্ট্রিট ও মধ্য কলকাতা',
-    coords: [88.3526, 22.5535],
-    centerLat: 22.5535,
-    centerLng: 88.3526,
-    googleMapQuery: 'Park Street, Kolkata, West Bengal 700016',
-    keyAreas: 'Camac Street, Esplanade, Park Circus, Mullick Bazar',
-    avgEtaMinutes: '22–32 mins',
-    verifiedKitchensCount: 6,
-    minOrderInr: 179,
-  },
-  {
-    id: 'new-town',
-    label: 'New Town (Action Area)',
-    bengaliName: 'নিউ টাউন ও রাজারহাট',
-    coords: [88.4655, 22.5922],
-    centerLat: 22.5922,
-    centerLng: 88.4655,
-    googleMapQuery: 'Action Area I, New Town, Kolkata, West Bengal 700156',
-    keyAreas: 'Action Area I, II, III, Eco Park, City Centre 2',
-    avgEtaMinutes: '24–35 mins',
-    verifiedKitchensCount: 4,
-    minOrderInr: 149,
-  },
-  {
-    id: 'south',
-    label: 'South (Ballygunge)',
-    bengaliName: 'বালিগঞ্জ ও দক্ষিণ কলকাতা',
-    coords: [88.3665, 22.5262],
-    centerLat: 22.5262,
-    centerLng: 88.3665,
-    googleMapQuery: 'Ballygunge, Kolkata, West Bengal 700019',
-    keyAreas: 'Gariahat, Jadavpur, Kasba, Southern Avenue, Dhakuria',
-    avgEtaMinutes: '20–30 mins',
-    verifiedKitchensCount: 5,
-    minOrderInr: 149,
-  },
-  {
-    id: 'north',
-    label: 'North (Shyambazar)',
-    bengaliName: 'শ্যামবাজার ও উত্তর কলকাতা',
-    coords: [88.3735, 22.6012],
-    centerLat: 22.6012,
-    centerLng: 88.3735,
-    googleMapQuery: 'Shyambazar Five Point Crossing, Kolkata, West Bengal 700004',
-    keyAreas: 'Hatibagan, Sovabazar, Bagbazar, Girish Park',
-    avgEtaMinutes: '22–30 mins',
-    verifiedKitchensCount: 4,
-    minOrderInr: 149,
-  },
-];
+const STATIC_AVG_ETA_BY_ZONE: Readonly<Record<Exclude<KolkataZoneId, 'all'>, string>> = {
+  'salt-lake': '20–30 mins',
+  central: '22–32 mins',
+  'new-town': '24–35 mins',
+  south: '20–30 mins',
+  north: '22–30 mins',
+};
+
+export const ZONE_CENTERS: readonly KolkataZoneDetail[] = KOLKATA_CORRIDOR_METADATA.map((item) => ({
+  id: item.id,
+  label: item.label,
+  bengaliName: item.bengaliName,
+  coords: [item.centerLng, item.centerLat] as const,
+  centerLat: item.centerLat,
+  centerLng: item.centerLng,
+  googleMapQuery: item.googleMapQuery,
+  keyAreas: item.keyAreas,
+  avgEtaMinutes: STATIC_AVG_ETA_BY_ZONE[item.id],
+  verifiedKitchensCount: item.verifiedKitchensCount,
+  minOrderInr: item.minOrderInr,
+}));
 
 export const KOLKATA_DELIVERY_BOUNDS = {
   minLng: 88.1,
   maxLng: 88.7,
   minLat: 22.3,
   maxLat: 22.85,
-  maxCorridorRadiusKm: 15.0,
+  maxCorridorRadiusKm: DEFAULT_DELIVERY_RADIUS_KM,
 } as const;
 
 export function calculateHaversineDistanceKm(
@@ -143,17 +105,7 @@ export function calculateHaversineDistanceKm(
   lat2: number,
   lon2: number,
 ): number {
-  const R = 6371; // Earth radius in km
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return Number((R * c).toFixed(2));
+  return roundDistanceKm(haversineDistanceKm(lat1, lon1, lat2, lon2));
 }
 
 export interface KolkataDeliveryCoverageCheck {
@@ -163,8 +115,12 @@ export interface KolkataDeliveryCoverageCheck {
   nearestZoneId: Exclude<KolkataZoneId, 'all'>;
   nearestZoneLabel: string;
   distanceKm: number;
+  estimatedEtaLabel: string;
+  availableCorridorCount: number;
+  totalCorridors: number;
   detectedLocality?: string;
   message: string;
+  routing: DeliveryRoutingResult;
 }
 
 export function checkKolkataDeliveryCoverage(
@@ -172,16 +128,11 @@ export function checkKolkataDeliveryCoverage(
   lng: number,
   detectedLocality?: string,
 ): KolkataDeliveryCoverageCheck {
-  let closest = ZONE_CENTERS[0]!;
-  let minDistanceKm = Number.POSITIVE_INFINITY;
-
-  for (const zone of ZONE_CENTERS) {
-    const dist = calculateHaversineDistanceKm(lat, lng, zone.centerLat, zone.centerLng);
-    if (dist < minDistanceKm) {
-      minDistanceKm = dist;
-      closest = zone;
-    }
-  }
+  const routing = evaluateDeliveryRouting(lat, lng, {
+    maxRadiusKm: KOLKATA_DELIVERY_BOUNDS.maxCorridorRadiusKm,
+    detectedLocality,
+  });
+  const closest = routing.nearestCorridor;
 
   const withinMetropolitanBounds =
     lng >= KOLKATA_DELIVERY_BOUNDS.minLng &&
@@ -189,22 +140,25 @@ export function checkKolkataDeliveryCoverage(
     lat >= KOLKATA_DELIVERY_BOUNDS.minLat &&
     lat <= KOLKATA_DELIVERY_BOUNDS.maxLat;
 
-  const isCovered =
-    withinMetropolitanBounds && minDistanceKm <= KOLKATA_DELIVERY_BOUNDS.maxCorridorRadiusKm;
+  const isCovered = withinMetropolitanBounds && routing.hasAnyCoverage;
 
   const message = isCovered
-    ? `Delivery is available in your area! Matched to closest corridor: ${closest.label} (${minDistanceKm} km away).`
-    : `Unfortunately, in this location there is no delivery available right now. We are working hard to make delivery available to your location soon!`;
+    ? `Delivery is available in your area! ${routing.availableCorridorCount} of ${routing.totalCorridors} corridors within 15 km — nearest: ${closest.label} (${closest.distanceKm} km, ETA ${closest.estimatedEtaLabel}).`
+    : `Unfortunately, no Bhojora corridor is within 15 km optimal road distance right now (nearest: ${closest.label} at ${closest.distanceKm} km).`;
 
   return {
     isCovered,
     latitude: lat,
     longitude: lng,
-    nearestZoneId: closest.id,
+    nearestZoneId: closest.zoneId,
     nearestZoneLabel: closest.label,
-    distanceKm: minDistanceKm,
+    distanceKm: closest.distanceKm,
+    estimatedEtaLabel: closest.estimatedEtaLabel,
+    availableCorridorCount: routing.availableCorridorCount,
+    totalCorridors: routing.totalCorridors,
     detectedLocality,
     message,
+    routing,
   };
 }
 

@@ -392,36 +392,69 @@ export function PilotInfoDialog({
               <span>Tap any zone to focus the Google Map and filter kitchen menus.</span>
             </div>
             <div className="corridor-cards-grid">
-              {ZONE_CENTERS.map((zone) => {
-                const active = selectedZone === zone.id;
-                return (
-                  <button
-                    key={zone.id}
-                    type="button"
-                    className={active ? 'corridor-card active' : 'corridor-card'}
-                    aria-pressed={active}
-                    onClick={() => {
-                      setDetectedCoords(null);
-                      setCoverageResult(null);
-                      onSelectZone(zone.id);
-                      setActiveMapQuery(zone.googleMapQuery);
-                    }}
-                  >
-                    <div className="corridor-card-header">
-                      <strong>{zone.label}</strong>
-                      <span className="corridor-bengali-title">{zone.bengaliName}</span>
-                    </div>
-                    <p className="corridor-key-areas">{zone.keyAreas}</p>
-                    <div className="corridor-meta-pills">
-                      <span className="corridor-eta">⏱️ {zone.avgEtaMinutes}</span>
-                      <span className="corridor-kitchens">
-                        🍳 {zone.verifiedKitchensCount} Kitchens
-                      </span>
-                      <span className="corridor-fee">Min ₹{zone.minOrderInr}</span>
-                    </div>
-                  </button>
-                );
-              })}
+              {coverageResult
+                ? coverageResult.routing.corridors.map((corridor) => {
+                    const active = selectedZone === corridor.zoneId;
+                    return (
+                      <button
+                        key={corridor.zoneId}
+                        type="button"
+                        className={[
+                          'corridor-card',
+                          active ? 'active' : '',
+                          !corridor.isAvailable ? 'out-of-range' : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                        aria-pressed={active}
+                        onClick={() => {
+                          onSelectZone(corridor.zoneId);
+                          setActiveMapQuery(corridor.googleMapQuery);
+                        }}
+                      >
+                        <div className="corridor-card-header">
+                          <strong>{corridor.label}</strong>
+                          <span className="corridor-bengali-title">{corridor.bengaliName}</span>
+                        </div>
+                        <p className="corridor-key-areas">{corridor.keyAreas}</p>
+                        <div className="corridor-meta-pills">
+                          <span className="corridor-eta">⏱️ {corridor.estimatedEtaLabel}</span>
+                          <span className="corridor-kitchens">🛣️ {corridor.distanceKm} km</span>
+                          <span className="corridor-fee">Min ₹{corridor.minOrderInr}</span>
+                        </div>
+                      </button>
+                    );
+                  })
+                : ZONE_CENTERS.map((zone) => {
+                    const active = selectedZone === zone.id;
+                    return (
+                      <button
+                        key={zone.id}
+                        type="button"
+                        className={active ? 'corridor-card active' : 'corridor-card'}
+                        aria-pressed={active}
+                        onClick={() => {
+                          setDetectedCoords(null);
+                          setCoverageResult(null);
+                          onSelectZone(zone.id);
+                          setActiveMapQuery(zone.googleMapQuery);
+                        }}
+                      >
+                        <div className="corridor-card-header">
+                          <strong>{zone.label}</strong>
+                          <span className="corridor-bengali-title">{zone.bengaliName}</span>
+                        </div>
+                        <p className="corridor-key-areas">{zone.keyAreas}</p>
+                        <div className="corridor-meta-pills">
+                          <span className="corridor-eta">⏱️ {zone.avgEtaMinutes}</span>
+                          <span className="corridor-kitchens">
+                            🍳 {zone.verifiedKitchensCount} Kitchens
+                          </span>
+                          <span className="corridor-fee">Min ₹{zone.minOrderInr}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
             </div>
 
             <div className="all-zones-row">
