@@ -237,6 +237,12 @@ export function LocationPermissionSheet({
           </button>
         </div>
 
+        {!showAddForm && addressError ? (
+          <div className="saved-address-form-error" role="alert" style={{ marginBottom: '12px' }}>
+            {addressError}
+          </div>
+        ) : null}
+
         {/* Section: Select a saved address */}
         <div className="saved-addresses-section">
           <div className="saved-addresses-header">

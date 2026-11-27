@@ -4220,6 +4220,8 @@ dialog.bhojora-location-sheet-dialog:modal {
   flex-direction: column;
   text-align: left;
   line-height: 1.15;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .delivery-eta-headline {
@@ -4227,6 +4229,9 @@ dialog.bhojora-location-sheet-dialog:modal {
   font-weight: 800;
   color: #111827;
   letter-spacing: -0.2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .header-location-view .location-label-text {
@@ -4235,6 +4240,10 @@ dialog.bhojora-location-sheet-dialog:modal {
   display: flex;
   align-items: center;
   gap: 4px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @media (max-width: 640px) {

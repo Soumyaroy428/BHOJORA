@@ -43,7 +43,12 @@ import { PillarsSection } from './components/PillarsSection';
 import { PilotInfoDialog } from './components/PilotInfoDialog';
 import { TrustProfileDialog } from './components/TrustProfileDialog';
 import { KOLKATA_ZONE_OPTIONS, VERIFIED_KOLKATA_KITCHENS } from './data/kitchens';
-import { apiRequest, getZoneCoordinates } from './lib/apiClient';
+import {
+  apiRequest,
+  detectLiveUserLocation,
+  getZoneCoordinates,
+  type DetectedLiveLocation,
+} from './lib/apiClient';
 import { initNativeStatusBar, setupNativeBackButton } from './lib/capacitorNative';
 import {
   applyPreviewCartAddition,
@@ -243,6 +248,9 @@ export function App() {
   );
   const [savingSheetAddress, setSavingSheetAddress] = useState(false);
   const [sheetAddressError, setSheetAddressError] = useState<string | null>(null);
+  const [detectedGpsLocation, setDetectedGpsLocation] = useState<DetectedLiveLocation | null>(null);
+  const [detectingGps, setDetectingGps] = useState(false);
+  const [gpsLocationError, setGpsLocationError] = useState<string | null>(null);
   const [activeCategorySlug, setActiveCategorySlug] = useState<string | null>(null);
   const [verifiedOnly, setVerifiedOnly] = useState(true);
   const [vegOnly, setVegOnly] = useState(false);
@@ -506,16 +514,54 @@ export function App() {
     setLocationSheetOpen(true);
   }, []);
 
-  const handleEnableLocationFromSheet = useCallback(() => {
-    setLocationPermissionState('granted');
-    setSelectedZone('salt-lake');
-    setSelectedQuoteLocationId('salt-lake');
-    setLocationSheetOpen(false);
-    // After enable location, show the 2nd pic outlet popover from corner right side
-    setTimeout(() => {
-      setCornerOutletOpen(true);
-    }, 80);
-  }, []);
+  const applyDetectedLiveLocation = useCallback(
+    (detected: DetectedLiveLocation) => {
+      setDetectedGpsLocation(detected);
+      setActiveAddressId(null);
+      writeStoredActiveAddressId(null);
+      setLocationPermissionState('granted');
+      setGpsLocationError(null);
+      setSheetAddressError(null);
+      const nextZone: Exclude<KolkataZoneId, 'all'> = detected.coverage.nearestZoneId;
+      setSelectedZone(detected.coverage.isCovered ? nextZone : 'all');
+      setSelectedQuoteLocationId(nextZone);
+      if (authSession?.tokens.accessToken) {
+        void apiRequest('/customer/profile', {
+          method: 'PATCH',
+          token: authSession.tokens.accessToken,
+          body: {
+            savedDeliveryZoneId: nextZone,
+            locationPermissionState: 'granted',
+            lastKnownLocalityLabel: detected.properLocation,
+          },
+        }).catch(() => {});
+      }
+    },
+    [authSession?.tokens.accessToken],
+  );
+
+  const handleEnableLocationFromSheet = useCallback(async () => {
+    setDetectingGps(true);
+    setSheetAddressError(null);
+    setGpsLocationError(null);
+    try {
+      const detected = await detectLiveUserLocation();
+      applyDetectedLiveLocation(detected);
+      setLocationSheetOpen(false);
+      setTimeout(() => {
+        setCornerOutletOpen(true);
+      }, 80);
+    } catch (error) {
+      setLocationPermissionState('denied');
+      setSheetAddressError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to access GPS location. Please choose or add your proper address below.',
+      );
+    } finally {
+      setDetectingGps(false);
+    }
+  }, [applyDetectedLiveLocation]);
 
   const activeSavedAddress = useMemo(
     () =>
@@ -528,6 +574,8 @@ export function App() {
   const handleSelectSavedAddressFromSheet = useCallback(
     (address: SavedAddressView) => {
       const targetZone = address.zoneId ?? 'salt-lake';
+      setDetectedGpsLocation(null);
+      setGpsLocationError(null);
       setActiveAddressId(address.addressId);
       writeStoredActiveAddressId(address.addressId);
       setSelectedZone(targetZone);
@@ -623,6 +671,8 @@ export function App() {
           ).catch(() => created);
 
           const finalAddr = selected.address;
+          setDetectedGpsLocation(null);
+          setGpsLocationError(null);
           setSavedAddresses((prev) => sortAddressesBySelectionHistory([finalAddr, ...prev]));
           setActiveAddressId(finalAddr.addressId);
           writeStoredActiveAddressId(finalAddr.addressId);
@@ -659,6 +709,8 @@ export function App() {
           updatedAt: nowIso,
         };
         const nextList = sortAddressesBySelectionHistory([localAddr, ...savedAddresses]);
+        setDetectedGpsLocation(null);
+        setGpsLocationError(null);
         setSavedAddresses(nextList);
         writeStoredSavedAddresses(nextList);
         setActiveAddressId(localAddr.addressId);
@@ -681,12 +733,24 @@ export function App() {
     [authSession?.tokens.accessToken, authSession?.user.id, savedAddresses],
   );
 
-  const handleUseMyLocationFromCorner = useCallback(() => {
-    setLocationPermissionState('granted');
-    setSelectedZone('salt-lake');
-    setSelectedQuoteLocationId('salt-lake');
-    setCornerOutletOpen(false);
-  }, []);
+  const handleUseMyLocationFromCorner = useCallback(async () => {
+    setDetectingGps(true);
+    setGpsLocationError(null);
+    try {
+      const detected = await detectLiveUserLocation();
+      applyDetectedLiveLocation(detected);
+      setCornerOutletOpen(false);
+    } catch (error) {
+      setLocationPermissionState('denied');
+      setGpsLocationError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to detect GPS location. Choose Select manually to enter your proper address.',
+      );
+    } finally {
+      setDetectingGps(false);
+    }
+  }, [applyDetectedLiveLocation]);
 
   const handleSelectManuallyFromCorner = useCallback(() => {
     setCornerOutletOpen(false);
@@ -697,14 +761,16 @@ export function App() {
     return KOLKATA_ZONE_OPTIONS.find((item) => item.id === selectedZone)?.label ?? 'All Kolkata';
   }, [selectedZone]);
 
-  const headerZoneLabel = activeSavedAddress
-    ? `${getSavedAddressDisplayTitle(activeSavedAddress)} · ${activeSavedAddress.streetAddress}, ${activeSavedAddress.locality}`
-    : selectedZone === 'all'
-      ? 'Select delivery address'
-      : selectedZoneLabel;
-  const headerAddressTitle = activeSavedAddress
-    ? `${getSavedAddressDisplayTitle(activeSavedAddress)}: ${formatFullSavedAddress(activeSavedAddress)}`
-    : undefined;
+  const headerZoneLabel = detectedGpsLocation
+    ? detectedGpsLocation.properLocation
+    : activeSavedAddress
+      ? `${getSavedAddressDisplayTitle(activeSavedAddress)} · ${activeSavedAddress.streetAddress}, ${activeSavedAddress.locality}`
+      : 'Select delivery address';
+  const headerAddressTitle = detectedGpsLocation
+    ? detectedGpsLocation.properLocation
+    : activeSavedAddress
+      ? `${getSavedAddressDisplayTitle(activeSavedAddress)}: ${formatFullSavedAddress(activeSavedAddress)}`
+      : undefined;
 
   const { visibleKitchens, totalMatchedCount, hasMore, matchedDishes } = useMemo(() => {
     if (liveResults !== null) {
@@ -1582,7 +1648,15 @@ export function App() {
         headerZoneLabel={headerZoneLabel}
         headerAddressTitle={headerAddressTitle}
         deliveryEtaText={
-          cart.itemCount > 0 ? 'Delivering to saved address' : 'Delivery in 27 minutes'
+          cart.itemCount > 0
+            ? detectedGpsLocation
+              ? 'Delivering to current location'
+              : 'Delivering to saved address'
+            : detectedGpsLocation
+              ? detectedGpsLocation.coverage.isCovered
+                ? `Delivery in ${detectedGpsLocation.coverage.estimatedEtaLabel}`
+                : 'Outside 15 km delivery range'
+              : 'Delivery in 27 minutes'
         }
         signedInFirstName={signedInFirstName}
         cartItemCount={cart.itemCount}
@@ -1599,12 +1673,22 @@ export function App() {
         open={cornerOutletOpen}
         currentZoneLabel={headerZoneLabel}
         currentAddressTitle={
-          activeSavedAddress ? getSavedAddressDisplayTitle(activeSavedAddress) : undefined
+          detectedGpsLocation
+            ? 'Your Location'
+            : activeSavedAddress
+              ? getSavedAddressDisplayTitle(activeSavedAddress)
+              : undefined
         }
         currentAddressSummary={
-          activeSavedAddress ? formatFullSavedAddress(activeSavedAddress) : undefined
+          detectedGpsLocation
+            ? detectedGpsLocation.properLocation
+            : activeSavedAddress
+              ? formatFullSavedAddress(activeSavedAddress)
+              : undefined
         }
-        onUseMyLocation={handleUseMyLocationFromCorner}
+        detectingLocation={detectingGps}
+        locationError={gpsLocationError}
+        onUseMyLocation={() => void handleUseMyLocationFromCorner()}
         onSelectManually={handleSelectManuallyFromCorner}
         onClose={() => setCornerOutletOpen(false)}
       />
@@ -1673,11 +1757,13 @@ export function App() {
 
         <KolkataZonesSection
           selectedZone={selectedZone}
+          liveUserLocation={detectedGpsLocation}
           onSelectZone={(zone) => {
             setSelectedZone(zone);
             setOfflinePageLimit(DEFAULT_OFFLINE_PAGE_SIZE);
           }}
           onOpenPilotDialog={() => setPilotInfoOpen(true)}
+          onLocationDetected={applyDetectedLiveLocation}
           onDetectGpsZone={handleDetectGpsZone}
         />
 
@@ -1721,7 +1807,7 @@ export function App() {
         savingAddress={savingSheetAddress}
         addressError={sheetAddressError}
         defaultRecipientName={authSession?.user.name ?? 'Bhojora Customer'}
-        onEnableLocation={handleEnableLocationFromSheet}
+        onEnableLocation={() => void handleEnableLocationFromSheet()}
         onSelectAddress={handleSelectSavedAddressFromSheet}
         onSaveNewAddress={handleSaveNewAddressFromSheet}
         onOpenSignIn={() => {

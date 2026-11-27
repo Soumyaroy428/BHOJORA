@@ -2,7 +2,10 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import {
   buildGoogleMapEmbedUrl,
   checkKolkataDeliveryCoverage,
+  detectLiveUserLocation,
+  GeolocationDetectError,
   ZONE_CENTERS,
+  type DetectedLiveLocation,
   type KolkataDeliveryCoverageCheck,
 } from '../lib/apiClient';
 import type { KolkataZoneId, LocationPermissionState } from '../types/domain';
@@ -10,8 +13,10 @@ import { resolveManualLocationFallback } from '../utils/deliveryGraph';
 
 interface KolkataZonesSectionProps {
   selectedZone: KolkataZoneId;
+  liveUserLocation?: DetectedLiveLocation | null;
   onSelectZone: (zone: KolkataZoneId) => void;
   onOpenPilotDialog: () => void;
+  onLocationDetected?: (location: DetectedLiveLocation) => void;
   onDetectGpsZone: (
     zone: Exclude<KolkataZoneId, 'all'>,
     permissionState: LocationPermissionState,
@@ -21,8 +26,10 @@ interface KolkataZonesSectionProps {
 
 export function KolkataZonesSection({
   selectedZone,
+  liveUserLocation = null,
   onSelectZone,
   onOpenPilotDialog,
+  onLocationDetected,
   onDetectGpsZone,
 }: KolkataZonesSectionProps) {
   const [detecting, setDetecting] = useState(false);
@@ -32,6 +39,16 @@ export function KolkataZonesSection({
   const [showManualFallback, setShowManualFallback] = useState(false);
   const [manualQuery, setManualQuery] = useState('');
   const [manualError, setManualError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!liveUserLocation) {
+      return;
+    }
+    setDetectedCoords({ lat: liveUserLocation.lat, lng: liveUserLocation.lng });
+    setCoverageCheck(liveUserLocation.coverage);
+    setLocationNotice(null);
+    setShowManualFallback(false);
+  }, [liveUserLocation]);
 
   const activeZoneDetail = ZONE_CENTERS.find((z) => z.id === selectedZone);
   const mapQuery = detectedCoords
@@ -51,74 +68,52 @@ export function KolkataZonesSection({
     (
       lat: number,
       lng: number,
-      localityLabel: string | undefined,
+      properLocation: string,
       permState: LocationPermissionState,
+      precomputedCoverage?: KolkataDeliveryCoverageCheck,
     ): void => {
       setDetectedCoords({ lat, lng });
       setLocationNotice(null);
       setManualError(null);
-      const coverage = checkKolkataDeliveryCoverage(lat, lng, localityLabel);
+      const coverage =
+        precomputedCoverage ?? checkKolkataDeliveryCoverage(lat, lng, properLocation);
       setCoverageCheck(coverage);
+      onLocationDetected?.({ lat, lng, properLocation, coverage });
       if (coverage.isCovered) {
-        onDetectGpsZone(coverage.nearestZoneId, permState, coverage.nearestZoneLabel);
+        onDetectGpsZone(coverage.nearestZoneId, permState, properLocation);
       }
     },
-    [onDetectGpsZone],
+    [onDetectGpsZone, onLocationDetected],
   );
 
-  const handleDetectLocation = useCallback((): void => {
-    if (typeof navigator === 'undefined' || !('geolocation' in navigator)) {
-      setShowManualFallback(true);
-      setLocationNotice(
-        'Browser geolocation is unavailable on this device. Enter your Kolkata locality or 6-digit PIN code below.',
-      );
-      return;
-    }
-
+  const handleDetectLocation = useCallback(async (): Promise<void> => {
     setDetecting(true);
     setLocationNotice(null);
     setManualError(null);
 
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-
-        let localityName: string | undefined;
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 2500);
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
-            { signal: controller.signal },
-          );
-          clearTimeout(timeoutId);
-          if (res.ok) {
-            const data: { display_name?: string; address?: { suburb?: string; city?: string } } =
-              await res.json();
-            localityName =
-              data.address?.suburb || data.address?.city || data.display_name?.split(',')[0];
-          }
-        } catch {
-          // Gracefully continue without external reverse geocode
-        }
-
-        setDetecting(false);
-        setShowManualFallback(false);
-        applyCoordinatesEvaluation(lat, lng, localityName, 'granted');
-      },
-      (error) => {
-        setDetecting(false);
-        setShowManualFallback(true);
-        const isDenied = error.code === error.PERMISSION_DENIED;
-        setLocationNotice(
-          isDenied
-            ? 'Location permission was denied. Enter your Kolkata area or 6-digit PIN code below to evaluate 15 km delivery corridors.'
+    try {
+      const detected = await detectLiveUserLocation();
+      setDetecting(false);
+      setShowManualFallback(false);
+      applyCoordinatesEvaluation(
+        detected.lat,
+        detected.lng,
+        detected.properLocation,
+        'granted',
+        detected.coverage,
+      );
+    } catch (error) {
+      setDetecting(false);
+      setShowManualFallback(true);
+      const isDenied = error instanceof GeolocationDetectError && error.permissionDenied;
+      setLocationNotice(
+        isDenied
+          ? 'Location permission was denied. Enter your Kolkata area or 6-digit PIN code below to evaluate 15 km delivery corridors.'
+          : error instanceof Error
+            ? error.message
             : 'Unable to detect GPS coordinates right now. Use the manual area / PIN lookup below.',
-        );
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 },
-    );
+      );
+    }
   }, [applyCoordinatesEvaluation]);
 
   useEffect(() => {
@@ -133,7 +128,7 @@ export function KolkataZonesSection({
           return;
         }
         if (status.state === 'granted') {
-          handleDetectLocation();
+          void handleDetectLocation();
         } else if (status.state === 'denied') {
           setShowManualFallback(true);
           setLocationNotice(
@@ -187,7 +182,7 @@ export function KolkataZonesSection({
               id="reDetectZonesLocationBtn"
               className="btn btn-primary"
               style={{ minHeight: '44px' }}
-              onClick={handleDetectLocation}
+              onClick={() => void handleDetectLocation()}
               disabled={detecting}
             >
               {detecting
@@ -225,11 +220,10 @@ export function KolkataZonesSection({
               <div className="zones-status-title">
                 {routing ? (
                   <>
-                    Location:{' '}
+                    Your Location:{' '}
                     <strong>
-                      {routing.detectedLocality
-                        ? `${routing.detectedLocality} (${routing.userLat.toFixed(4)}°, ${routing.userLng.toFixed(4)}°)`
-                        : `${routing.userLat.toFixed(4)}°, ${routing.userLng.toFixed(4)}°`}
+                      {routing.detectedLocality ??
+                        `${routing.userLat.toFixed(4)}°, ${routing.userLng.toFixed(4)}°`}
                     </strong>
                   </>
                 ) : (
@@ -242,8 +236,7 @@ export function KolkataZonesSection({
                     Delivery Available in {routing.availableCorridorCount} of{' '}
                     {routing.totalCorridors} Corridors within {routing.maxRadiusKm} km
                   </strong>{' '}
-                  • Nearest: {routing.nearestCorridor.label} ({routing.nearestCorridor.distanceKm}{' '}
-                  km road path)
+                  • Coordinates: {routing.userLat.toFixed(4)}°, {routing.userLng.toFixed(4)}°
                 </div>
               ) : locationNotice ? (
                 <div className="zones-status-summary is-warning">{locationNotice}</div>
@@ -265,7 +258,7 @@ export function KolkataZonesSection({
               type="button"
               className="btn btn-outline btn-sm"
               style={{ minHeight: '38px' }}
-              onClick={handleDetectLocation}
+              onClick={() => void handleDetectLocation()}
               disabled={detecting}
             >
               {detecting ? 'Locating...' : 'Re-detect Location'}

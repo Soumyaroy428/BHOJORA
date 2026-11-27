@@ -188,6 +188,155 @@ export function buildGoogleMapEmbedUrl(options: {
   return `https://maps.google.com/maps?q=${encodeURIComponent(q)}&t=m&z=${zoom}&output=embed`;
 }
 
+export interface DetectedLiveLocation {
+  lat: number;
+  lng: number;
+  properLocation: string;
+  coverage: KolkataDeliveryCoverageCheck;
+}
+
+export class GeolocationDetectError extends Error {
+  public readonly permissionDenied: boolean;
+
+  constructor(message: string, permissionDenied: boolean) {
+    super(message);
+    this.name = 'GeolocationDetectError';
+    this.permissionDenied = permissionDenied;
+  }
+}
+
+interface NominatimReversePayload {
+  display_name?: string;
+  address?: {
+    house_number?: string;
+    road?: string;
+    neighbourhood?: string;
+    residential?: string;
+    quarter?: string;
+    hamlet?: string;
+    suburb?: string;
+    village?: string;
+    town?: string;
+    city_district?: string;
+    city?: string;
+    state_district?: string;
+    postcode?: string;
+  };
+}
+
+/**
+ * Formats an exact user-facing location string from Nominatim address components
+ * (street / premise / neighbourhood / locality / city / PIN) without substituting
+ * generic service zone labels, falling back cleanly to GPS coordinates if offline.
+ */
+export function formatProperUserLocation(
+  lat: number,
+  lng: number,
+  payload?: NominatimReversePayload | null,
+): string {
+  const addr = payload?.address;
+  if (addr) {
+    const streetPart = [addr.house_number, addr.road]
+      .filter((p): p is string => Boolean(p && p.trim()))
+      .join(' ')
+      .trim();
+    const microLocality =
+      addr.neighbourhood ||
+      addr.residential ||
+      addr.quarter ||
+      addr.hamlet ||
+      addr.suburb ||
+      addr.village;
+    const cityPart = addr.city_district || addr.town || addr.city || addr.state_district;
+    const rawParts = [streetPart, microLocality, cityPart, addr.postcode];
+    const deduped: string[] = [];
+    const seen = new Set<string>();
+    for (const part of rawParts) {
+      const cleaned = part?.trim();
+      if (!cleaned) {
+        continue;
+      }
+      const key = cleaned.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        deduped.push(cleaned);
+      }
+    }
+    if (deduped.length > 0) {
+      return deduped.join(', ');
+    }
+  }
+
+  if (payload?.display_name) {
+    const segments = payload.display_name
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .slice(0, 3);
+    if (segments.length > 0) {
+      return segments.join(', ');
+    }
+  }
+
+  return `${lat.toFixed(4)}°, ${lng.toFixed(4)}°`;
+}
+
+/**
+ * Shared GPS detector + reverse geocoder + 15 km Dijkstra graph evaluator.
+ */
+export function detectLiveUserLocation(): Promise<DetectedLiveLocation> {
+  return new Promise((resolve, reject) => {
+    if (typeof navigator === 'undefined' || !('geolocation' in navigator)) {
+      reject(
+        new GeolocationDetectError(
+          'Browser geolocation is unavailable on this device. Enter your address or PIN manually.',
+          false,
+        ),
+      );
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        let payload: NominatimReversePayload | null = null;
+
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 2500);
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=jsonv2&addressdetails=1&zoom=18`,
+            { signal: controller.signal },
+          );
+          clearTimeout(timeoutId);
+          if (res.ok) {
+            payload = (await res.json()) as NominatimReversePayload;
+          }
+        } catch {
+          // Offline / reverse-geocode timeout falls back cleanly to exact coordinates
+        }
+
+        const properLocation = formatProperUserLocation(lat, lng, payload);
+        const coverage = checkKolkataDeliveryCoverage(lat, lng, properLocation);
+        resolve({ lat, lng, properLocation, coverage });
+      },
+      (error) => {
+        const isDenied = error.code === error.PERMISSION_DENIED;
+        reject(
+          new GeolocationDetectError(
+            isDenied
+              ? 'Location permission was denied. Enable GPS in browser settings or enter your proper address / PIN.'
+              : 'Unable to detect your GPS location right now. Please select or enter your address manually.',
+            isDenied,
+          ),
+        );
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 },
+    );
+  });
+}
+
 export function resolveNearestKolkataZone(
   lat: number,
   lng: number,

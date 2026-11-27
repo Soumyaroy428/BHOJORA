@@ -3,6 +3,7 @@ import { useDialogLightDismiss } from '../hooks/useDialogLightDismiss';
 import {
   buildGoogleMapEmbedUrl,
   checkKolkataDeliveryCoverage,
+  formatProperUserLocation,
   ZONE_CENTERS,
   type KolkataDeliveryCoverageCheck,
 } from '../lib/apiClient';
@@ -104,41 +105,40 @@ export function PilotInfoDialog({
         const lng = position.coords.longitude;
         setDetectedCoords({ lat, lng });
 
-        // Optional quick reverse geocoding via OpenStreetMap with timeout
-        let localityName: string | undefined;
+        let reversePayload: { display_name?: string; address?: Record<string, string> } | null =
+          null;
         try {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 2500);
           const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=jsonv2&addressdetails=1&zoom=18`,
             { signal: controller.signal },
           );
           clearTimeout(timeoutId);
           if (res.ok) {
-            const data: { display_name?: string; address?: { suburb?: string; city?: string } } =
-              await res.json();
-            localityName =
-              data.address?.suburb || data.address?.city || data.display_name?.split(',')[0];
+            reversePayload = (await res.json()) as {
+              display_name?: string;
+              address?: Record<string, string>;
+            };
           }
         } catch {
           // Gracefully continue without external reverse geocode
         }
 
-        const coverage = checkKolkataDeliveryCoverage(lat, lng, localityName);
+        const properLocation = formatProperUserLocation(lat, lng, reversePayload);
+        const coverage = checkKolkataDeliveryCoverage(lat, lng, properLocation);
         setCoverageResult(coverage);
         setDetecting(false);
-
-        // Center map on user's exact detected GPS pin
         setActiveMapQuery(`${lat},${lng}`);
 
         if (coverage.isCovered) {
           setStatusNote(
-            `✓ Delivery available! Matched to ${coverage.nearestZoneLabel} (${coverage.distanceKm} km away).`,
+            `✓ Delivery available at ${properLocation}! ${coverage.availableCorridorCount} of ${coverage.totalCorridors} corridors within 15 km (${coverage.distanceKm} km, ${coverage.estimatedEtaLabel}).`,
           );
-          onDetectGpsZone(coverage.nearestZoneId, 'granted', coverage.nearestZoneLabel);
+          onDetectGpsZone(coverage.nearestZoneId, 'granted', properLocation);
         } else {
           setStatusNote(
-            `Detected location: ${localityName ?? `${lat.toFixed(4)}°, ${lng.toFixed(4)}°`} (${coverage.distanceKm} km from nearest Kolkata hub).`,
+            `Your location: ${properLocation} (${coverage.distanceKm} km from nearest hub — outside 15 km range).`,
           );
         }
       },

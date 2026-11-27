@@ -5,6 +5,8 @@ interface CornerLocationOutletPopoverProps {
   currentZoneLabel: string;
   currentAddressTitle?: string;
   currentAddressSummary?: string;
+  detectingLocation?: boolean;
+  locationError?: string | null;
   onUseMyLocation: () => void;
   onSelectManually: () => void;
   onClose: () => void;
@@ -15,6 +17,8 @@ export function CornerLocationOutletPopover({
   currentZoneLabel,
   currentAddressTitle,
   currentAddressSummary,
+  detectingLocation = false,
+  locationError = null,
   onUseMyLocation,
   onSelectManually,
   onClose,
@@ -108,26 +112,35 @@ export function CornerLocationOutletPopover({
               <>
                 <strong>{currentAddressTitle}</strong> · {currentAddressSummary}
               </>
-            ) : currentAddressTitle ? (
-              <>
-                <strong>{currentAddressTitle}</strong> · {currentZoneLabel}
-              </>
             ) : (
-              <>
-                Active: <strong>{currentZoneLabel}</strong>
-              </>
+              <strong>{currentAddressSummary ?? currentZoneLabel}</strong>
             )}
           </div>
         )}
+
+        {locationError ? (
+          <p
+            role="alert"
+            style={{
+              fontSize: '12px',
+              color: '#b91c1c',
+              margin: '0 0 10px',
+              fontWeight: 600,
+            }}
+          >
+            {locationError}
+          </p>
+        ) : null}
 
         <div className="corner-popover-actions">
           <button
             type="button"
             className="corner-btn-use-location"
             onClick={onUseMyLocation}
+            disabled={detectingLocation}
             aria-label="Use my current GPS location"
           >
-            Use my location
+            {detectingLocation ? 'Locating...' : 'Use my location'}
           </button>
           <button
             type="button"
