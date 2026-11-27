@@ -1126,12 +1126,27 @@ export class IdentityService {
       now,
     );
 
+    const recoveryFailBuckets = [
+      {
+        scope: 'recovery_verify' as const,
+        subjectKey: recoverySubjectKey,
+        maxFailures: this.options.config.loginMaxFailures,
+        windowSeconds: this.options.config.loginLockoutSeconds,
+        blockSeconds: this.options.config.loginLockoutSeconds,
+      },
+    ];
+
     const challenge = await this.options.store.findLatestActiveChallenge(
       resolved.normalized,
       'password_recovery',
       now,
     );
     if (!challenge || !challenge.userId) {
+      await this.recordFailedAttempt(
+        recoveryFailBuckets,
+        'Too many failed password recovery attempts',
+        now,
+      );
       throw new AppError(401, 'UNAUTHORIZED', 'Invalid or expired password recovery token');
     }
 
@@ -1142,15 +1157,7 @@ export class IdentityService {
     if (!timingSafeHexEqual(challenge.secretHash, expectedHash)) {
       await this.options.store.recordFailedChallengeAttempt(challenge.challengeId, now);
       await this.recordFailedAttempt(
-        [
-          {
-            scope: 'recovery_verify',
-            subjectKey: recoverySubjectKey,
-            maxFailures: this.options.config.loginMaxFailures,
-            windowSeconds: this.options.config.loginLockoutSeconds,
-            blockSeconds: this.options.config.loginLockoutSeconds,
-          },
-        ],
+        recoveryFailBuckets,
         'Too many failed password recovery attempts',
         now,
       );

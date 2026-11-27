@@ -11,7 +11,7 @@ import { MongooseIdentityStore } from './modules/identity/identity.models';
 import { createIdentityRouter } from './modules/identity/identity.routes';
 import { IdentityService } from './modules/identity/identity.service';
 import type { Clock, IdentityStore } from './modules/identity/identity.types';
-import { SafeLogOtpSenderAdapter } from './modules/identity/otp.adapter';
+import { createDefaultOtpSenderAdapter } from './modules/identity/otp.adapter';
 import { createCustomerRouter } from './modules/customer/customer.routes';
 import { CustomerService } from './modules/customer/customer.service';
 import { MongooseCustomerStore } from './modules/customer/customer.store';
@@ -253,8 +253,9 @@ export function createApp(options: CreateAppOptions): Express {
     new IdentityService({
       config,
       store: fallbackIdentityStore,
-      otpAdapter: new SafeLogOtpSenderAdapter(logger),
+      otpAdapter: createDefaultOtpSenderAdapter(config, logger),
       logger,
+      ...(options.clock ? { clock: options.clock } : {}),
     });
   const identityStore = options.identityStore ?? identityService.getStore();
   const rbacStore = options.rbacStore ?? new MongooseRbacStore(mongoose.connection);

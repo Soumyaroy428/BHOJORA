@@ -146,6 +146,30 @@ const rawEnvSchema = z.object({
   CORS_ALLOWED_ORIGINS: z.string().optional(),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
   SHUTDOWN_TIMEOUT_MS: z.coerce.number().int().min(500).max(60000).default(10000),
+  SMTP_HOST: z
+    .string()
+    .optional()
+    .transform((v) => (v && v.trim() !== '' ? v.trim() : undefined)),
+  SMTP_PORT: z.preprocess(
+    (v) => (v === undefined || (typeof v === 'string' && v.trim() === '') ? undefined : v),
+    z.coerce.number().int().min(1).max(65535).optional(),
+  ),
+  SMTP_SECURE: z
+    .enum(['true', 'false', ''])
+    .optional()
+    .transform((value) => (value === 'true' ? true : value === 'false' ? false : undefined)),
+  SMTP_USER: z
+    .string()
+    .optional()
+    .transform((v) => (v && v.trim() !== '' ? v.trim() : undefined)),
+  SMTP_PASS: z
+    .string()
+    .optional()
+    .transform((v) => (v && v !== '' ? v : undefined)),
+  SMTP_FROM: z
+    .string()
+    .optional()
+    .transform((v) => (v && v.trim() !== '' ? v.trim() : undefined)),
 });
 
 export interface ParseConfigMeta {
@@ -249,5 +273,11 @@ export function validateEnv(
     corsAllowedOrigins: Object.freeze(corsAllowedOrigins),
     logLevel: data.LOG_LEVEL as LogLevel,
     shutdownTimeoutMs: data.SHUTDOWN_TIMEOUT_MS,
+    ...(data.SMTP_HOST ? { smtpHost: data.SMTP_HOST } : {}),
+    ...(data.SMTP_PORT !== undefined ? { smtpPort: data.SMTP_PORT } : {}),
+    ...(data.SMTP_SECURE !== undefined ? { smtpSecure: data.SMTP_SECURE } : {}),
+    ...(data.SMTP_USER ? { smtpUser: data.SMTP_USER } : {}),
+    ...(data.SMTP_PASS ? { smtpPass: data.SMTP_PASS } : {}),
+    ...(data.SMTP_FROM ? { smtpFrom: data.SMTP_FROM } : {}),
   });
 }

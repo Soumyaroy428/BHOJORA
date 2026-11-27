@@ -37,4 +37,10 @@ export interface AppConfig {
   corsAllowedOrigins: readonly string[];
   logLevel: LogLevel;
   shutdownTimeoutMs: number;
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpSecure?: boolean;
+  smtpUser?: string;
+  smtpPass?: string;
+  smtpFrom?: string;
 }

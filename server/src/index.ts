@@ -13,7 +13,11 @@ import { CustomerService } from './modules/customer/customer.service';
 import { MongooseCustomerStore } from './modules/customer/customer.store';
 import { MongooseIdentityStore } from './modules/identity/identity.models';
 import { IdentityService } from './modules/identity/identity.service';
-import { SafeLogOtpSenderAdapter } from './modules/identity/otp.adapter';
+import {
+  createDefaultOtpSenderAdapter,
+  SafeLogOtpSenderAdapter,
+  SmtpEmailOtpSenderAdapter,
+} from './modules/identity/otp.adapter';
 import { MongooseRbacStore } from './modules/rbac/rbac.store';
 import { OutletService } from './modules/outlet/outlet.service';
 import { InMemoryOutletStore, MongooseOutletStore } from './modules/outlet/outlet.store';
@@ -134,6 +138,8 @@ export {
   DELIVERY_SHIFT_STATUSES_RUNTIME,
   VEHICLE_TYPES_RUNTIME,
   SafeLogOtpSenderAdapter,
+  SmtpEmailOtpSenderAdapter,
+  createDefaultOtpSenderAdapter,
 };
 
 async function startServer(): Promise<void> {
@@ -195,7 +201,7 @@ async function startServer(): Promise<void> {
   const identityService = new IdentityService({
     config,
     store: identityStore,
-    otpAdapter: new SafeLogOtpSenderAdapter(logger),
+    otpAdapter: createDefaultOtpSenderAdapter(config, logger),
     logger,
   });
 

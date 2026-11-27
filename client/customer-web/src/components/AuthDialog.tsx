@@ -407,15 +407,28 @@ export function AuthDialog({
     if (!event.currentTarget.reportValidity()) {
       return;
     }
+    const identifier = recoverIdentifier.trim();
+    if (!identifier) {
+      setBanner({
+        text: 'Enter your registered email or mobile number above before resetting your password.',
+        kind: 'error',
+      });
+      document.getElementById('recoverIdentifier')?.focus();
+      return;
+    }
     setBusy(true);
     try {
       await apiRequest('/auth/reset-password', {
         body: {
-          identifier: recoverIdentifier.trim(),
+          identifier,
           token: resetToken.trim(),
           newPassword: resetNewPassword,
         },
       });
+      setLoginIdentifier(identifier);
+      setLoginPassword('');
+      setResetToken('');
+      setResetNewPassword('');
       switchPanel('login');
       setBanner({
         text: 'Password updated and previous sessions revoked. Sign in with your new password.',
@@ -586,7 +599,12 @@ export function AuthDialog({
                 type="button"
                 id="goRecoverFromLoginBtn"
                 className="auth-link-btn"
-                onClick={() => switchPanel('recover')}
+                onClick={() => {
+                  if (!recoverIdentifier.trim() && loginIdentifier.trim()) {
+                    setRecoverIdentifier(loginIdentifier.trim());
+                  }
+                  switchPanel('recover');
+                }}
               >
                 Forgot password?
               </button>
